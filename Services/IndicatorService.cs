@@ -1,4 +1,7 @@
-﻿using CryptoPortfolioTracker.Infrastructure.Response.Coins;
+﻿using CryptoPortfolioTracker.Enums;
+using CryptoPortfolioTracker.Infrastructure.Response.Coins;
+using CryptoPortfolioTracker.Models;
+using Skender.Stock.Indicators;
 
 namespace CryptoPortfolioTracker.Services;
 
@@ -205,6 +208,189 @@ public class IndicatorService : IIndicatorService
             };
             coin.PriceLevels.Add(newPriceLevel);
         }
-        // As above: if UI needs the PriceLevels property changed notification, raise it from the caller / model.
+    }
+
+    // -----------------------------------------------------------------------
+    // PLUS — Sprint 1.2: extended indicators via Skender.Stock.Indicators
+    // -----------------------------------------------------------------------
+
+    public async Task<MacdData> CalculateMacdAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        try
+        {
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 35) return new MacdData(0, 0, 0);
+
+            var result = quotes.GetMacd(12, 26, 9).LastOrDefault();
+            if (result is null) return new MacdData(0, 0, 0);
+
+            var macd      = result.Macd      ?? 0;
+            var signal    = result.Signal    ?? 0;
+            var histogram = result.Histogram ?? 0;
+
+            coin.Macd       = macd;
+            coin.MacdSignal = signal;
+            return new MacdData(macd, signal, histogram);
+        }
+        catch { return new MacdData(0, 0, 0); }
+    }
+
+    public async Task<BollingerData> CalculateBollingerAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        try
+        {
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 20) return new BollingerData(0, 0, 0);
+
+            var result = quotes.GetBollingerBands(20, 2).LastOrDefault();
+            if (result is null) return new BollingerData(0, 0, 0);
+
+            var upper  = result.UpperBand ?? 0;
+            var middle = result.Sma       ?? 0;
+            var lower  = result.LowerBand ?? 0;
+
+            coin.BollingerUpper = upper;
+            coin.BollingerLower = lower;
+            return new BollingerData(upper, middle, lower);
+        }
+        catch { return new BollingerData(0, 0, 0); }
+    }
+
+    public async Task<double> CalculateAtrAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        try
+        {
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 14) return 0;
+
+            var result = quotes.GetAtr(14).LastOrDefault();
+            var atr = result?.Atr ?? 0;
+            coin.Atr = atr;
+            return atr;
+        }
+        catch { return 0; }
+    }
+
+    public async Task<double> CalculateStochRsiAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        try
+        {
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 50) return 0;
+
+            var result = quotes.GetStochRsi(14, 14, 3, 1).LastOrDefault();
+            var stochRsi = result?.StochRsi ?? 0;
+            coin.StochRsi = stochRsi;
+            return stochRsi;
+        }
+        catch { return 0; }
+    }
+
+    public async Task<TaScore> CalculateTaScoreAsync(Coin coin, Timeframe tf)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+
+        var triggered = new List<string>();
+        double score = 50.0;
+
+        try
+        {
+            var macd      = await CalculateMacdAsync(coin);
+            var bollinger = await CalculateBollingerAsync(coin);
+            await CalculateAtrAsync(coin);
+            await CalculateStochRsiAsync(coin);
+            await CalculateRsiAsync(coin);
+
+            // RSI rules
+            if (coin.Rsi > 0)
+            {
+                if (coin.Rsi < 30) { score += 15; triggered.Add("RSI oversold (<30)"); }
+                else if (coin.Rsi > 70) { score -= 15; triggered.Add("RSI overbought (>70)"); }
+                else if (coin.Rsi < 50) { score += 5; triggered.Add("RSI bearish zone"); }
+                else { score += 5; triggered.Add("RSI bullish zone"); }
+            }
+
+            // MACD rules
+            if (macd.Macd != 0)
+            {
+                if (macd.Macd > macd.Signal) { score += 10; triggered.Add("MACD above signal"); }
+                else { score -= 10; triggered.Add("MACD below signal"); }
+
+                if (macd.Histogram > 0) { score += 5; triggered.Add("MACD histogram positive"); }
+                else { score -= 5; triggered.Add("MACD histogram negative"); }
+            }
+
+            // Bollinger rules
+            if (bollinger.Upper > 0 && coin.Price > 0)
+            {
+                if (coin.Price < bollinger.Lower) { score += 10; triggered.Add("Price below Bollinger lower band"); }
+                else if (coin.Price > bollinger.Upper) { score -= 10; triggered.Add("Price above Bollinger upper band"); }
+            }
+
+            // StochRSI rules
+            if (coin.StochRsi > 0)
+            {
+                if (coin.StochRsi < 20) { score += 10; triggered.Add("StochRSI oversold (<20)"); }
+                else if (coin.StochRsi > 80) { score -= 10; triggered.Add("StochRSI overbought (>80)"); }
+            }
+
+            score = Math.Clamp(score, 0, 100);
+            var direction = score >= 60 ? SignalDirection.Long
+                          : score <= 40 ? SignalDirection.Short
+                          : SignalDirection.Flat;
+
+            return new TaScore(direction, score, triggered);
+        }
+        catch
+        {
+            return new TaScore(SignalDirection.Flat, 50, triggered);
+        }
+    }
+
+    public async Task RecalculateAllAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        await CalculateRsiAsync(coin);
+        await CalculateMaAsync(coin);
+        await CalculateMacdAsync(coin);
+        await CalculateBollingerAsync(coin);
+        await CalculateAtrAsync(coin);
+        await CalculateStochRsiAsync(coin);
+    }
+
+    // Loads closing prices as Skender Quote objects (OHLCV with close = price from chart)
+    private async Task<List<Quote>> LoadQuotesAsync(Coin coin)
+    {
+        try
+        {
+            var fileName = Path.Combine(AppConstants.ChartsFolder, $"MarketChart_{coin.ApiId}.json");
+            if (!File.Exists(fileName)) return new List<Quote>();
+
+            var suffix = coin.Name.Contains("_pre-listing") ? "-prelisting" : "";
+            var marketChart = new MarketChartById();
+            await marketChart.LoadMarketChartJson(coin.ApiId + suffix);
+
+            if (marketChart.Prices?.Length > 0)
+            {
+                return marketChart.Prices
+                    .TakeLast(200)
+                    .Select((p, i) => new Quote
+                    {
+                        Date   = DateTimeOffset.FromUnixTimeMilliseconds((long)p[0].Value).UtcDateTime,
+                        Open   = (decimal)p[1].Value,
+                        High   = (decimal)p[1].Value,
+                        Low    = (decimal)p[1].Value,
+                        Close  = (decimal)p[1].Value,
+                        Volume = 0
+                    })
+                    .ToList();
+            }
+        }
+        catch { }
+        return new List<Quote>();
     }
 }
