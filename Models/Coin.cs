@@ -10,6 +10,7 @@ using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Infrastructure.Response.Coins;
 using LanguageExt;
 using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
+using MarketRegimeEnum = CryptoPortfolioTracker.Enums.MarketRegime;
 
 namespace CryptoPortfolioTracker.Models;
 
@@ -47,6 +48,17 @@ public partial class Coin : BaseModel
     [ObservableProperty] private double change24Hr;
     [ObservableProperty] private string note = string.Empty;
     [ObservableProperty] private bool isAsset;
+
+    // PLUS indicator fields
+    public double Macd { get; set; }
+    public double MacdSignal { get; set; }
+    public double BollingerUpper { get; set; }
+    public double BollingerLower { get; set; }
+    public double Atr { get; set; }
+    public double StochRsi { get; set; }
+    public double LatestSentimentScore { get; set; }
+    public double LatestSignalScore { get; set; }
+    public MarketRegimeEnum MarketRegime { get; set; }
 
     [NotMapped] public double Rsi { get; set; }
     [NotMapped] public double Ema { get; set; }

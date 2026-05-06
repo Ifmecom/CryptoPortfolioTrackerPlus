@@ -72,14 +72,20 @@ class CoinEntityTypeConfiguration : IEntityTypeConfiguration<Coin>
             .Property("Note")
             .HasColumnName("Note");
 
-        configuration
-            .Ignore("Rsi");
-        configuration
-            .Ignore("Ema");
-        configuration
-            .Ignore("ClosingPrices");
-        configuration
-            .Ignore("FileDateMarketChart");
+        configuration.Property(x => x.Macd).HasColumnName("Macd");
+        configuration.Property(x => x.MacdSignal).HasColumnName("MacdSignal");
+        configuration.Property(x => x.BollingerUpper).HasColumnName("BollingerUpper");
+        configuration.Property(x => x.BollingerLower).HasColumnName("BollingerLower");
+        configuration.Property(x => x.Atr).HasColumnName("Atr");
+        configuration.Property(x => x.StochRsi).HasColumnName("StochRsi");
+        configuration.Property(x => x.LatestSentimentScore).HasColumnName("LatestSentimentScore");
+        configuration.Property(x => x.LatestSignalScore).HasColumnName("LatestSignalScore");
+        configuration.Property(x => x.MarketRegime).HasConversion<string>().HasColumnName("MarketRegime");
+
+        configuration.Ignore("Rsi");
+        configuration.Ignore("Ema");
+        configuration.Ignore("ClosingPrices");
+        configuration.Ignore("FileDateMarketChart");
 
         configuration.HasIndex("NarrativeId");
 

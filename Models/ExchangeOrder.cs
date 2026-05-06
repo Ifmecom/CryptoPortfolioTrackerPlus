@@ -1,0 +1,25 @@
+using System;
+using CryptoPortfolioTracker.Enums;
+
+namespace CryptoPortfolioTracker.Models;
+
+public class ExchangeOrder
+{
+    public int Id { get; set; }
+    public int? SignalId { get; set; }
+    public ExchangeKind Exchange { get; set; }
+    public string Symbol { get; set; } = string.Empty;
+    public OrderSide Side { get; set; }
+    public OrderType Type { get; set; }
+    public double Qty { get; set; }
+    public double Entry { get; set; }
+    public double StopLoss { get; set; }
+    public double TakeProfit { get; set; }
+    public OrderStatus Status { get; set; }
+    public string ExternalOrderId { get; set; } = string.Empty;
+    public bool IsPaper { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? FilledAt { get; set; }
+
+    public Signal? Signal { get; set; }
+}
