@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -16,9 +15,7 @@ using CryptoPortfolioTracker.ViewModels;
 using LanguageExt;
 using LanguageExt.Common;
 using Microsoft.EntityFrameworkCore;
-using Newtonsoft.Json;
 using Polly;
-using CoinGeckoClient = CoinGeckoFluentApi.Client.CoinGeckoClient;
 using Exception = System.Exception;
 
 namespace CryptoPortfolioTracker.Services;
@@ -268,32 +265,25 @@ public partial class LibraryService : ObservableObject, ILibraryService
 
     public async Task<Result<List<CoinList>>> GetCoinListFromGecko()
     {
-        //var context = _portfolioService.Context;
-        var Retries = 0;
+        var retries = 0;
 
-        var tokenSource2 = new CancellationTokenSource();
-        var cancellationToken = tokenSource2.Token;
+        var tokenSource = new CancellationTokenSource();
+        var cancellationToken = tokenSource.Token;
 
         var strategy = new ResiliencePipelineBuilder().AddRetry(new()
         {
             ShouldHandle = new PredicateBuilder().Handle<Exception>(),
             MaxRetryAttempts = 8,
-            Delay = System.TimeSpan.FromSeconds(15), // Wait between each try
+            Delay = System.TimeSpan.FromSeconds(15),
             OnRetry = args =>
             {
-                var exception = args.Outcome.Exception!;
-                Retries++;
+                retries++;
                 return default;
             }
         }).Build();
 
         List<CoinList>? coinList = null;
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; AcmeInc/1.0)");
-        var serializerSettings = new JsonSerializerSettings();
-
-        var coinsClient = new CoinGeckoClient(httpClient, AppConstants.CoinGeckoApiKey, AppConstants.ApiPath, serializerSettings);
+        var geckoClient = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -301,8 +291,7 @@ public partial class LibraryService : ObservableObject, ILibraryService
             {
                 await strategy.ExecuteAsync(async token =>
                 {
-                    coinList = await coinsClient.Coins.List.GetAsync<List<CoinList>>(token);
-
+                    coinList = await geckoClient.GetCoinListAsync(token);
                 }, cancellationToken);
             }
             catch (System.Exception ex)
@@ -311,8 +300,8 @@ public partial class LibraryService : ObservableObject, ILibraryService
             }
             finally
             {
-                tokenSource2.Cancel();
-                tokenSource2.Dispose();
+                tokenSource.Cancel();
+                tokenSource.Dispose();
             }
         }
         return coinList ?? new List<CoinList>();
@@ -320,40 +309,33 @@ public partial class LibraryService : ObservableObject, ILibraryService
 
     public async Task<Result<CoinFullDataById>> GetCoinDetails(string coinId)
     {
-        var Retries = 0;
+        var retries = 0;
         if (coinId == null || coinId == "") { return new Result<CoinFullDataById>(); }
 
-        var tokenSource2 = new CancellationTokenSource();
-        var cancellationToken = tokenSource2.Token;
+        var tokenSource = new CancellationTokenSource();
+        var cancellationToken = tokenSource.Token;
 
         var strategy = new ResiliencePipelineBuilder().AddRetry(new()
         {
             ShouldHandle = new PredicateBuilder().Handle<Exception>(),
             MaxRetryAttempts = 8,
-            Delay = System.TimeSpan.FromSeconds(15), // Wait between each try
+            Delay = System.TimeSpan.FromSeconds(15),
             OnRetry = args =>
             {
-                var exception = args.Outcome.Exception!;
-                Retries++;
-                if (Retries > 0)
+                retries++;
+                if (retries > 0)
                 {
                     MainPage.Current.DispatcherQueue.TryEnqueue(() =>
                     {
                         _messenger.Send(new ShowBePatienceMessage());
                     });
-                    
                 }
                 return default;
             }
         }).Build();
 
         CoinFullDataById? coinFullDataById = null;
-
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; AcmeInc/1.0)");
-        var serializerSettings = new JsonSerializerSettings();
-
-        var coinsClient = new CoinGeckoClient(httpClient, AppConstants.CoinGeckoApiKey, AppConstants.ApiPath, serializerSettings);
+        var geckoClient = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
 
         while (!cancellationToken.IsCancellationRequested)
         {
@@ -361,7 +343,7 @@ public partial class LibraryService : ObservableObject, ILibraryService
             {
                 await strategy.ExecuteAsync(async token =>
                 {
-                    coinFullDataById = await coinsClient.Coins[coinId].GetAsync<CoinFullDataById>(token);
+                    coinFullDataById = await geckoClient.GetCoinDetailsAsync(coinId, token);
                 }, cancellationToken);
             }
             catch (System.Exception ex)
@@ -370,8 +352,8 @@ public partial class LibraryService : ObservableObject, ILibraryService
             }
             finally
             {
-                tokenSource2.Cancel();
-                tokenSource2.Dispose();
+                tokenSource.Cancel();
+                tokenSource.Dispose();
             }
         }
         return coinFullDataById ?? new CoinFullDataById();

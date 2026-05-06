@@ -12,8 +12,6 @@ using System.Threading.Tasks;
 using CryptoPortfolioTracker.Infrastructure;
 using Microsoft.EntityFrameworkCore;
 using LanguageExt;
-using CoinGeckoFluentApi.Client;
-using CryptoPortfolioTracker.Infrastructure.Response.Coins;
 using CryptoPortfolioTracker.Helpers;
 using LanguageExt.Common;
 using System.Diagnostics;
