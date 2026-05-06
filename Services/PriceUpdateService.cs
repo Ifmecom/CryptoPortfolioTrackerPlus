@@ -17,8 +17,6 @@ using Newtonsoft.Json;
 using Polly;
 using Serilog;
 using Serilog.Core;
-using CoinGeckoClient = CoinGeckoFluentApi.Client.CoinGeckoClient;
-using HttpClient = System.Net.Http.HttpClient;
 
 namespace CryptoPortfolioTracker.Services;
 
@@ -280,15 +278,11 @@ public class PriceUpdateService : IPriceUpdateService
             }
         }).Build();
 
-        using var httpClient = new HttpClient();
-        httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (compatible; AcmeInc/1.0)");
-        var serializerSettings = new JsonSerializerSettings();
-        var coinsClient = new CoinGeckoClient(httpClient, AppConstants.CoinGeckoApiKey, AppConstants.ApiPath, serializerSettings);
-
+        var geckoClient = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
         List<CoinMarkets>? coinMarketsPage = null;
 
-        var tokenSource2 = new CancellationTokenSource();
-        var cancellationToken = tokenSource2.Token;
+        var tokenSource = new CancellationTokenSource();
+        var cancellationToken = tokenSource.Token;
         while (!cancellationToken.IsCancellationRequested && !IsPausRequested)
         {
             totalRequests++;
@@ -297,18 +291,10 @@ public class PriceUpdateService : IPriceUpdateService
                 await strategy.ExecuteAsync(async token =>
                 {
                     Logger.Debug("Getting Market Data; (Retries: {0})", retries);
-                    coinMarketsPage = await coinsClient.Coins.Markets
-                        .Ids(coinIds)
-                        .VsCurrency("usd")
-                        .Order("market_cap_desc")
-                        .Page(1).PerPage(dataPerPage)
-                        .IncludeSparkline(false)
-                        .PriceChangePercentage("24h,30d,1y")
-                        .GetAsync<List<CoinMarkets>>(token);
+                    coinMarketsPage = await geckoClient.GetCoinMarketsAsync(coinIds, dataPerPage, token);
                 }, cancellationToken);
 
                 Logger.Information("Received Market Data; (Count: {0})", coinMarketsPage?.Count.ToString() ?? "0");
-                
             }
             catch (System.Exception ex)
             {
@@ -317,8 +303,8 @@ public class PriceUpdateService : IPriceUpdateService
             }
             finally
             {
-                tokenSource2.Cancel();
-                tokenSource2.Dispose();
+                tokenSource.Cancel();
+                tokenSource.Dispose();
             }
         }
         return coinMarketsPage ?? new Result<List<CoinMarkets>>(new NullReferenceException());
