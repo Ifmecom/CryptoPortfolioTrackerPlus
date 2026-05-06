@@ -361,3 +361,23 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# WinUI 3 / Windows App SDK
+AppPackages/
+*.msix
+*.msixbundle
+*.msixupload
+
+# SQLite databases (runtime data — nooit committen)
+*.db
+*.db-shm
+*.db-wal
+
+# NuGet restore artefacten in obj/
+**/obj/project.assets.json
+**/obj/*.nuget.cache
+**/obj/project.nuget.cache
+
+# Gebruikersinstellingen en autorisatie-state (runtime)
+authstate.json
+prefs.xml
