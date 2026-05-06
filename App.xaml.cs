@@ -228,6 +228,7 @@ public partial class App : Application
         services.AddScoped<PortfolioService>();
         services.AddSingleton<IMessenger, WeakReferenceMessenger>();
         services.AddSingleton<IQuestPdfService, QuestPdfService>();
+        services.AddScoped<ISentimentService, SentimentService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 
@@ -260,7 +261,7 @@ public partial class App : Application
 #endif
         Logger = Log.Logger.ForContext(Constants.SourceContextPropertyName, typeof(App).Name.PadRight(22));
         Logger.Information("------------------------------------");
-        Logger.Information("Started Crypto Portfolio Tracker {0}", AppConstants.ProductVersion);
+        Logger.Information("Started Crypto Portfolio Tracker Plus {0}", AppConstants.ProductVersion);
     }
 
     public void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
