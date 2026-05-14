@@ -11,7 +11,7 @@ public static class AppConstants
     public const string VersionUrl = "https://marcel-osft.github.io/CryptoPortfolioTracker/current_version.txt";
     public const string DefaultPortfolioGuid = "f52ee1a8-ea8d-4f21-849c-6e6429f88256";
     public const string DefaultDuressPortfolioGuid = "08c1ac97-27e0-4922-93da-320c8a5e08ba";
-    public const string ScheduledTaskName = "CryptoPortfolioTracker MarketCharts Update Task";
+    public const string ScheduledTaskName = "CryptoPortfolioTrackerPlus MarketCharts Update Task";
     public const string DbName = "sqlCPT.db";
     public const string PrefFileName = "prefs.xml";
     public const string BackupFolder = "Backup";
@@ -34,7 +34,13 @@ public static class AppConstants
     public static void GetAppEnvironmentals()
     {
         AppConstants.AppPath = System.IO.Path.GetDirectoryName(System.AppContext.BaseDirectory) ?? string.Empty;
-        AppConstants.AppDataPath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\CryptoPortfolioTracker";
+
+        var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        AppConstants.AppDataPath = Path.Combine(localAppData, "CryptoPortfolioTrackerPlus");
+
+        // One-time migration: copy data from original CryptoPortfolioTracker folder if Plus folder is new
+        MigrateDataFolderIfNeeded(Path.Combine(localAppData, "CryptoPortfolioTracker"), AppConstants.AppDataPath);
+
         if (!Directory.Exists(AppConstants.AppDataPath))
         {
             Directory.CreateDirectory(AppConstants.AppDataPath);
@@ -53,12 +59,52 @@ public static class AppConstants
         if (Debugger.IsAttached)
         {
             // Development mode (running from IDE)
-            AppConstants.ScheduledTaskExe = "C:\\Program Files\\Crypto Portfolio Tracker\\MarketChartsUpdateService.exe";
+            AppConstants.ScheduledTaskExe = "C:\\Program Files\\Crypto Portfolio Tracker Plus\\MarketChartsUpdateService.exe";
         }
         else
         {
             // Production mode
             AppConstants.ScheduledTaskExe = Path.Combine(AppConstants.AppPath, "MarketChartsUpdateService.exe");
+        }
+    }
+
+    /// <summary>
+    /// Copies all files and subfolders from <paramref name="source"/> to <paramref name="target"/>
+    /// the first time the Plus folder does not yet exist. Runs only once — subsequent launches skip this.
+    /// </summary>
+    private static void MigrateDataFolderIfNeeded(string source, string target)
+    {
+        // Skip if target already exists (migration already done or fresh install)
+        if (Directory.Exists(target)) return;
+        // Skip if source doesn't exist either (clean install of Plus)
+        if (!Directory.Exists(source)) return;
+
+        try
+        {
+            CopyDirectory(source, target);
+        }
+        catch
+        {
+            // Migration failure is non-fatal — the app will start with an empty data folder
+        }
+    }
+
+    private static void CopyDirectory(string source, string target)
+    {
+        Directory.CreateDirectory(target);
+
+        // Copy all files
+        foreach (var file in Directory.GetFiles(source))
+        {
+            var dest = Path.Combine(target, Path.GetFileName(file));
+            File.Copy(file, dest, overwrite: true);
+        }
+
+        // Recurse into subdirectories
+        foreach (var dir in Directory.GetDirectories(source))
+        {
+            var destDir = Path.Combine(target, Path.GetFileName(dir));
+            CopyDirectory(dir, destDir);
         }
     }
 

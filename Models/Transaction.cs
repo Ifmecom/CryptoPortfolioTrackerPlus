@@ -26,6 +26,13 @@ public partial class Transaction : BaseModel
     [ObservableProperty] private DateTime timeStamp;
     [ObservableProperty] private string note = string.Empty;
     [ObservableProperty] private ICollection<Mutation> mutations;
+
+    /// <summary>
+    /// Optionele externe sleutel voor deduplicatie bij automatische imports.
+    /// Formaat: "MEXC:{tradeId}" voor MEXC spot trades.
+    /// Null voor handmatig ingevoerde transacties.
+    /// </summary>
+    public string? SourceId { get; set; }
     [ObservableProperty][NotMapped] private Asset? requestedAsset = null;
     [ObservableProperty][NotMapped] private TransactionDetails details;
 

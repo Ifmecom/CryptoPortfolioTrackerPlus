@@ -21,7 +21,7 @@ using CryptoPortfolioTracker.Dialogs;
 using WinRT;
 using CryptoPortfolioTracker.Helpers;
 using LanguageExt;
-using WinRT.CryptoPortfolioTrackerGenericHelpers;
+using WinRT.CryptoFolioTrackerPlusGenericHelpers;
 
 namespace CryptoPortfolioTracker.Services;
 
@@ -190,6 +190,7 @@ public partial class PriceLevelService : ObservableObject, IPriceLevelService
             coinList = await context.Coins
                 .AsNoTracking()
                 .Where(x => x.Name.Length <= 12 || (x.Name.Length > 12 && x.Name.Substring(x.Name.Length - 12) != "_pre-listing"))
+                .Where(x => x.PriceLevels.Any(pl => pl.Value != 0))
                 .Include(x => x.PriceLevels)
                 .Include(x => x.Narrative)
                 .Include(x => x.Assets)
@@ -414,7 +415,8 @@ public partial class PriceLevelService : ObservableObject, IPriceLevelService
         }
 
         
-        var priceLevel = asset.Coin.PriceLevels.Where(x => x.Type == PriceLevelType.TakeProfit).First();
+        var priceLevel = asset.Coin.PriceLevels.Where(x => x.Type == PriceLevelType.TakeProfit).FirstOrDefault();
+        if (priceLevel is null) return index;
 
         priceLevel.DistanceToValuePerc = (100 * (asset.Coin.Price - priceLevel.Value) / priceLevel.Value);
 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Page
     x:Class="CryptoPortfolioTracker.Views.PriceLevelsView"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,7 +34,7 @@
             <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="3" Height="265" VerticalAlignment="Top"/>
             <RelativePanel>
                 <TextBlock AutomationProperties.AutomationId="__ClickableAreaTextBlock" />
-                <TextBlock x:Name="smallHeaderText" Text="Crypto Portfolio Tracker" Foreground="DarkGoldenrod" Margin="36,0,0,0" VerticalAlignment="Top" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock x:Name="smallHeaderText" Text="Crypto Portfolio Tracker Plus" Foreground="DarkGoldenrod" Margin="36,0,0,0" VerticalAlignment="Top" Style="{StaticResource TitleTextBlockStyle}"/>
                 <TextBlock x:Name="txtPortfolio" Margin="36,0,0,0" Text="{Binding PortfolioName}"  Foreground="DarkGoldenrod" Style="{StaticResource SubSampleHeaderTextStyle}" RelativePanel.Below="smallHeaderText" />
                 <TextBlock l:Uids.Uid="PriceLevels_Title" x:Name="txtPriceLevels" Margin="36,5,0,0" Foreground="DarkGoldenrod" Style="{StaticResource SampleHeaderTextStyle}" RelativePanel.Below="txtPortfolio" />
                 <TextBlock x:Name="txtCount" Text="{x:Bind converters:Functions.AddPrefixAndSuffixToString(_viewModel.CoinsCount,' \(','\)'), Mode=OneWay}" 

@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <ContentDialog
     x:Class="CryptoPortfolioTracker.Dialogs.AboutDialog"
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
@@ -34,7 +34,7 @@
         <StackPanel Orientation="Horizontal" HorizontalAlignment="Stretch" Grid.Row="0" Margin="100,0,0,0">
             <Image Source="{Binding ImagePath}" Width="70" Height="70" VerticalAlignment="Center" Margin="0,0,30,0" />
             <StackPanel VerticalAlignment="Center">
-                <TextBlock  Text="Crypto Portfolio Tracker" 
+                <TextBlock  Text="Crypto Portfolio Tracker Plus" 
                             Foreground="Goldenrod" 
                             FontWeight="SemiBold" 
                             HorizontalTextAlignment="Center" 

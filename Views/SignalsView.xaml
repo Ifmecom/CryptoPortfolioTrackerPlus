@@ -1,0 +1,436 @@
+<Page
+    x:Class="CryptoPortfolioTracker.Views.SignalsView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:CryptoPortfolioTracker.ViewModels"
+    xmlns:helpers="using:CryptoPortfolioTracker.Helpers"
+    xmlns:converters="using:CryptoPortfolioTracker.Converters"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Loaded="View_Loaded"
+    Unloaded="View_Unloaded"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid x:Name="HeaderGrid" CornerRadius="8,8,0,0"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,0,5,10" VerticalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="110"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="3" Height="265" VerticalAlignment="Top"/>
+
+            <!-- Header -->
+            <RelativePanel>
+                <TextBlock AutomationProperties.AutomationId="__ClickableAreaTextBlock"/>
+                <TextBlock x:Name="appTitle"
+                           Text="Crypto Portfolio Tracker Plus"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           VerticalAlignment="Top"
+                           Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock x:Name="txtPortfolio"
+                           Text="{x:Bind _viewModel.PortfolioName, Mode=OneWay}"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           Style="{StaticResource SubSampleHeaderTextStyle}"
+                           RelativePanel.Below="appTitle"/>
+                <TextBlock x:Name="txtTitle"
+                           Text="Analysis"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,5,0,0"
+                           Style="{StaticResource SampleHeaderTextStyle}"
+                           RelativePanel.Below="txtPortfolio"/>
+            </RelativePanel>
+
+            <!-- Explainer -->
+            <TextBlock Grid.Row="1" VerticalAlignment="Bottom"
+                       Style="{StaticResource ExplainerTextStyle}"
+                       Margin="35,0,20,20" TextWrapping="Wrap"
+                       Text="Technical indicators, signal scores and direction per asset. Refresh Analysis recalculates indicators; Evaluate Signals runs the full engine (TA + sentiment + regime)."/>
+
+            <!-- Main content -->
+            <Border Grid.Row="2" VerticalAlignment="Stretch" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Toolbar -->
+                    <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
+
+                        <Button Command="{x:Bind _viewModel.RefreshAnalysisCommand}"
+                                IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsRefreshing), Mode=OneWay}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE72C;" FontSize="14"/>
+                                <TextBlock Text="Refresh Analysis"/>
+                            </StackPanel>
+                        </Button>
+
+                        <Button Command="{x:Bind _viewModel.EvaluateSignalsCommand}"
+                                IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsEvaluating), Mode=OneWay}"
+                                Style="{StaticResource AccentButtonStyle}">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <FontIcon Glyph="&#xE9D9;" FontSize="14"/>
+                                <TextBlock Text="Evaluate Signals"/>
+                            </StackPanel>
+                        </Button>
+
+                        <ProgressRing IsActive="{x:Bind _viewModel.IsRefreshing, Mode=OneWay}"
+                                      Width="20" Height="20" VerticalAlignment="Center"/>
+                        <ProgressRing IsActive="{x:Bind _viewModel.IsEvaluating, Mode=OneWay}"
+                                      Width="20" Height="20" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Status message -->
+                    <TextBlock Grid.Row="1"
+                               Text="{x:Bind _viewModel.StatusMessage, Mode=OneWay}"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               FontSize="12" Margin="2,0,0,8"/>
+
+                    <!-- Sticky column headers (outside ListView so they don't scroll) -->
+                    <ScrollViewer Grid.Row="2"
+                                  x:Name="HeaderScrollViewer"
+                                  HorizontalScrollMode="Auto"
+                                  HorizontalScrollBarVisibility="Hidden"
+                                  VerticalScrollMode="Disabled"
+                                  VerticalScrollBarVisibility="Hidden">
+                        <Grid Padding="12,4,12,4"
+                              Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="35"/>
+                                <ColumnDefinition Width="160"/>
+                                <ColumnDefinition Width="95"/>
+                                <ColumnDefinition Width="140"/>
+                                <ColumnDefinition Width="85"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="85"/>
+                                <ColumnDefinition Width="70"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="90"/>
+                                <ColumnDefinition Width="58"/>
+                                <ColumnDefinition Width="65"/>
+                                <ColumnDefinition Width="55"/>
+                                <ColumnDefinition Width="55"/>
+                                <ColumnDefinition Width="58"/>
+                                <ColumnDefinition Width="65"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="80"/>
+                                <ColumnDefinition Width="44"/>
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Rank"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Market Cap rank — lower number means larger market cap.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderRank, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="1"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Name"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Asset — name and ticker symbol of the coin.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderName, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="2"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Macd"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="MACD — Moving Average Convergence Divergence. Positive = upward momentum; negative = downward momentum.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderMacd, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="3"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="BollingerUpper"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Bollinger Bands — H = upper band, K = current price, L = lower band. Price above H = overbought; price below L = oversold.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderBollinger, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="4"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Atr"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="ATR — Average True Range. Measures volatility; higher value means larger price swings and wider stop-loss levels are typically needed.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderAtr, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="5"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="StochRsi"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="StochRSI — scale 0–100. Below 20 = oversold (potential buy opportunity); above 80 = overbought (potential sell signal).">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderStochRsi, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="6"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Sentiment"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Sentiment — combined score from multiple sources. Positive = bullish market sentiment; negative = bearish sentiment.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderSentiment, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="7"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Regime"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Regime — overall market environment based on BTC trends. RiskOn = favourable; Neutral = mixed; RiskOff = unfavourable.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderRegime, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="8"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="CombinedScore"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Score — combined signal score (TA + sentiment + regime), 0–100. Above 60 = bullish; below 40 = bearish.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderScore, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="9"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Direction"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Direction — recommended trade direction based on the combined score. Long = buy signal; Flat = hold/neutral; Short = sell signal.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderDirection, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="10" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="EmaCross"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="EMA Cross — EMA9 vs EMA21. Bullish cross = short-term uptrend confirmed; Bearish cross = downtrend. Shows days since last cross.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderEmaCross, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="11" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="RsiDaily"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="RSI (14) — Relative Strength Index on 14-day closes. Below 30 = oversold; above 70 = overbought.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderRsi, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="12" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Ma50DistPerc"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="MA50% — distance of current price from the 50-day simple moving average. Positive = above MA50 (bullish); negative = below MA50 (bearish).">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderMa50, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="13" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Adx"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="ADX — Average Directional Index. Measures trend strength regardless of direction. Below 20 = no trend / sideways; above 25 = strong trend (signals more reliable).">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderAdx, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="14" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="BollingerPctB"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="%B — Bollinger Band position (0–100). 0 = at lower band (oversold); 100 = at upper band (overbought); 50 = at midline.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderPctB, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="15" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="IsSqueeze"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="Squeeze — Bollinger Bands inside Keltner Channel = low volatility consolidation, expect breakout. 'Aan' = squeeze active; 'Af' = no squeeze.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderSqueeze, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <Button Grid.Column="16" Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="High52wPerc"
+                                    Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
+                                    ToolTipService.ToolTip="52w% — percentage below the 52-week high. 0% = at 52-week high; -50% = 50% below 52-week high.">
+                                <TextBlock Text="{x:Bind _viewModel.HeaderHigh52w, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
+                            </Button>
+                            <TextBlock Grid.Column="17" Text="1H" FontSize="11" FontWeight="SemiBold" Foreground="DarkGoldenrod"
+                                       VerticalAlignment="Center"
+                                       ToolTipService.ToolTip="1H Trend — short-term price trend based on the last 14 1H closes. Green line = uptrend; red line = downtrend."/>
+                            <TextBlock Grid.Column="18" Text="4H" FontSize="11" FontWeight="SemiBold" Foreground="DarkGoldenrod"
+                                       VerticalAlignment="Center"
+                                       ToolTipService.ToolTip="4H Trend — medium-term price trend based on the last 30 4H closes. Green line = uptrend; red line = downtrend."/>
+                            <TextBlock Grid.Column="19" Text="1D" FontSize="11" FontWeight="SemiBold" Foreground="DarkGoldenrod"
+                                       VerticalAlignment="Center"
+                                       ToolTipService.ToolTip="1D Trend — long-term price trend based on the last 90 daily closes. Green line = uptrend; red line = downtrend."/>
+                            <TextBlock Grid.Column="20" Text="" Style="{StaticResource CaptionTextBlockStyle}"/>
+                        </Grid>
+                    </ScrollViewer>
+
+                    <!-- Table -->
+                    <ListView Grid.Row="3"
+                              x:Name="DataListView"
+                              ItemsSource="{x:Bind _viewModel.Rows, Mode=OneWay}"
+                              DataContext="{x:Bind _viewModel}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False"
+                              ScrollViewer.HorizontalScrollMode="Auto"
+                              ScrollViewer.HorizontalScrollBarVisibility="Auto">
+
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="BorderBrush" Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:CoinSignalRow">
+                                <Grid Padding="12,8,12,8" MinHeight="44">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="35"/>
+                                        <ColumnDefinition Width="160"/>
+                                        <ColumnDefinition Width="95"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="85"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition Width="85"/>
+                                        <ColumnDefinition Width="70"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition Width="58"/>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="55"/>
+                                        <ColumnDefinition Width="58"/>
+                                        <ColumnDefinition Width="65"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="44"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Rank -->
+                                    <TextBlock Grid.Column="0"
+                                               Text="{x:Bind Rank}"
+                                               VerticalAlignment="Center"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               FontSize="12"/>
+
+                                    <!-- Asset name + symbol -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal"
+                                                VerticalAlignment="Center" Spacing="8">
+                                        <Image Width="28" Height="28" VerticalAlignment="Center"
+                                               Source="{x:Bind converters:Functions.StringToImageSource(ImageUri), Mode=OneWay}"/>
+                                        <StackPanel VerticalAlignment="Center" MaxWidth="118">
+                                            <TextBlock Text="{x:Bind Name}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"
+                                                       ToolTipService.ToolTip="{x:Bind Name}"/>
+                                            <TextBlock Text="{x:Bind Symbol}"
+                                                       FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- MACD -->
+                                    <TextBlock Grid.Column="2"
+                                               Text="{x:Bind MacdDisplay}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.SignedColor(Macd)}"/>
+
+                                    <!-- Bollinger -->
+                                    <StackPanel Grid.Column="3" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{x:Bind BollingerHighDisplay}"
+                                                   FontSize="11" FontFamily="Consolas"
+                                                   Foreground="#FF4CAF50"/>
+                                        <TextBlock Text="{x:Bind BollingerPriceDisplay}"
+                                                   FontSize="11" FontFamily="Consolas"/>
+                                        <TextBlock Text="{x:Bind BollingerLowDisplay}"
+                                                   FontSize="11" FontFamily="Consolas"
+                                                   Foreground="#FFF44336"/>
+                                    </StackPanel>
+
+                                    <!-- ATR -->
+                                    <TextBlock Grid.Column="4"
+                                               Text="{x:Bind AtrDisplay}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12" FontFamily="Consolas"/>
+
+                                    <!-- StochRSI -->
+                                    <TextBlock Grid.Column="5"
+                                               Text="{x:Bind StochRsiDisplay}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.StochRsiColor(StochRsi)}"/>
+
+                                    <!-- Sentiment -->
+                                    <TextBlock Grid.Column="6"
+                                               Text="{x:Bind SentimentDisplay}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.SignedColor(Sentiment)}"/>
+
+                                    <!-- Regime -->
+                                    <Border Grid.Column="7"
+                                            CornerRadius="4" Padding="8,3"
+                                            VerticalAlignment="Center" HorizontalAlignment="Left"
+                                            Background="{x:Bind helpers:AnalysisHelpers.RegimeColor(Regime)}">
+                                        <TextBlock Text="{x:Bind Regime}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="White"/>
+                                    </Border>
+
+                                    <!-- Score -->
+                                    <TextBlock Grid.Column="8"
+                                               Text="{x:Bind ScoreDisplay}"
+                                               VerticalAlignment="Center"
+                                               FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.ScoreColor(CombinedScore)}"/>
+
+                                    <!-- Direction -->
+                                    <Border Grid.Column="9"
+                                            CornerRadius="4" Padding="8,3"
+                                            VerticalAlignment="Center" HorizontalAlignment="Left"
+                                            Background="{x:Bind helpers:AnalysisHelpers.DirectionColor(Direction)}">
+                                        <TextBlock Text="{x:Bind Direction}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="White"/>
+                                    </Border>
+
+                                    <!-- EMA Cross (col 10) -->
+                                    <StackPanel Grid.Column="10" VerticalAlignment="Center" Spacing="1">
+                                        <TextBlock Text="{x:Bind EmaCrossDisplay}"
+                                                   FontSize="11" FontFamily="Consolas"
+                                                   Foreground="{x:Bind helpers:AnalysisHelpers.EmaCrossColor(EmaCross)}"/>
+                                    </StackPanel>
+
+                                    <!-- RSI 1D (col 11) -->
+                                    <TextBlock Grid.Column="11" Text="{x:Bind RsiDailyDisplay}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.RsiColor(RsiDaily)}"/>
+
+                                    <!-- MA50% (col 12) -->
+                                    <TextBlock Grid.Column="12" Text="{x:Bind Ma50DistDisplay}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.Ma50Color(Ma50DistPerc)}"/>
+
+                                    <!-- ADX (col 13) -->
+                                    <TextBlock Grid.Column="13" Text="{x:Bind AdxDisplay2}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.AdxColor(Adx)}"/>
+
+                                    <!-- %B (col 14) -->
+                                    <TextBlock Grid.Column="14" Text="{x:Bind BollingerPctBDisplay}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.PctBColor(BollingerPctB)}"/>
+
+                                    <!-- Squeeze (col 15) -->
+                                    <Border Grid.Column="15"
+                                            CornerRadius="4" Padding="6,2"
+                                            VerticalAlignment="Center" HorizontalAlignment="Left"
+                                            Background="{x:Bind helpers:AnalysisHelpers.SqueezeColor(IsSqueeze)}">
+                                        <TextBlock Text="{x:Bind SqueezeDisplay}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="White"/>
+                                    </Border>
+
+                                    <!-- 52w% (col 16) -->
+                                    <TextBlock Grid.Column="16" Text="{x:Bind High52wDisplay}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.SignedColor(High52wPerc)}"/>
+
+                                    <!-- Sparklines (shifted to col 17/18/19) -->
+                                    <controls:SparklineControl Grid.Column="17"
+                                                               Values="{x:Bind Trend1h}"
+                                                               VerticalAlignment="Center"
+                                                               ToolTipService.ToolTip="1H Trend: last 14 1H closes"/>
+                                    <controls:SparklineControl Grid.Column="18"
+                                                               Values="{x:Bind Trend4h}"
+                                                               VerticalAlignment="Center"
+                                                               ToolTipService.ToolTip="4H Trend: last 30 4H closes"/>
+                                    <controls:SparklineControl Grid.Column="19"
+                                                               Values="{x:Bind TrendDay}"
+                                                               VerticalAlignment="Center"
+                                                               ToolTipService.ToolTip="1D Trend: last 90 daily closes"/>
+
+                                    <!-- Paper trade button (shifted to col 20) -->
+                                    <Button Grid.Column="20"
+                                            VerticalAlignment="Center"
+                                            Padding="6,4"
+                                            ToolTipService.ToolTip="Place paper trade"
+                                            Tag="{x:Bind}"
+                                            Click="PaperTrade_Click">
+                                        <FontIcon Glyph="&#xE8C3;" FontSize="13"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

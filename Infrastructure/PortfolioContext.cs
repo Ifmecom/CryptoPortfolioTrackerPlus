@@ -34,8 +34,15 @@ namespace CryptoPortfolioTracker.Infrastructure
         public DbSet<Narrative> Narratives { get; set; }
         public DbSet<Mutation> Mutations { get; set; }
         public DbSet<Transaction> Transactions { get; set; }
-
         public DbSet<PriceLevel> PriceLevels { get; set; }
+
+        // PLUS
+        public DbSet<SentimentReading> SentimentReadings { get; set; }
+        public DbSet<Signal> Signals { get; set; }
+        public DbSet<SignalRule> SignalRules { get; set; }
+        public DbSet<ExchangeOrder> ExchangeOrders { get; set; }
+        public DbSet<ExchangeAccount> ExchangeAccounts { get; set; }
+        public DbSet<BronSource> BronSources { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -47,6 +54,14 @@ namespace CryptoPortfolioTracker.Infrastructure
             builder.ApplyConfiguration(new CoinEntityTypeConfiguration());
             builder.ApplyConfiguration(new MutationEntityTypeConfiguration());
             builder.ApplyConfiguration(new PriceLevelEntityTypeConfiguration());
+
+            // PLUS
+            builder.ApplyConfiguration(new SentimentReadingEntityTypeConfiguration());
+            builder.ApplyConfiguration(new SignalEntityTypeConfiguration());
+            builder.ApplyConfiguration(new SignalRuleEntityTypeConfiguration());
+            builder.ApplyConfiguration(new ExchangeOrderEntityTypeConfiguration());
+            builder.ApplyConfiguration(new ExchangeAccountEntityTypeConfiguration());
+            builder.ApplyConfiguration(new BronSourceEntityTypeConfiguration());
 
         }
 

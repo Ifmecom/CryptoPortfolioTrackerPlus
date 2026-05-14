@@ -229,6 +229,99 @@ public partial class Settings : ObservableObject
             OnPropertyChanged(nameof(LastVersion));
         }
     }
+    // -----------------------------------------------------------------------
+    // Telegram notifications
+    // -----------------------------------------------------------------------
+
+    public bool IsTelegramEnabled
+    {
+        get => _store.Get("IsTelegramEnabled", false);
+        set { _store.Set("IsTelegramEnabled", value); OnPropertyChanged(nameof(IsTelegramEnabled)); }
+    }
+
+    public string TelegramBotToken
+    {
+        get => _store.Get("TelegramBotToken", string.Empty);
+        set { _store.Set("TelegramBotToken", value); OnPropertyChanged(nameof(TelegramBotToken)); }
+    }
+
+    public string TelegramChatId
+    {
+        get => _store.Get("TelegramChatId", string.Empty);
+        set { _store.Set("TelegramChatId", value); OnPropertyChanged(nameof(TelegramChatId)); }
+    }
+
+    /// <summary>Minimum combined score (0-100) for a Long signal to trigger a notification.</summary>
+    public double TelegramScoreThreshold
+    {
+        get => _store.Get("TelegramScoreThreshold", 65.0);
+        set { _store.Set("TelegramScoreThreshold", value); OnPropertyChanged(nameof(TelegramScoreThreshold)); }
+    }
+
+    // -----------------------------------------------------------------------
+    // Signalen & Trading
+    // -----------------------------------------------------------------------
+
+    /// <summary>Paper-trading mode — orders are only simulated, never sent to exchange.</summary>
+    public bool IsPaperTradingEnabled
+    {
+        get => _store.Get("IsPaperTradingEnabled", true);
+        set { _store.Set("IsPaperTradingEnabled", value); OnPropertyChanged(nameof(IsPaperTradingEnabled)); }
+    }
+
+    /// <summary>General minimum combined score for a Long signal to be saved/shown (0-100).</summary>
+    public double SignalScoreThreshold
+    {
+        get => _store.Get("SignalScoreThreshold", 60.0);
+        set { _store.Set("SignalScoreThreshold", value); OnPropertyChanged(nameof(SignalScoreThreshold)); }
+    }
+
+    // -----------------------------------------------------------------------
+    // Risk-guardrails
+    // -----------------------------------------------------------------------
+
+    /// <summary>Maximum percentage of portfolio value to risk per single trade (1-25 %).</summary>
+    public double MaxPortfolioPercPerTrade
+    {
+        get => _store.Get("MaxPortfolioPercPerTrade", 5.0);
+        set { _store.Set("MaxPortfolioPercPerTrade", value); OnPropertyChanged(nameof(MaxPortfolioPercPerTrade)); }
+    }
+
+    /// <summary>Maximum number of simultaneously open positions (1-20).</summary>
+    public int MaxOpenPositions
+    {
+        get => _store.Get("MaxOpenPositions", 5);
+        set { _store.Set("MaxOpenPositions", value); OnPropertyChanged(nameof(MaxOpenPositions)); }
+    }
+
+    /// <summary>Daily loss limit as % of portfolio value — signal engine pauses for 24h when hit (1-30 %).</summary>
+    public double DailyLossLimitPerc
+    {
+        get => _store.Get("DailyLossLimitPerc", 10.0);
+        set { _store.Set("DailyLossLimitPerc", value); OnPropertyChanged(nameof(DailyLossLimitPerc)); }
+    }
+
+    /// <summary>Emergency kill-switch — when true, signal engine and auto-trading are suspended.</summary>
+    public bool IsKillSwitchActive
+    {
+        get => _store.Get("IsKillSwitchActive", false);
+        set { _store.Set("IsKillSwitchActive", value); OnPropertyChanged(nameof(IsKillSwitchActive)); }
+    }
+
+    // -----------------------------------------------------------------------
+    // Exchange regio
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Wanneer true wordt api.bybit.eu gebruikt i.p.v. api.bybit.com.
+    /// Vereist voor Bybit EU (bybit.eu) accounts.
+    /// </summary>
+    public bool BybitIsEu
+    {
+        get => _store.Get("BybitIsEu", false);
+        set { _store.Set("BybitIsEu", value); OnPropertyChanged(nameof(BybitIsEu)); }
+    }
+
     // New: expose flush so callers owning Settings can wait for persistence
     public Task FlushPreferenceStoreAsync(CancellationToken ct = default) =>
         _store.FlushAsync(ct);

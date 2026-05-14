@@ -11,6 +11,7 @@ public class IconCacheService
     private readonly string _iconsFolderPath;
     private readonly PortfolioService _portfolioService;
     private readonly ILogger _logger;
+    private static readonly HttpClient _httpClient = new HttpClient();
 
     public IconCacheService(string iconsFolderPath, PortfolioService portfolioService, ILogger logger)
     {
@@ -34,36 +35,30 @@ public class IconCacheService
         var context = _portfolioService.Context;
         var coins = context?.Coins.Where(coin => !string.IsNullOrEmpty(coin.ImageUri)).ToList();
 
-        if (coins != null)
+        if (coins == null) return;
+
+        var seen = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+        foreach (var coin in coins)
         {
-            var tasks = coins.Select(async coin =>
+            var fileName = Path.GetFileName(coin.ImageUri.Split('?')[0]);
+            if (fileName == "QuestionMarkBlue.png" || !seen.Add(fileName)) continue;
+
+            var iconPath = Path.Combine(_iconsFolderPath, fileName);
+            if (!await RetrieveCoinIconAsync(coin.ImageUri, iconPath))
             {
-                var fileName = Path.GetFileName(coin.ImageUri.Split('?')[0]);
-                if (fileName != "QuestionMarkBlue.png")
-                {
-                    var iconPath = Path.Combine(_iconsFolderPath, fileName);
-                    if (!File.Exists(iconPath))
-                    {
-                        if (!await RetrieveCoinIconAsync(coin.ImageUri, iconPath))
-                        {
-                            _logger?.Warning("Failed to cache icon for {0}", coin.Name);
-                        }
-                    }
-                }
-            });
-            await Task.WhenAll(tasks);
+                _logger?.Warning("Failed to cache icon for {0}", coin.Name);
+            }
         }
     }
 
     private async Task<bool> RetrieveCoinIconAsync(string imageUri, string iconPath)
     {
-        using var httpClient = new HttpClient();
         try
         {
-            var response = await httpClient.GetAsync(imageUri);
+            var response = await _httpClient.GetAsync(imageUri);
             if (!response.IsSuccessStatusCode) return false;
-            await using var fs = new FileStream(iconPath, FileMode.Create);
-            await response.Content.CopyToAsync(fs);
+            var bytes = await response.Content.ReadAsByteArrayAsync();
+            await File.WriteAllBytesAsync(iconPath, bytes);
             return true;
         }
         catch

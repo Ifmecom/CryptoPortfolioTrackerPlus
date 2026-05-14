@@ -14,7 +14,7 @@
   <mp:PhoneIdentity PhoneProductId="888d91d3-450f-43ca-bf3d-41d75f3c8b17" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
   <Properties>
-    <DisplayName>Crypto Portfolio Tracker</DisplayName>
+    <DisplayName>CryptoFolioTrackerPlus</DisplayName>
     <PublisherDisplayName>MK-OSFT</PublisherDisplayName>
     <Logo>Assets\CPT_v2.png</Logo>
   </Properties>
@@ -34,7 +34,7 @@
       Executable="$targetnametoken$.exe"
       EntryPoint="$targetentrypoint$">
       <uap:VisualElements
-        DisplayName="Crypto Portfolio Tracker"
+        DisplayName="CryptoFolioTrackerPlus"
         Description="a tracker for your crypto assets"
         BackgroundColor="transparent" Square44x44Logo="Assets\CPT256x256Icon.png" Square150x150Logo="Assets\CPT256x256Icon.png">
         <uap:DefaultTile  Square71x71Logo="Assets\CPT256x256Icon.png" Wide310x150Logo="Assets\CPT256x256Icon.png" Square310x310Logo="Assets\CPT256x256Icon.png">

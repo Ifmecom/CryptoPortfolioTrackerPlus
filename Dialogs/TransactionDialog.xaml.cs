@@ -15,6 +15,7 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
     //private readonly DispatcherQueue dispatcherQueue;
     private readonly ILocalizer loc = Localizer.Get();
     private readonly AssetsViewModel _viewModel;
+    private bool _isInitialized = false;
     [ObservableProperty] private TransactionKind transactionType;
     [ObservableProperty] private List<string> listCoinA;
     [ObservableProperty] private List<string> listCoinB;
@@ -129,10 +130,9 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
 
     private void SetDialogButtonsAndTitle(DialogAction dialogAction)
     {
-        var index = -1;
+        var index = 0;
         if (dialogAction == DialogAction.Edit && transactionToEdit != null)
         {
-
             for (var i = 0; i < TransactionTypeRadioButtons.Items.Count; i++)
             {
                 if ((TransactionTypeRadioButtons.Items[i] is RadioButton rbutton) && rbutton.Content.ToString() == transactionToEdit.Details.TransactionType.AsDisplayString())
@@ -141,14 +141,21 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
                     break;
                 }
             }
-            TransactionTypeRadioButtons.SelectedIndex = index;
             Title = loc.GetLocalizedString("TransactionDialog_Title_Edit");
         }
         else
         {
-            TransactionTypeRadioButtons.SelectedIndex = 0;
             Title = loc.GetLocalizedString("TransactionDialog_Title_Add");
         }
+
+        // WinUI 3 RadioButtons auto-selecteert SelectedIndex=0 tijdens InitializeComponent,
+        // waardoor SelectionChanged te vroeg vuurt (XAML-bindings nog niet gereed → crash).
+        // Oplossing: reset naar -1 (guard blokkeert dat event), zet daarna de guard aan,
+        // en stel de gewenste index in zodat SelectionChanged correct vuurt.
+        TransactionTypeRadioButtons.SelectedIndex = -1;
+        _isInitialized = true;
+        TransactionTypeRadioButtons.SelectedIndex = index;
+
         PrimaryButtonText = loc.GetLocalizedString("TransactionDialog_PrimaryButton");
         CloseButtonText = loc.GetLocalizedString("TransactionDialog_CloseButton");
     }
@@ -379,6 +386,7 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
 
     private async void TransactionType_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
+        if (!_isInitialized) return;
         InitializeAllFields();
         var CoinFromHeader = loc.GetLocalizedString("TransactionDialog_CoinFromHeader");
         var CoinToHeader = loc.GetLocalizedString("TransactionDialog_CoinToHeader");

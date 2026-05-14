@@ -42,6 +42,12 @@ public class Functions
     {
         return !value;
     }
+
+    /// <summary>Returns Visible when the string is non-empty, Collapsed otherwise.</summary>
+    public static Visibility StringToVisibility(string value)
+    {
+        return string.IsNullOrEmpty(value) ? Visibility.Collapsed : Visibility.Visible;
+    }
     public static bool InvertBool(bool? value)
     {
         if (value is null) return false;
@@ -174,6 +180,24 @@ public class Functions
     public static ImageSource StringToImageSource(string value)
     {
         return new BitmapImage(new Uri(string.IsNullOrWhiteSpace(value) ? AppConstants.AppPath + "\\Assets\\QuestionMarkRed.png" : value));
+    }
+
+    /// <summary>
+    /// Resolves the coin imageUri to a local cached file (or web fallback)
+    /// and returns a BitmapImage — safe for use as Image.Source in x:Bind.
+    /// Avoids inline &lt;BitmapImage&gt; XAML which causes heap corruption in WinUI 3 DataTemplates.
+    /// </summary>
+    public static ImageSource CoinImageSource(string imageUri)
+    {
+        try
+        {
+            var uri = FormatUri(imageUri);
+            return new BitmapImage(uri);
+        }
+        catch
+        {
+            return new BitmapImage(new Uri(AppConstants.AppPath + "\\Assets\\QuestionMarkBlue.png"));
+        }
     }
     public static ImageSource TransactionDirectionToBitmapImage(MutationDirection value)
     {

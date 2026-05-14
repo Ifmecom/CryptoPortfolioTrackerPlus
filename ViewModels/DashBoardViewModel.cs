@@ -3,16 +3,19 @@ using CommunityToolkit.Mvvm.Input;
 using CommunityToolkit.Mvvm.Messaging;
 using CryptoPortfolioTracker.Controls;
 using CryptoPortfolioTracker.Converters;
+using CryptoPortfolioTracker.Helpers;
 using CryptoPortfolioTracker.Dialogs;
 using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Infrastructure;
 using CryptoPortfolioTracker.Models;
 using CryptoPortfolioTracker.Services;
 using CryptoPortfolioTracker.Views;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.UI.Xaml.Controls;
 using Serilog;
 using Serilog.Core;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Threading.Tasks;
@@ -66,6 +69,103 @@ public partial class DashboardViewModel : BaseViewModel
         ReloadAffectedControls();
     }
 
+    // -----------------------------------------------------------------------
+    // Signal widgets
+    // -----------------------------------------------------------------------
+
+    [ObservableProperty] private ObservableCollection<DashboardSignalRow> topSignals = new();
+    [ObservableProperty] private string currentRegime = "–";
+    [ObservableProperty] private string regimeDescription = "Voer 'Evaluate Signals' uit om het regime te bepalen.";
+    [ObservableProperty] private string lastEvaluated = "–";
+    [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush regimeBrush =
+        new(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80));
+    [ObservableProperty] private string regimeReasons = string.Empty;
+
+    private async Task LoadSignalWidgetsAsync()
+    {
+        try
+        {
+            var context = _dashboardService.GetContext();
+            if (context is null) return;
+
+            var cutoff = DateTime.UtcNow.AddHours(-24);
+            var coinIds = await context.Coins.AsNoTracking()
+                .Where(c => c.IsAsset).Select(c => c.Id).ToListAsync();
+
+            var allSignals = await context.Signals.AsNoTracking()
+                .Where(s => coinIds.Contains(s.CoinId) && s.CreatedAt >= cutoff)
+                .OrderByDescending(s => s.CreatedAt)
+                .ToListAsync();
+
+            var latestPerCoin = allSignals
+                .GroupBy(s => s.CoinId)
+                .Select(g => g.First())
+                .ToList();
+
+            var coinDict = await context.Coins.AsNoTracking()
+                .Where(c => coinIds.Contains(c.Id))
+                .ToDictionaryAsync(c => c.Id);
+
+            // Top 3 Long (highest) + top 3 Short (lowest)
+            var topLong  = latestPerCoin.Where(s => s.Direction == SignalDirection.Long)
+                               .OrderByDescending(s => s.CombinedScore).Take(3);
+            var topShort = latestPerCoin.Where(s => s.Direction == SignalDirection.Short)
+                               .OrderBy(s => s.CombinedScore).Take(3);
+
+            var rows = topLong.Concat(topShort)
+                .OrderByDescending(s => Math.Abs(s.CombinedScore - 50))
+                .Select(s => coinDict.TryGetValue(s.CoinId, out var c) ? new DashboardSignalRow(s, c) : null)
+                .Where(r => r is not null)
+                .Select(r => r!)
+                .ToList();
+
+            TopSignals = new ObservableCollection<DashboardSignalRow>(rows);
+
+            LastEvaluated = allSignals.Count > 0
+                ? allSignals.Max(s => s.CreatedAt).ToString("dd-MM HH:mm") + " UTC"
+                : "–";
+
+            // Market regime from BTC (rank 1)
+            var btc = await context.Coins.AsNoTracking().FirstOrDefaultAsync(c => c.Rank == 1);
+            if (btc is not null)
+            {
+                CurrentRegime = btc.MarketRegime.ToString();
+                RegimeDescription = btc.MarketRegime switch
+                {
+                    MarketRegime.RiskOn  => "BTC in opwaartse trend — gunstige condities voor Long-posities.",
+                    MarketRegime.RiskOff => "BTC in neerwaartse trend — wees voorzichtig met Long-posities.",
+                    _                   => "BTC neutraal — gemengde marktcondities.",
+                };
+                RegimeBrush = Helpers.AnalysisHelpers.RegimeColor(btc.MarketRegime.ToString());
+
+                // Load BTC's latest signal reasoning
+                var btcSignal = await context.Signals.AsNoTracking()
+                    .Where(s => s.CoinId == btc.Id)
+                    .OrderByDescending(s => s.CreatedAt)
+                    .FirstOrDefaultAsync();
+
+                if (btcSignal is not null && !string.IsNullOrWhiteSpace(btcSignal.Reasoning))
+                {
+                    var lines = btcSignal.Reasoning
+                        .Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                        .Select(l => l.Trim())
+                        .Where(l => l.Length > 0)
+                        .Take(6)
+                        .ToList();
+                    RegimeReasons = string.Join("\n", lines);
+                }
+                else
+                {
+                    RegimeReasons = string.Empty;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "LoadSignalWidgets failed");
+        }
+    }
+
     [ObservableProperty] bool needUpdateDashboard = false;
     async partial void OnNeedUpdateDashboardChanged(bool oldValue, bool newValue)
     {
@@ -83,6 +183,7 @@ public partial class DashboardViewModel : BaseViewModel
         await RefreshHeatMapPoints();
         await GetTop5();
         GetValueGains();
+        await LoadSignalWidgetsAsync();
     }
 
     public DashboardViewModel(IDashboardService dashboardService, 

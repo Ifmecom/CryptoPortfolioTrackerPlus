@@ -10,6 +10,7 @@ using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Infrastructure.Response.Coins;
 using LanguageExt;
 using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
+using MarketRegimeEnum = CryptoPortfolioTracker.Enums.MarketRegime;
 
 namespace CryptoPortfolioTracker.Models;
 
@@ -48,7 +49,26 @@ public partial class Coin : BaseModel
     [ObservableProperty] private string note = string.Empty;
     [ObservableProperty] private bool isAsset;
 
-    [NotMapped] public double Rsi { get; set; }
+    // PLUS indicator fields
+    public double Macd { get; set; }
+    public double MacdSignal { get; set; }
+    public double BollingerUpper { get; set; }
+    public double BollingerLower { get; set; }
+    public double Atr { get; set; }
+    public double StochRsi { get; set; }
+    public double LatestSentimentScore { get; set; }
+    public double LatestSignalScore { get; set; }
+    public MarketRegimeEnum MarketRegime { get; set; }
+
+    // Extended indicator fields — persisted to DB (populated by RecalculateAllAsync)
+    public double Rsi { get; set; }
+    public string EmaCross { get; set; } = "–";   // "Bullish" / "Bearish" / "–"
+    public int    EmaCrossBarsAgo { get; set; }
+    public double BollingerPctB { get; set; }
+    public double Ma50DistPerc { get; set; }
+    public double Adx { get; set; }
+    public bool   IsSqueeze { get; set; }
+    public double High52wPerc { get; set; }
     [NotMapped] public double Ema { get; set; }
     [NotMapped] private List<double> ClosingPrices { get; set; } = new();
     [NotMapped] private DateTime FileDateMarketChart { get; set; } = DateTime.MinValue;

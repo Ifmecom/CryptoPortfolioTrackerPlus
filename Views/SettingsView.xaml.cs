@@ -11,15 +11,17 @@ namespace CryptoPortfolioTracker.Views;
 public partial class SettingsView : Page, IDisposable
 {
     public readonly SettingsViewModel _viewModel;
+    public readonly TaxViewModel      _taxViewModel;
     public static SettingsView Current;
 
     [ObservableProperty] bool isCardExpanded;
     [ObservableProperty] bool isCardEnabled;
 
-    public SettingsView(SettingsViewModel viewModel)
+    public SettingsView(SettingsViewModel viewModel, TaxViewModel taxViewModel)
     {
         Current = this;
-        _viewModel = viewModel;
+        _viewModel    = viewModel;
+        _taxViewModel = taxViewModel;
         InitializeComponent();
         DataContext = _viewModel;
         VersionNumber.Text = AppConstants.ProductVersion;

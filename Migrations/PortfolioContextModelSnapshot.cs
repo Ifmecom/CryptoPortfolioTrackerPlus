@@ -263,6 +263,10 @@ namespace CryptoPortfolioTracker.Migrations
                         .HasColumnType("TEXT")
                         .HasColumnName("Note");
 
+                    b.Property<string>("SourceId")
+                        .HasColumnType("TEXT")
+                        .HasColumnName("SourceId");
+
                     b.Property<DateTime>("TimeStamp")
                         .HasColumnType("TEXT")
                         .HasColumnName("TimeStamp");
