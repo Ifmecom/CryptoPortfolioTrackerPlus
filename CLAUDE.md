@@ -148,6 +148,71 @@ Gebruikt `Skender.Stock.Indicators` NuGet (MIT, gratis). Bestaande methodes blij
 
 ---
 
+## What's New pagina bijhouden
+
+De pagina `Views/WhatsNewView.xaml.cs` (methode `BuildContent()`) bevat het volledige versie-overzicht van de app.
+
+**Verplichte regel: voeg altijd een nieuw feature-item toe bij elke wijziging die zichtbaar is voor de gebruiker.**
+
+Richtlijnen:
+- Nieuwe functies gaan bovenaan, in het bestaande `AddVersionHeader`-blok van de huidige sprint/versie
+- Begin een nieuw versieblok (`AddVersionHeader("v1.x", "subtitel")`) bij een nieuwe release
+- Gebruik een passend emoji-icoon, een korte Nederlandse titel en een heldere beschrijving
+- Technische refactors en bugfixes die de gebruiker niet merkt hoeven niet vermeld te worden
+- Meest recente versie staat altijd bovenaan — oudere versies blijven staan
+
+De startup-dialog (`Dialogs/WhatsNewDialog.xaml.cs`) toont ook een samenvatting bij de eerste opstart na een versie-update. **Werk deze ook bij** zodat de popup-samenvatting overeenkomt met de volledige What's New pagina.
+
+---
+
+## Databronnen-pagina bijhouden
+
+De tab **Databronnen** in `Views/SettingsView.xaml` (tweede `PivotItem`) is een handmatig bijgehouden overzicht van alle externe en lokale bronnen die de app gebruikt.
+
+**Verplichte regel: voeg altijd een kaart toe aan deze tab bij elke wijziging die een nieuwe databron introduceert.**
+
+Dit geldt voor:
+- Een nieuwe externe API of service (REST, WebSocket, RSS, etc.)
+- Een nieuwe lokale opslaglocatie (extra database, extra JSON-cache, configuratiebestand)
+- Een nieuwe achtergrondservice die data ophaalt of wegschrijft
+- Een nieuwe NuGet-library die zelf een extern endpoint aanspreekt (bijv. Telegram.Bot, Reddit-client)
+
+De kaart hoort in de logisch passende `ct:SettingsExpander`-sectie:
+| Type bron | Sectie |
+|---|---|
+| Externe prijs-/marktdata API | Koers- en marktdata |
+| Lokale bestanden of databases | Lokale opslag |
+| Nieuws, social media, sentiment | Sentiment & nieuws |
+| Push- of e-mailnotificaties | Notificaties |
+| Iets anders | Voeg een nieuwe sectie toe |
+
+---
+
+## PRD bijhouden (`PRD.md`)
+
+De `PRD.md` in de projectroot is de centrale ontwikkelaarsdocumentatie. **Werk deze altijd bij na elke wijziging die je doorvoert.**
+
+Wat bijgewerkt moet worden:
+
+| Soort wijziging | Sectie in PRD.md |
+|---|---|
+| Nieuwe entiteit of property | § Data Model |
+| Nieuwe service of interface | § Architecture / § Services |
+| Nieuwe berekening of formule | § Calculations & Formulas |
+| Nieuwe externe API / integratie | § External Integrations |
+| Nieuwe pagina of ViewModel | § Pages & Views |
+| Nieuwe configuratie-instelling | § Configuration |
+| Bugfix met architecturele impact | § Known Limitations / § Architecture |
+| Nieuwe belasting-calculator | § Tax Module |
+| Versienummer / sprint | § Version History (bovenaan toevoegen) |
+
+**Verplichte werkwijze:**
+1. Voer de wijziging door in de code
+2. Pas `PRD.md` aan op de relevante secties
+3. Commit code én PRD in dezelfde commit (of direct daarna als aparte `docs:`-commit)
+
+---
+
 ## Wat niet te doen
 
 - Geen `dotnet build` gebruiken (zie Build hierboven)
@@ -156,3 +221,19 @@ Gebruikt `Skender.Stock.Indicators` NuGet (MIT, gratis). Bestaande methodes blij
 - Geen handmatige wijzigingen in `PortfolioContextModelSnapshot.cs`
 - Geen twee features in één EF-migratie
 - Geen hardcoded paden — gebruik `AppConstants.*`
+- **Geen nieuwe databron toevoegen zonder de Databronnen-tab in `SettingsView.xaml` bij te werken**
+- **Geen zichtbare gebruikersfunctie toevoegen zonder `WhatsNewView.xaml.cs` (`BuildContent`) bij te werken**
+- **`PRD.md` nooit verouderd laten — altijd bijwerken na elke wijziging (zie § PRD bijhouden)**
+
+---
+
+## Wishlist — toekomstige indicatoren
+
+Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:
+
+| Indicator | Reden |
+|---|---|
+| **Ichimoku Cloud** | Te complex voor een tabelkolom; vereist een aparte grafiekweergave |
+| **Funding Rate / Open Interest** | Vereist koppeling met een exchange-API (Binance/Bybit etc.) |
+| **VWAP** | Zinvol op intraday/uurdata; de app werkt met dagelijkse slotkoersen |
+| **Volume vs Gemiddeld** | Volume-data is niet beschikbaar in de lokale MarketChart JSON |
