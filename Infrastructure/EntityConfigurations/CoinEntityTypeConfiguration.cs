@@ -82,7 +82,7 @@ class CoinEntityTypeConfiguration : IEntityTypeConfiguration<Coin>
         configuration.Property(x => x.LatestSignalScore).HasColumnName("LatestSignalScore");
         configuration.Property(x => x.MarketRegime).HasConversion<string>().HasColumnName("MarketRegime");
 
-        configuration.Ignore("Rsi");
+        configuration.Property(x => x.Rsi).HasColumnName("Rsi");
         configuration.Ignore("Ema");
         configuration.Ignore("ClosingPrices");
         configuration.Ignore("FileDateMarketChart");

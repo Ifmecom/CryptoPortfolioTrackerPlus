@@ -1,9 +1,9 @@
 {
   "profiles": {
-    "CryptoPortfolioTracker (Package)": {
+    "CryptoFolioTrackerPlus (Package)": {
       "commandName": "MsixPackage"
     },
-    "CryptoPortfolioTracker (Unpackaged)": {
+    "CryptoFolioTrackerPlus (Unpackaged)": {
       "commandName": "Project"
     }
   }

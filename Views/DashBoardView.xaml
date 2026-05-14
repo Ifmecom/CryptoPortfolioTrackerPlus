@@ -12,7 +12,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     d:DataContext="{d:DesignInstance Type=viewmodels:DashboardViewModel}"
-    xmlns:controls="using:CryptoPortfolioTracker.Controls" 
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
     xmlns:lvc="using:LiveChartsCore.SkiaSharpView.WinUI"
     xmlns:muxc="using:Microsoft.UI.Xaml.Controls"
     Loaded="View_Loaded"
@@ -38,6 +38,7 @@
                 <RowDefinition Height="{x:Bind converters:Functions.FullScreenToGridDef(_viewModel.ToggleFsMode,'33*','HeatMap+PiePortfolio'), Mode=OneWay}"/>
                 <RowDefinition Height="{x:Bind converters:Functions.FullScreenToGridDef(_viewModel.ToggleFsMode,'33*','Graph+PieAccounts'), Mode=OneWay}"/>
                 <RowDefinition Height="{x:Bind converters:Functions.FullScreenToGridDef(_viewModel.ToggleFsMode,'33*','PieNarratives'), Mode=OneWay}"/>
+                <RowDefinition Height="{x:Bind converters:Functions.FullScreenToGridDef(_viewModel.ToggleFsMode,'280','SignalsWidget'), Mode=OneWay}"/>
             </Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="{x:Bind converters:Functions.FullScreenToGridDef(_viewModel.ToggleFsMode,'41*','HeatMap+Graph'), Mode=OneWay}"/>
@@ -88,6 +89,122 @@
             <controls:Top5Control x:Name="Top5" x:FieldModifier="public" Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" Margin="10,10,0,0" HorizontalAlignment="Stretch" />
             <controls:ValueGainsControl x:Name="ValueGains" x:FieldModifier="public" Grid.Row="0" Grid.Column="2" Grid.RowSpan="3" Margin="10,10,0,0" HorizontalAlignment="Stretch" />
             <controls:PieChartControl x:Name="NarrativesPie" x:FieldModifier="public" Grid.Row="3" Grid.Column="2" Margin="10,0,0,0" HorizontalAlignment="Stretch" />
+
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+            <!-- Row 4 — Signals widget (Col 0-1) + Regime card (Col 2)         -->
+            <!-- ═══════════════════════════════════════════════════════════════ -->
+
+            <!-- Vandaag's signalen -->
+            <Border Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                    Margin="10,4,4,4"
+                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    CornerRadius="8" Padding="10,6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Header row -->
+                    <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,0,0,4">
+                        <TextBlock Text="&#x1F4CA; Vandaag's signalen"
+                                   FontWeight="SemiBold" FontSize="13"
+                                   Foreground="DarkGoldenrod" VerticalAlignment="Center"/>
+                        <TextBlock Text="{x:Bind _viewModel.LastEvaluated, Mode=OneWay}"
+                                   FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+
+                    <!-- Signal rows -->
+                    <ListView Grid.Row="1"
+                              ItemsSource="{x:Bind _viewModel.TopSignals, Mode=OneWay}"
+                              SelectionMode="None" IsItemClickEnabled="False"
+                              ScrollViewer.VerticalScrollBarVisibility="Disabled"
+                              ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="MinHeight" Value="0"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:DashboardSignalRow">
+                                <Grid Margin="0,2" ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="24"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="44"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Coin logo -->
+                                    <Image Grid.Column="0" Source="{x:Bind Image}" Width="20" Height="20"
+                                           VerticalAlignment="Center" HorizontalAlignment="Center"/>
+
+                                    <!-- Name + symbol -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind Name}" FontSize="12" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"/>
+                                        <TextBlock Text="{x:Bind Symbol}" FontSize="10"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    </StackPanel>
+
+                                    <!-- Direction badge -->
+                                    <Border Grid.Column="2" CornerRadius="3" Padding="5,1"
+                                            Background="{x:Bind DirectionBrush}" VerticalAlignment="Center">
+                                        <TextBlock Text="{x:Bind DirectionDisplay}" FontSize="10"
+                                                   FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
+
+                                    <!-- Score -->
+                                    <TextBlock Grid.Column="3" Text="{x:Bind ScoreDisplay}"
+                                               FontSize="12" FontWeight="SemiBold"
+                                               Foreground="{x:Bind ScoreBrush}"
+                                               VerticalAlignment="Center" HorizontalAlignment="Right"/>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+                </Grid>
+            </Border>
+
+            <!-- Marktregime-status -->
+            <Border Grid.Row="4" Grid.Column="2"
+                    Margin="4,4,0,4"
+                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    CornerRadius="8" Padding="10,6">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Title -->
+                    <TextBlock Text="&#x1F4C8; Marktregime"
+                               FontWeight="SemiBold" FontSize="13"
+                               Foreground="DarkGoldenrod" Margin="0,0,0,6"/>
+
+                    <!-- Regime badge -->
+                    <Border Grid.Row="1" CornerRadius="6" Padding="10,4"
+                            HorizontalAlignment="Left" Margin="0,0,0,6"
+                            Background="{x:Bind _viewModel.RegimeBrush, Mode=OneWay}">
+                        <TextBlock Text="{x:Bind _viewModel.CurrentRegime, Mode=OneWay}"
+                                   FontSize="14" FontWeight="Bold" Foreground="White"/>
+                    </Border>
+
+                    <!-- Description + Reasons -->
+                    <StackPanel Grid.Row="2" Spacing="4">
+                        <TextBlock Text="{x:Bind _viewModel.RegimeDescription, Mode=OneWay}"
+                                   FontSize="11" TextWrapping="Wrap"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <TextBlock Text="{x:Bind _viewModel.RegimeReasons, Mode=OneWay}"
+                                   FontSize="11" TextWrapping="Wrap" FontFamily="Consolas"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
 
         </Grid>
     </Grid>

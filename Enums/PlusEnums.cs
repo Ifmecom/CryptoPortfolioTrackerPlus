@@ -47,7 +47,9 @@ public enum OrderStatus
     Filled,
     PartiallyFilled,
     Cancelled,
-    Rejected
+    Rejected,
+    /// <summary>Position manually closed by the user at market price.</summary>
+    Closed
 }
 
 public enum MarketRegime

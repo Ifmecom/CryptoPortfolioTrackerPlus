@@ -33,7 +33,7 @@ public partial class MainPage : Page //INotifyPropertyChanged
 
     private async void MainPage_Loaded(object sender, RoutedEventArgs e)
     {
-        navigationView.SelectedItem = navigationView.MenuItems.OfType<NavigationViewItem>().Where(x => x.Name == "AssetsView").First();
+        navigationView.SelectedItem = navigationView.MenuItems.OfType<NavigationViewItem>().Where(x => x.Name == "AssetsNavItem").First();
         App.Splash?.Close();
         App.Splash = null;
 
@@ -167,8 +167,9 @@ public partial class MainPage : Page //INotifyPropertyChanged
                         }
                     case "WhatsNew":
                         {
-                            DisplayWhatsNewFile();
-                            Logger.Information("What's New File Requested");
+                            LoadView(typeof(WhatsNewView));
+                            lastSelectedNavigationItem = selectedItem;
+                            Logger.Information("What's New Page Requested");
                             break;
                         }
                     case "About":
@@ -237,29 +238,6 @@ public partial class MainPage : Page //INotifyPropertyChanged
             await ShowMessageDialog(
                 loc.GetLocalizedString("Messages_HelpFile_FailedTitle"),
                 loc.GetLocalizedString("Messages_HelpFile_FailedMsg"),
-                loc.GetLocalizedString("Common_CloseButton"));
-        }
-    }
-    private async void DisplayWhatsNewFile()
-    {
-        var loc = Localizer.Get();
-        var fileName = Path.Combine("docs","WhatsNew_NL.pdf");
-
-        if (string.Equals(_appSettings.AppCultureLanguage, "en-US", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName = Path.Combine("docs","WhatsNew_EN.pdf");
-        }
-        try
-        {
-            Process.Start(new ProcessStartInfo(AppConstants.Url + fileName) { UseShellExecute = true });
-            Logger.Information("What's New File Displayed");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "Failed to display What's New File");
-            await ShowMessageDialog(
-                loc.GetLocalizedString("Messages_WhatsNewFile_FailedTitle"),
-                loc.GetLocalizedString("Messages_WhatsNewFile_FailedMsg"),
                 loc.GetLocalizedString("Common_CloseButton"));
         }
     }

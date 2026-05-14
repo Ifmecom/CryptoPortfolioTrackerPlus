@@ -73,7 +73,7 @@ namespace CryptoPortfolioTracker.Services
                 IsInitialPortfolioLoaded = await LoadInitialPortfolio();
             }
             _graphUpdateService = App.Container.GetService<IGraphUpdateService>();
-           
+
             _priceUpdateService = App.Container.GetService<IPriceUpdateService>();
         }
 
@@ -296,6 +296,7 @@ namespace CryptoPortfolioTracker.Services
             pendingMigrations = null;
 
             await Context.Database.MigrateAsync();
+            await ApplyPlusSchemaAsync();
 
             var appliedMigrations = await Context.Database.GetAppliedMigrationsAsync();
             foreach (var migration in appliedMigrations)
@@ -345,6 +346,158 @@ namespace CryptoPortfolioTracker.Services
             }
         }
 
+        private async Task ApplyPlusSchemaAsync()
+        {
+            var db = Context.Database;
+            try
+            {
+                // Add new Coin columns — each call is idempotent via try/catch on duplicate column error
+                await TryAddColumnAsync(db, "Coins", "Macd",                 "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "MacdSignal",           "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "BollingerUpper",       "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "BollingerLower",       "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "Atr",                  "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "StochRsi",             "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "LatestSentimentScore", "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "LatestSignalScore",    "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "MarketRegime",         "TEXT",    "'Neutral'");
+                // Extended indicator columns (Sprint 1.2+)
+                await TryAddColumnAsync(db, "Coins", "Rsi",                  "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "EmaCross",             "TEXT",    "'-'");
+                await TryAddColumnAsync(db, "Coins", "EmaCrossBarsAgo",      "INTEGER", "0");
+                await TryAddColumnAsync(db, "Coins", "BollingerPctB",        "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "Ma50DistPerc",         "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "Adx",                  "REAL",    "0");
+                await TryAddColumnAsync(db, "Coins", "IsSqueeze",            "INTEGER", "0");
+                await TryAddColumnAsync(db, "Coins", "High52wPerc",          "REAL",    "0");
+
+                // Create new PLUS tables if they don't exist
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS BronSources (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Type TEXT NOT NULL,
+                        Url TEXT NOT NULL,
+                        Handle TEXT NOT NULL,
+                        ReliabilityScore REAL NOT NULL DEFAULT 1.0,
+                        IsActive INTEGER NOT NULL DEFAULT 1
+                    )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ExchangeAccounts (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Exchange TEXT NOT NULL,
+                        ApiKeyEncrypted TEXT NOT NULL DEFAULT '',
+                        ApiSecretEncrypted TEXT NOT NULL DEFAULT '',
+                        Permissions TEXT NOT NULL DEFAULT '',
+                        IsActive INTEGER NOT NULL DEFAULT 0
+                    )");
+                // RSA support columns (added in v1.5) — idempotent via TryAddColumnAsync
+                await TryAddColumnAsync(db, "ExchangeAccounts", "AuthMethod",    "TEXT", "'HMAC'");
+                await TryAddColumnAsync(db, "ExchangeAccounts", "PublicKeyPem",  "TEXT", "''");
+
+                // ExchangeOrders — close-position support (v1.11)
+                await TryAddColumnAsync(db,         "ExchangeOrders", "ClosePrice", "REAL", "0");
+                await TryAddNullableColumnAsync(db, "ExchangeOrders", "ClosedAt",   "TEXT");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS SentimentReadings (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        CoinId INTEGER NOT NULL,
+                        Source TEXT NOT NULL,
+                        SentimentScore REAL NOT NULL DEFAULT 0,
+                        Confidence REAL NOT NULL DEFAULT 0,
+                        MentionCount INTEGER NOT NULL DEFAULT 0,
+                        Timestamp TEXT NOT NULL,
+                        RawSnippet TEXT NOT NULL DEFAULT '',
+                        FOREIGN KEY (CoinId) REFERENCES Coins(Id) ON DELETE CASCADE
+                    )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS Signals (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        CoinId INTEGER NOT NULL,
+                        NarrativeId INTEGER,
+                        Timeframe TEXT NOT NULL DEFAULT 'OneDay',
+                        TaScore REAL NOT NULL DEFAULT 0,
+                        SentimentScore REAL NOT NULL DEFAULT 0,
+                        MarketRegimeMultiplier REAL NOT NULL DEFAULT 1,
+                        CombinedScore REAL NOT NULL DEFAULT 0,
+                        Direction TEXT NOT NULL DEFAULT 'Flat',
+                        Reasoning TEXT NOT NULL DEFAULT '',
+                        CreatedAt TEXT NOT NULL,
+                        Acknowledged INTEGER NOT NULL DEFAULT 0,
+                        ActedOn INTEGER NOT NULL DEFAULT 0,
+                        FOREIGN KEY (CoinId) REFERENCES Coins(Id) ON DELETE CASCADE,
+                        FOREIGN KEY (NarrativeId) REFERENCES Narratives(Id) ON DELETE SET NULL
+                    )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS SignalRules (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        NarrativeId INTEGER,
+                        Name TEXT NOT NULL DEFAULT '',
+                        IndicatorConditionsJson TEXT NOT NULL DEFAULT '{{}}',
+                        SentimentThreshold REAL NOT NULL DEFAULT 0,
+                        ScoreThreshold REAL NOT NULL DEFAULT 60,
+                        IsActive INTEGER NOT NULL DEFAULT 1,
+                        FOREIGN KEY (NarrativeId) REFERENCES Narratives(Id) ON DELETE SET NULL
+                    )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS ExchangeOrders (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        SignalId INTEGER,
+                        Exchange TEXT NOT NULL,
+                        Symbol TEXT NOT NULL DEFAULT '',
+                        Side TEXT NOT NULL DEFAULT 'Buy',
+                        Type TEXT NOT NULL DEFAULT 'Market',
+                        Qty REAL NOT NULL DEFAULT 0,
+                        Entry REAL NOT NULL DEFAULT 0,
+                        StopLoss REAL NOT NULL DEFAULT 0,
+                        TakeProfit REAL NOT NULL DEFAULT 0,
+                        Status TEXT NOT NULL DEFAULT 'Pending',
+                        ExternalOrderId TEXT NOT NULL DEFAULT '',
+                        IsPaper INTEGER NOT NULL DEFAULT 1,
+                        CreatedAt TEXT NOT NULL,
+                        FilledAt TEXT,
+                        FOREIGN KEY (SignalId) REFERENCES Signals(Id) ON DELETE SET NULL
+                    )");
+
+                Logger?.Information("PLUS schema applied successfully");
+            }
+            catch (Exception ex)
+            {
+                Logger?.Error(ex, "ApplyPlusSchemaAsync failed");
+            }
+        }
+
+        private async Task TryAddColumnAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade db, string table, string column, string type, string defaultVal)
+        {
+            try
+            {
+                await db.ExecuteSqlRawAsync($"ALTER TABLE {table} ADD COLUMN \"{column}\" {type} NOT NULL DEFAULT {defaultVal}");
+                Logger?.Information("PLUS schema: added {Table}.{Col}", table, column);
+            }
+            catch (Exception ex) when (ex.Message.Contains("duplicate column name") || ex.Message.Contains("already exists"))
+            {
+                // Column already present — idempotent, safe to ignore
+            }
+        }
+
+        /// <summary>Add a nullable column (no NOT NULL constraint, defaults to NULL). Idempotent.</summary>
+        private async Task TryAddNullableColumnAsync(Microsoft.EntityFrameworkCore.Infrastructure.DatabaseFacade db, string table, string column, string type)
+        {
+            try
+            {
+                await db.ExecuteSqlRawAsync($"ALTER TABLE {table} ADD COLUMN \"{column}\" {type}");
+                Logger?.Information("PLUS schema: added nullable {Table}.{Col}", table, column);
+            }
+            catch (Exception ex) when (ex.Message.Contains("duplicate column name") || ex.Message.Contains("already exists"))
+            {
+                // Column already present — idempotent, safe to ignore
+            }
+        }
+
         private async Task RepairCoinIsAssetStatus()
         {
             var context = Context;
@@ -353,7 +506,7 @@ namespace CryptoPortfolioTracker.Services
 
             try
             {
-                var coins = await context.Coins.ToListAsync();  
+                var coins = await context.Coins.ToListAsync();
 
                 foreach (var coin in coins)
                 {

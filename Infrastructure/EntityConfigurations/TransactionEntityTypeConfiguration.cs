@@ -23,6 +23,11 @@ class TransactionEntityTypeConfiguration : IEntityTypeConfiguration<Transaction>
             .Property("Note")
             .HasColumnName("Note");
 
+        configuration
+            .Property("SourceId")
+            .HasColumnName("SourceId")
+            .IsRequired(false);
+
         configuration.Navigation("Mutations");
         configuration
             .Ignore("RequestedAsset");

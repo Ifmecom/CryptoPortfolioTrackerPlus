@@ -48,7 +48,7 @@ public partial class PriceLevelsViewModel : BaseViewModel
         CurrentPortfolio = _priceLevelService.GetPortfolio();
 
         sortGroup = "Library";
-        initialSortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.TakeProfit).First().DistanceToValuePerc;
+        initialSortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.TakeProfit).FirstOrDefault()?.DistanceToValuePerc ?? double.PositiveInfinity;
         initialSortingOrder = SortingOrder.Descending;
 
         messenger.Register<UpdatePricesMessage>(this, async (r, m) =>
@@ -62,8 +62,13 @@ public partial class PriceLevelsViewModel : BaseViewModel
     {
         CurrentPortfolio = _priceLevelService.GetPortfolio();
         PortfolioName = CurrentPortfolio.Name;
-        await _priceLevelService.PopulateCoinsList(initialSortingOrder, initialSortFunc);
-        CoinsCount = _priceLevelService.ListCoins.Count;
+        // Skip the full coin+indicator load on re-navigation; the UpdatePricesMessage
+        // messenger keeps the list fresh while the app is running.
+        if (!_priceLevelService.ListCoinsHasAny())
+        {
+            await _priceLevelService.PopulateCoinsList(initialSortingOrder, initialSortFunc);
+            CoinsCount = _priceLevelService.ListCoins.Count;
+        }
     }
 
     public void Terminate()
@@ -81,7 +86,7 @@ public partial class PriceLevelsViewModel : BaseViewModel
     [RelayCommand]
     public void SortOnDistanceToTpLevel(SortingOrder sortingOrder)
     {
-        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type==PriceLevelType.TakeProfit).First().DistanceToValuePerc;
+        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.TakeProfit).FirstOrDefault()?.DistanceToValuePerc ?? double.PositiveInfinity;
         _priceLevelService.SortList(sortingOrder, sortFunc);
         //_priceLevelService.SortListTest(sortingOrder);
     }
@@ -89,14 +94,14 @@ public partial class PriceLevelsViewModel : BaseViewModel
     [RelayCommand]
     public void SortOnDistanceToBuyLevel(SortingOrder sortingOrder)
     {
-        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Buy).First().DistanceToValuePerc;
+        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Buy).FirstOrDefault()?.DistanceToValuePerc ?? double.PositiveInfinity;
         _priceLevelService.SortList(sortingOrder, sortFunc);
     }
 
     [RelayCommand]
     public void SortOnDistanceToStopLevel(SortingOrder sortingOrder)
     {
-        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Stop).First().DistanceToValuePerc;
+        Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Stop).FirstOrDefault()?.DistanceToValuePerc ?? double.PositiveInfinity;
         _priceLevelService.SortList(sortingOrder, sortFunc);
     }
 
@@ -105,7 +110,7 @@ public partial class PriceLevelsViewModel : BaseViewModel
     {
         try
         {
-            Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Ema).First().DistanceToValuePerc;
+            Func<Coin, object> sortFunc = x => x.PriceLevels.Where(t => t.Type == PriceLevelType.Ema).FirstOrDefault()?.DistanceToValuePerc ?? double.PositiveInfinity;
             _priceLevelService.SortList(sortingOrder, sortFunc);
         }
         catch (Exception)

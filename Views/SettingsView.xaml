@@ -40,12 +40,17 @@
             <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="2" Height="250" VerticalAlignment="Top"/>
             <RelativePanel>
                 <TextBlock AutomationProperties.AutomationId="__ClickableAreaTextBlock" />
-                <TextBlock x:Name="smallHeaderText" Text="Crypto Portfolio Tracker" Foreground="DarkGoldenrod" Margin="36,0,0,0" VerticalAlignment="Top" Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock x:Name="smallHeaderText" Text="Crypto Portfolio Tracker Plus" Foreground="DarkGoldenrod" Margin="36,0,0,0" VerticalAlignment="Top" Style="{StaticResource TitleTextBlockStyle}"/>
                 <TextBlock x:Name="txtPortfolio" Margin="36,0,0,0" Text=""  Foreground="DarkGoldenrod" Style="{StaticResource SubSampleHeaderTextStyle}" RelativePanel.Below="smallHeaderText" />
                 <TextBlock l:Uids.Uid="Settings_Title" x:Name="txtSettings" Margin="36,10,0,0" Foreground="DarkGoldenrod" Style="{StaticResource SampleHeaderTextStyle}" RelativePanel.Below="txtPortfolio" />
             </RelativePanel>
-            <Border Grid.Row="2"  VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Margin="10,0,0,0">
-                <ScrollViewer HorizontalAlignment="Stretch" Margin="0,0,0,0" Padding="0,0,20,0" toolkit:ScrollBarExtensions.KeepVerticalExpanded="{Binding IsScrollBarsExpanded}" >
+            <Pivot Grid.Row="2" Margin="10,0,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!-- Tab 1 — Instellingen                                  -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <PivotItem Header="Instellingen">
+                <ScrollViewer HorizontalAlignment="Stretch" Margin="0,4,0,0" Padding="0,0,20,0" toolkit:ScrollBarExtensions.KeepVerticalExpanded="{Binding IsScrollBarsExpanded}" >
                     <StackPanel Spacing="4" >
 
                         <ct:SettingsCard l:Uids.Uid="Settings_CheckUpdate" x:Name="SettingsCU"
@@ -147,9 +152,794 @@
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 
+                        <!-- ================================================ -->
+                        <!-- Telegram Notificaties                            -->
+                        <!-- ================================================ -->
+                        <ct:SettingsExpander Header="Telegram Notificaties"
+                            Description="Ontvang signaal-alerts op je telefoon via een Telegram-bot."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE715;}"
+                            IsEnabled="{x:Bind IsCardEnabled, Mode=OneWay}"
+                            IsExpanded="{x:Bind IsCardExpanded, Mode=OneWay}">
+
+                            <ct:SettingsExpander.Items>
+
+                                <!-- Enable toggle -->
+                                <ct:SettingsCard Header="Notificaties inschakelen"
+                                    Description="Stuur Telegram-berichten bij Long- en Short-signalen."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.IsTelegramEnabled, Mode=TwoWay}"
+                                                  OnContent="Aan" OffContent="Uit"/>
+                                </ct:SettingsCard>
+
+                                <!-- Bot Token -->
+                                <ct:SettingsCard Header="Bot Token"
+                                    Description="Maak een bot via @BotFather en plak hier het token (bijv. 123456:ABC-DEF...)."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE72E;}">
+                                    <PasswordBox Password="{x:Bind _viewModel.TelegramBotToken, Mode=TwoWay}"
+                                                 Width="300" PlaceholderText="123456789:ABCdefGHI..."/>
+                                </ct:SettingsCard>
+
+                                <!-- Chat ID -->
+                                <ct:SettingsCard Header="Chat ID"
+                                    Description="Je persoonlijke Chat ID (getal) of een kanaal (@mijnkanaal). Stuur /start naar je bot en gebruik @userinfobot om je ID op te vragen."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8BD;}">
+                                    <TextBox Text="{x:Bind _viewModel.TelegramChatId, Mode=TwoWay}"
+                                             Width="200" PlaceholderText="123456789 of @kanaal"/>
+                                </ct:SettingsCard>
+
+                                <!-- Score drempel -->
+                                <ct:SettingsCard Header="Score drempel"
+                                    Description="Minimale gecombineerde score (0–100) waarop een Long-signaal een notificatie stuurt. Voor Short geldt de spiegelwaarde (100 − drempel)."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9D9;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.TelegramScoreThreshold, Mode=TwoWay}"
+                                                Minimum="50" Maximum="90" StepFrequency="1"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.TelegramScoreThreshold, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- Test -->
+                                <ct:SettingsCard Header="Verbinding testen"
+                                    Description="Stuurt een testbericht naar het opgegeven chat ID."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8FB;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Button Content="Test verbinding"
+                                                Command="{x:Bind _viewModel.TestTelegramCommand}"
+                                                Style="{StaticResource AccentButtonStyle}"/>
+                                        <TextBlock Text="{x:Bind _viewModel.TelegramTestStatus, Mode=OneWay}"
+                                                   VerticalAlignment="Center" FontSize="12"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ================================================ -->
+                        <!-- Signalen & Trading                                -->
+                        <!-- ================================================ -->
+                        <ct:SettingsExpander Header="Signalen &amp; Trading"
+                            Description="Schakel paper-trading in en stel de minimale score in voor een Long- of Short-signaal."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D9;}"
+                            IsEnabled="{x:Bind IsCardEnabled, Mode=OneWay}"
+                            IsExpanded="{x:Bind IsCardExpanded, Mode=OneWay}">
+                            <ct:SettingsExpander.Items>
+
+                                <!-- Paper trading toggle -->
+                                <ct:SettingsCard Header="Paper-trading modus"
+                                    Description="Orders worden alleen gesimuleerd — er wordt niets naar een exchange gestuurd."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8C3;}">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.IsPaperTradingEnabled, Mode=TwoWay}"
+                                                  OnContent="Aan" OffContent="Uit"/>
+                                </ct:SettingsCard>
+
+                                <!-- Signal score threshold -->
+                                <ct:SettingsCard Header="Signaaldrempel (Long)"
+                                    Description="Minimale gecombineerde score (0–100) om een Long-signaal op te slaan en te tonen. Short-signaaldrempel = 100 − drempel."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9D9;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.SignalScoreThreshold, Mode=TwoWay}"
+                                                Minimum="50" Maximum="85" StepFrequency="1"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.SignalScoreThreshold, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ================================================ -->
+                        <!-- Risk-guardrails                                   -->
+                        <!-- ================================================ -->
+                        <ct:SettingsExpander Header="Risk-guardrails"
+                            Description="Beperk automatisch risico per trade, maximale posities en dagelijks verlies."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE7BA;}"
+                            IsEnabled="{x:Bind IsCardEnabled, Mode=OneWay}"
+                            IsExpanded="{x:Bind IsCardExpanded, Mode=OneWay}">
+                            <ct:SettingsExpander.Items>
+
+                                <!-- Max % per trade -->
+                                <ct:SettingsCard Header="Max % portfolio per trade"
+                                    Description="Maximaal deel van de portefeuillewaarde dat per order geriskeerd mag worden."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE81E;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.MaxPortfolioPercPerTrade, Mode=TwoWay}"
+                                                Minimum="1" Maximum="25" StepFrequency="0.5"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.MaxPortfolioPercPerTrade, Mode=OneWay}"/>
+                                        <TextBlock VerticalAlignment="Center" Text="%"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- Max open positions -->
+                                <ct:SettingsCard Header="Max openstaande posities"
+                                    Description="De signal-engine weigert nieuwe trades als dit aantal bereikt is."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8FD;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.MaxOpenPositions, Mode=TwoWay}"
+                                                Minimum="1" Maximum="20" StepFrequency="1"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.MaxOpenPositions, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- Daily loss limit -->
+                                <ct:SettingsCard Header="Dagelijkse verlies-limiet"
+                                    Description="Als het dagverlies dit % van de portfolio bereikt, pauzeert de signal-engine 24 uur."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE783;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.DailyLossLimitPerc, Mode=TwoWay}"
+                                                Minimum="1" Maximum="30" StepFrequency="0.5"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.DailyLossLimitPerc, Mode=OneWay}"/>
+                                        <TextBlock VerticalAlignment="Center" Text="%"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- Kill-switch -->
+                                <ct:SettingsCard Header="Kill-switch"
+                                    Description="Zet alles direct op pauze — signal-engine en auto-trading worden volledig gestopt."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE7E8;}">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.IsKillSwitchActive, Mode=TwoWay}"
+                                                  OnContent="ACTIEF" OffContent="Uit"/>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Exchanges (API-sleutels) ──────────────────── -->
+                        <ct:SettingsExpander Header="Exchanges (API-sleutels)"
+                            Description="Versleutelde koppeling met Bybit en/of MEXC voor live orders."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8C8;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <!-- Bybit regio -->
+                                <ct:SettingsCard Header="Bybit regio"
+                                    Description="Gebruik api.bybit.eu voor Bybit EU-accounts (bybit.eu). Gebruik api.bybit.com voor het globale platform (bybit.com)."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE909;}">
+                                    <ToggleSwitch
+                                        OnContent="Bybit EU  (api.bybit.eu)"
+                                        OffContent="Global  (api.bybit.com)"
+                                        IsOn="{x:Bind _viewModel.BybitIsEu, Mode=TwoWay}"/>
+                                </ct:SettingsCard>
+
+                                <!-- Bybit -->
+                                <ct:SettingsCard Header="Bybit"
+                                    Description="V5 REST API  ·  RSA (Self-generated key)"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE909;}">
+                                    <StackPanel MaxWidth="360" Spacing="10">
+
+                                        <!-- ── Status: geconfigureerd ── -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsBybitConfigured), Mode=OneWay}">
+                                            <FontIcon Glyph="&#xE930;" Foreground="#FF4CAF50" FontSize="14"/>
+                                            <TextBlock FontSize="12" Foreground="#FF4CAF50">
+                                                <Run Text="Actief · "/>
+                                                <Run Text="{x:Bind _viewModel.BybitAuthMethod, Mode=OneWay}"/>
+                                                <Run Text=" · "/>
+                                                <Run Text="{x:Bind _viewModel.BybitKeyPreview, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- ── Optie A: HMAC (System-generated key) ── -->
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1" CornerRadius="4" Padding="10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock FontSize="12" FontWeight="SemiBold" Text="Optie A — HMAC (System-generated key)"/>
+                                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                           Text="Gebruik de API Key en API Secret die Bybit toont na aanmaken van een System-generated sleutel."/>
+                                                <PasswordBox Header="API Key" Width="280" HorizontalAlignment="Left"
+                                                             Password="{x:Bind _viewModel.BybitHmacApiKey, Mode=TwoWay}"
+                                                             PlaceholderText="Plak hier de API Key"/>
+                                                <PasswordBox Header="API Secret" Width="280" HorizontalAlignment="Left"
+                                                             Password="{x:Bind _viewModel.BybitHmacApiSecret, Mode=TwoWay}"
+                                                             PlaceholderText="Plak hier de API Secret"/>
+                                                <Button Content="Opslaan (HMAC)"
+                                                        Command="{x:Bind _viewModel.SaveBybitHmacKeyCommand}"
+                                                        Style="{StaticResource AccentButtonStyle}"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <TextBlock FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="── of gebruik RSA (Self-generated key) ──"
+                                                   HorizontalAlignment="Center"/>
+
+                                        <!-- ── Optie B: RSA (Self-generated key) ── -->
+                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="Optie B — Stap 1 — Genereer RSA-sleutelpaar"/>
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="De private key blijft versleuteld op jouw PC. De public key plak je straks in Bybit."/>
+                                        <Button Content="Genereer sleutelpaar"
+                                                Command="{x:Bind _viewModel.GenerateBybitRsaKeyPairCommand}"
+                                                Style="{StaticResource AccentButtonStyle}"/>
+
+                                        <!-- Public key tonen zodra gegenereerd -->
+                                        <StackPanel Spacing="6"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.BybitRsaKeyGenerated), Mode=OneWay}">
+                                            <TextBlock FontSize="11" FontWeight="SemiBold" Text="Public key (kopieer en plak in Bybit):"/>
+                                            <ScrollViewer MaxHeight="120" HorizontalScrollMode="Disabled">
+                                                <TextBlock FontSize="10" FontFamily="Consolas" TextWrapping="Wrap"
+                                                           Text="{x:Bind _viewModel.BybitPublicKeyPem, Mode=OneWay}"
+                                                           IsTextSelectionEnabled="True"/>
+                                            </ScrollViewer>
+                                            <TextBox Header="Jouw publieke IP (optioneel — vereist voor Bybit EU)"
+                                                     PlaceholderText="bijv. 62.45.95.228"
+                                                     Text="{x:Bind _viewModel.BybitIpWhitelist, Mode=TwoWay}"
+                                                     Width="280" HorizontalAlignment="Left"/>
+                                            <Button Content="📋  Kopieer public key + IP"
+                                                    Command="{x:Bind _viewModel.CopyBybitPublicKeyCommand}"
+                                                    HorizontalAlignment="Left"/>
+                                        </StackPanel>
+
+                                        <!-- ── Stap 2: API Key van Bybit invoeren ── -->
+                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="Stap 2 — Voer API Key in"
+                                                   Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.BybitRsaKeyGenerated), Mode=OneWay}"/>
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.BybitRsaKeyGenerated), Mode=OneWay}"
+                                                   Text="Ga naar Bybit → API → Self-generated → plak de public key → kopieer de API Key die Bybit teruggeeft."/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.BybitRsaKeyGenerated), Mode=OneWay}">
+                                            <PasswordBox Header="API Key (van Bybit)"
+                                                         Password="{x:Bind _viewModel.BybitRsaApiKey, Mode=TwoWay}"
+                                                         PlaceholderText="Plak hier de API Key"
+                                                         FontSize="12" Width="240"/>
+                                            <Button Content="Opslaan"
+                                                    Command="{x:Bind _viewModel.SaveBybitRsaApiKeyCommand}"
+                                                    Style="{StaticResource AccentButtonStyle}"
+                                                    VerticalAlignment="Bottom"/>
+                                        </StackPanel>
+
+                                        <!-- ── Acties als geconfigureerd ── -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsBybitConfigured), Mode=OneWay}">
+                                            <Button Content="Verbinding testen"
+                                                    Command="{x:Bind _viewModel.TestBybitConnectionCommand}"/>
+                                            <Button Content="Verwijderen"
+                                                    Command="{x:Bind _viewModel.DeleteBybitAccountCommand}"/>
+                                        </StackPanel>
+
+                                        <!-- Test-status -->
+                                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                                    Visibility="{x:Bind converters:Functions.StringToVisibility(_viewModel.BybitConnectionStatus), Mode=OneWay}">
+                                            <ProgressRing IsActive="{x:Bind _viewModel.IsBybitTesting, Mode=OneWay}"
+                                                          Width="16" Height="16"/>
+                                            <TextBlock FontSize="12" TextWrapping="Wrap"
+                                                       Text="{x:Bind _viewModel.BybitConnectionStatus, Mode=OneWay}"/>
+                                        </StackPanel>
+
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- MEXC -->
+                                <ct:SettingsCard Header="MEXC"
+                                    Description="api.mexc.com — V3 REST API  ·  HMAC-SHA256"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE909;}">
+                                    <StackPanel MaxWidth="360" Spacing="10">
+
+                                        <!-- Status actief -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsMexcConfigured), Mode=OneWay}">
+                                            <FontIcon Glyph="&#xE930;" Foreground="Green" FontSize="14"/>
+                                            <TextBlock FontSize="12" VerticalAlignment="Center">
+                                                <Run Text="Actief  ·  HMAC  · "/>
+                                                <Run Text="{x:Bind _viewModel.MexcKeyPreview, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <!-- API Key + Secret invoeren -->
+                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="API Key en Secret"/>
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Maak een persoonlijke sleutel aan via mexc.com → Profiel → API Management."/>
+                                        <PasswordBox Header="API Key" Width="280" HorizontalAlignment="Left"
+                                                     Password="{x:Bind _viewModel.MexcHmacApiKey, Mode=TwoWay}"
+                                                     PlaceholderText="Plak hier de API Key"/>
+                                        <PasswordBox Header="API Secret" Width="280" HorizontalAlignment="Left"
+                                                     Password="{x:Bind _viewModel.MexcHmacApiSecret, Mode=TwoWay}"
+                                                     PlaceholderText="Plak hier de API Secret"/>
+                                        <Button Content="Opslaan"
+                                                Command="{x:Bind _viewModel.SaveMexcHmacKeyCommand}"
+                                                Style="{StaticResource AccentButtonStyle}"/>
+
+                                        <!-- Acties -->
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="Verbinding testen"
+                                                    Command="{x:Bind _viewModel.TestMexcConnectionCommand}"/>
+                                            <Button Content="Verificeer balansen"
+                                                    Command="{x:Bind _viewModel.VerifyMexcBalancesCommand}"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsMexcConfigured), Mode=OneWay}"/>
+                                            <Button Content="Verwijderen"
+                                                    Command="{x:Bind _viewModel.DeleteMexcAccountCommand}"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsMexcConfigured), Mode=OneWay}"/>
+                                        </StackPanel>
+
+                                        <!-- Status -->
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Text="{x:Bind _viewModel.MexcConnectionStatus, Mode=OneWay}"
+                                                   Visibility="{x:Bind converters:Functions.StringToVisibility(_viewModel.MexcConnectionStatus), Mode=OneWay}"/>
+
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
                     </StackPanel>
                 </ScrollViewer>
-            </Border>
+                </PivotItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!-- Tab 2 — Databronnen                                   -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <PivotItem Header="Databronnen">
+                <ScrollViewer HorizontalAlignment="Stretch" Margin="0,4,0,0" Padding="0,0,20,0"
+                              toolkit:ScrollBarExtensions.KeepVerticalExpanded="{Binding IsScrollBarsExpanded}">
+                    <StackPanel Spacing="4">
+
+                        <!-- Intro tekst -->
+                        <TextBlock TextWrapping="Wrap" Margin="4,0,0,12" FontSize="12"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   Text="Overzicht van alle externe en lokale bronnen die de applicatie gebruikt, inclusief waarvoor ze dienen en hoe vaak ze worden bijgewerkt."/>
+
+                        <!-- ── Koersdata ──────────────────────────────────── -->
+                        <ct:SettingsExpander Header="Koers- en marktdata"
+                            Description="Prijzen, marktkapitalisaties en historische koersen."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9F3;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <ct:SettingsCard Header="CoinGecko API"
+                                    Description="api.coingecko.com/api/v3"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE909;}"
+                                    >
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert real-time prijzen, coinlijst en marktdata. Wordt ook gebruikt als bron voor dagelijkse slotkoersen (OHLC) die worden opgeslagen in de lokale koerscache."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Portfolio-waardering · Coinbibliotheek · Marktoverzicht"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: bij opstart app + via geplande achtergrondtaak"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Lokale koerscache (JSON)"
+                                    Description="%LocalAppData%\CryptoPortfolioTrackerPlus\MarketCharts\MarketChart_*.json"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xED41;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Dagelijkse slotkoersen per coin, opgeslagen als lokale JSON-bestanden door de achtergrondservice MarketChartsUpdateService.exe."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Technische indicatoren (RSI · MACD · Bollinger · StochRSI · ATR) · Trendgrafieken (sparklines) op de Analyse-pagina"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: via Windows Task Scheduler (MarketChartsUpdateService.exe)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Binance Public API (klines)"
+                                    Description="api.binance.com/api/v3/klines"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert echte multi-timeframe OHLCV-candledata (1H · 4H · 1D · 1W) voor de Trade Advies-pagina. Geen API-sleutel vereist — alleen marktdata voor coins genoteerd op Binance."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Trade Advies — primaire databron (multi-timeframe analyse · sleutelniveaus · trade setup)"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: live ophalen bij elke analyse-aanvraag"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="KuCoin Public API (klines — fallback 1)"
+                                    Description="api.kucoin.com/api/v1/market/candles"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Eerste fallback als Binance geen data heeft. Levert 1H · 4H · 1D · 1W OHLCV-data voor coins genoteerd op KuCoin. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Trade Advies — automatisch geprobeerd na Binance-miss"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: live ophalen bij elke analyse-aanvraag (alleen als Binance mislukt)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Gate.io Public API (klines — fallback 2)"
+                                    Description="api.gateio.ws/api/v4/spot/candlesticks"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Tweede fallback voor coins niet op Binance of KuCoin. Gate.io heeft een brede listing van kleinere altcoins en memecoins. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Trade Advies — automatisch geprobeerd na KuCoin-miss"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: live ophalen bij elke analyse-aanvraag (alleen als Binance en KuCoin mislukken)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="MEXC Public API (klines — fallback 3)"
+                                    Description="api.mexc.com/api/v3/klines"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Derde fallback. MEXC heeft een Binance-compatibele API en een van de grootste listings van nieuwe en obscure tokens. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Trade Advies — automatisch geprobeerd na Gate.io-miss"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: live ophalen bij elke analyse-aanvraag (alleen als alle andere bronnen mislukken)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Lokale opslag ──────────────────────────────── -->
+                        <ct:SettingsExpander Header="Lokale opslag"
+                            Description="Alle portfoliodata wordt lokaal opgeslagen — geen cloud."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEDA2;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <ct:SettingsCard Header="SQLite-database"
+                                    Description="%LocalAppData%\CryptoPortfolioTrackerPlus\Portfolios\{portfolionaam}\sqlCPT.db"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xF000;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Alle portefeuille-data wordt lokaal opgeslagen in een versleutelde SQLite-database. Er wordt niets naar externe servers gestuurd."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Bevat: Portfolio · Coins · Transacties · Signalen · Orders (Trade Journal) · Sentimentmetingen · Instellingen"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Beheerd door: Entity Framework Core 7 (EF Core)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Sentiment ──────────────────────────────────── -->
+                        <ct:SettingsExpander Header="Sentiment &amp; nieuws"
+                            Description="Bronnen voor de sentimentscore die meewegen in de signaalengine. Score loopt van −1,0 (extreem bearish) tot +1,0 (extreem bullish)."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8BD;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <!-- Uitleg sentimentscore -->
+                                <ct:SettingsCard Header="Sentimentscore — uitleg &amp; bandbreedte"
+                                    Description="Hoe de score te interpreteren"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE946;}">
+                                    <StackPanel MaxWidth="420" Spacing="10">
+
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="De sentimentscore is een gewogen gemiddelde over de afgelopen 24 uur van alle actieve bronnen. Elke meting krijgt een gewicht op basis van het aantal gevonden trefwoorden (confidence): hoe meer trefwoorden, hoe zwaarder de meting meetelt."/>
+
+                                        <!-- Schaaluitleg -->
+                                        <TextBlock FontSize="12" FontWeight="SemiBold" Text="Score-schaal: −1,0 → +1,0"/>
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Een hogere waarde (richting +1,0) betekent dat er meer positieve trefwoorden zijn gevonden dan negatieve — sterker bullish sentiment, breed gedragen optimisme. Een lagere waarde (richting −1,0) betekent het omgekeerde: meer negatieve trefwoorden, breed gedragen pessimisme of angst."/>
+
+                                        <!-- Band-tabel als StackPanel van rijen -->
+                                        <Border CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1" Padding="10,8">
+                                            <Grid ColumnSpacing="12" RowSpacing="5">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="*"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <!-- Header -->
+                                                <TextBlock Grid.Row="0" Grid.Column="0" FontSize="11" FontWeight="SemiBold" Text="Bandbreedte"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="1" FontSize="11" FontWeight="SemiBold" Text="Signaal"/>
+                                                <TextBlock Grid.Row="0" Grid.Column="2" FontSize="11" FontWeight="SemiBold" Text="Betekenis"/>
+
+                                                <!-- +0,6 → +1,0 -->
+                                                <TextBlock Grid.Row="1" Grid.Column="0" FontSize="11" Foreground="#FF4CAF50" Text="+0,6 → +1,0"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="1" FontSize="11" Foreground="#FF4CAF50" Text="Sterk bullish"/>
+                                                <TextBlock Grid.Row="1" Grid.Column="2" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Breed positief sentiment, sterke koopdruk verwacht"/>
+
+                                                <!-- +0,2 → +0,6 -->
+                                                <TextBlock Grid.Row="2" Grid.Column="0" FontSize="11" Foreground="#FF8BC34A" Text="+0,2 → +0,6"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="1" FontSize="11" Foreground="#FF8BC34A" Text="Licht bullish"/>
+                                                <TextBlock Grid.Row="2" Grid.Column="2" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Overwegend positief, voorzichtig optimistisch"/>
+
+                                                <!-- -0,2 → +0,2 -->
+                                                <TextBlock Grid.Row="3" Grid.Column="0" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Text="−0,2 → +0,2"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="1" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Text="Neutraal"/>
+                                                <TextBlock Grid.Row="3" Grid.Column="2" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Gemengd of weinig nieuws, geen duidelijke richting"/>
+
+                                                <!-- -0,6 → -0,2 -->
+                                                <TextBlock Grid.Row="4" Grid.Column="0" FontSize="11" Foreground="#FFFFC107" Text="−0,6 → −0,2"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="1" FontSize="11" Foreground="#FFFFC107" Text="Licht bearish"/>
+                                                <TextBlock Grid.Row="4" Grid.Column="2" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Overwegend negatief, verhoogde voorzichtigheid"/>
+
+                                                <!-- -1,0 → -0,6 -->
+                                                <TextBlock Grid.Row="5" Grid.Column="0" FontSize="11" Foreground="#FFF44336" Text="−1,0 → −0,6"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="1" FontSize="11" Foreground="#FFF44336" Text="Sterk bearish"/>
+                                                <TextBlock Grid.Row="5" Grid.Column="2" FontSize="11" TextWrapping="Wrap"
+                                                           Text="Breed negatief sentiment, mogelijke uitverkoop of paniekstemming"/>
+
+                                            </Grid>
+                                        </Border>
+
+                                        <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="De score wordt elke 15 minuten bijgewerkt en zichtbaar als 'Sentiment' in de signaalengine-kolom van het dashboard."/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Reddit (JSON API)"
+                                    Description="reddit.com — publieke subreddit-feeds"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8F4;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Berichten en reacties uit crypto-subreddits worden geanalyseerd op positief/negatief sentiment via NLP."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Actieve bronnen: r/CryptoCurrency · r/Altstreetbets · r/Bitcoin · r/ethereum · r/CryptoMarkets"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Sentimentscore → Signaalengine"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="RSS-nieuwsfeeds"
+                                    Description="Crypto-nieuwssites via standaard RSS"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE736;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Nieuwsartikelen van gerenommeerde crypto-mediasites worden opgehaald en gescoord op sentiment."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Actieve feeds: CoinDesk · Cointelegraph · Decrypt · The Block · CryptoSlate"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Sentimentscore → Signaalengine"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="CryptoPanic API"
+                                    Description="cryptopanic.com/api/free/v1/posts/"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8C3;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Nieuws-aggregator die berichten voorziet van bullish/bearish labels. Gratis publieke API, geen sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Sentimentscore → Signaalengine"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Notificaties ───────────────────────────────── -->
+                        <ct:SettingsExpander Header="Notificaties"
+                            Description="Externe kanalen waarnaar de app berichten stuurt."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEA8F;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <ct:SettingsCard Header="Telegram Bot API"
+                                    Description="api.telegram.org — via Telegram.Bot NuGet"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE715;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Bij een Long- of Short-signaal boven de drempelwaarde stuurt de app automatisch een pushbericht naar je Telegram-chat of kanaal."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Vereist: Bot Token (via @BotFather) + Chat ID"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Instellen: Instellingen → Telegram Notificaties"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Richting: uitsluitend uitgaand — de app leest geen Telegram-berichten"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                    </StackPanel>
+                </ScrollViewer>
+                </PivotItem>
+
+                <!-- ══════════════════════════════════════════════════════ -->
+                <!-- Tab 3 — Belasting                                      -->
+                <!-- ══════════════════════════════════════════════════════ -->
+                <PivotItem Header="Belasting">
+                <ScrollViewer HorizontalAlignment="Stretch" Margin="0,4,0,0" Padding="0,0,20,0">
+                    <StackPanel Spacing="4">
+
+                        <!-- Disclaimer -->
+                        <InfoBar IsOpen="True" IsClosable="False" Severity="Informational"
+                                 Title="Indicatief overzicht"
+                                 Message="Crypto valt in box 3 als 'overige bezitting'. Deze berekening is gebaseerd op gepubliceerde tarieven en is uitsluitend bedoeld als indicatie — geen fiscaal advies."/>
+
+                        <!-- Land -->
+                        <ct:SettingsCard Header="Land"
+                            Description="Kies het belastingland waarvoor de berekening geldt."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                            <ComboBox MinWidth="180"
+                                      ItemsSource="{x:Bind _taxViewModel.CountryOptions}"
+                                      SelectedItem="{x:Bind _taxViewModel.SelectedCountryOption, Mode=TwoWay}"
+                                      DisplayMemberPath="DisplayName"/>
+                        </ct:SettingsCard>
+
+                        <!-- Belastingjaar -->
+                        <ct:SettingsCard Header="Belastingjaar"
+                            Description="{x:Bind _taxViewModel.ReferenceDateDisplay, Mode=OneWay}"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xEC92;}">
+                            <ComboBox MinWidth="120"
+                                      ItemsSource="{x:Bind _taxViewModel.YearOptions, Mode=OneWay}"
+                                      SelectedItem="{x:Bind _taxViewModel.SelectedYear, Mode=TwoWay}"/>
+                        </ct:SettingsCard>
+
+                        <!-- Vermogen op peildatum — losse kaarten zodat x:Bind werkt -->
+                        <ct:SettingsCard Header="Cryptoportfolio"
+                            Description="Totale waarde van al uw crypto op de peildatum (1 januari, in €)"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8C7;}">
+                            <NumberBox Value="{x:Bind _taxViewModel.CryptoValue, Mode=TwoWay}"
+                                       Minimum="0" SpinButtonPlacementMode="Hidden"
+                                       PlaceholderText="0" MinWidth="160"/>
+                        </ct:SettingsCard>
+
+                        <ct:SettingsCard Header="Banktegoeden"
+                            Description="Spaarrekeningen en betaalrekeningen op de peildatum (in €)"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8C7;}">
+                            <NumberBox Value="{x:Bind _taxViewModel.BankSavings, Mode=TwoWay}"
+                                       Minimum="0" SpinButtonPlacementMode="Hidden"
+                                       PlaceholderText="0" MinWidth="160"/>
+                        </ct:SettingsCard>
+
+                        <ct:SettingsCard Header="Overige beleggingen"
+                            Description="Aandelen, obligaties, vastgoed e.d. niet in deze app (in €)"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8C7;}">
+                            <NumberBox Value="{x:Bind _taxViewModel.OtherAssets, Mode=TwoWay}"
+                                       Minimum="0" SpinButtonPlacementMode="Hidden"
+                                       PlaceholderText="0" MinWidth="160"/>
+                        </ct:SettingsCard>
+
+                        <ct:SettingsCard Header="Schulden (aftrekpost)"
+                            Description="Financiële schulden aftrekbaar in box 3 (in €)"
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8C7;}">
+                            <NumberBox Value="{x:Bind _taxViewModel.Debts, Mode=TwoWay}"
+                                       Minimum="0" SpinButtonPlacementMode="Hidden"
+                                       PlaceholderText="0" MinWidth="160"/>
+                        </ct:SettingsCard>
+
+                        <ct:SettingsCard Header="Fiscaal partner"
+                            Description="Heffingsvrij vermogen wordt verdubbeld bij een fiscaal partner."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE716;}">
+                            <ToggleSwitch IsOn="{x:Bind _taxViewModel.HasFiscalPartner, Mode=TwoWay}"
+                                          OnContent="Ja" OffContent="Nee" Margin="0,-6,0,-6"/>
+                        </ct:SettingsCard>
+
+                        <!-- Bereken-knop -->
+                        <Button Content="Belasting berekenen"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Command="{x:Bind _taxViewModel.CalculateCommand}"
+                                Margin="0,4,0,0"/>
+
+                        <TextBlock Text="{x:Bind _taxViewModel.StatusMessage, Mode=OneWay}"
+                                   Foreground="#CD5C5C" FontSize="12" Margin="0,2,0,0"/>
+
+                        <!-- ── Resultaten ──────────────────────────────── -->
+                        <Border Visibility="{x:Bind _taxViewModel.HasResult, Mode=OneWay}"
+                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="16,14" Margin="0,4,0,0">
+                            <StackPanel Spacing="10">
+
+                                <TextBlock Text="{x:Bind _taxViewModel.ResultTitle, Mode=OneWay}"
+                                           Style="{ThemeResource SubtitleTextBlockStyle}"/>
+
+                                <!-- Breakdown tabel -->
+                                <ListView ItemsSource="{x:Bind _taxViewModel.ReportLines, Mode=OneWay}"
+                                          SelectionMode="None" IsItemClickEnabled="False" MinHeight="0">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="Padding" Value="0,3"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="MinHeight" Value="0"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="models:TaxReportLine">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="160"/>
+                                                </Grid.ColumnDefinitions>
+                                                <!-- Gewone regel label -->
+                                                <TextBlock Grid.Column="0" Text="{x:Bind Label}"
+                                                           FontSize="12" VerticalAlignment="Center"
+                                                           Visibility="{x:Bind IsRegularLine}"/>
+                                                <!-- Totaalregel label (bold) -->
+                                                <TextBlock Grid.Column="0" Text="{x:Bind Label}"
+                                                           FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"
+                                                           Visibility="{x:Bind IsTotalLine}"/>
+                                                <!-- Bedrag gewone regel -->
+                                                <TextBlock Grid.Column="1" Text="{x:Bind AmountDisplay}"
+                                                           FontSize="12" FontFamily="Consolas"
+                                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                           Visibility="{x:Bind IsRegularLine}"/>
+                                                <!-- Bedrag totaalregel (bold) -->
+                                                <TextBlock Grid.Column="1" Text="{x:Bind AmountDisplay}"
+                                                           FontSize="12" FontWeight="SemiBold" FontFamily="Consolas"
+                                                           HorizontalAlignment="Right" VerticalAlignment="Center"
+                                                           Visibility="{x:Bind IsTotalLine}"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+
+                                <!-- Totaalregel onderaan -->
+                                <Border BorderBrush="{ThemeResource DividerStrokeColorDefaultBrush}"
+                                        BorderThickness="0,1,0,0" Padding="0,10,0,0">
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <StackPanel Spacing="2">
+                                            <TextBlock Text="Verschuldigde belasting box 3"
+                                                       FontSize="13" FontWeight="SemiBold"/>
+                                            <TextBlock Text="{x:Bind _taxViewModel.EffectiveRateDisplay, Mode=OneWay}"
+                                                       FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        </StackPanel>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind _taxViewModel.TaxDueDisplay, Mode=OneWay}"
+                                                   FontSize="22" FontWeight="Bold"
+                                                   Foreground="#CD5C5C"
+                                                   VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                            </StackPanel>
+                        </Border>
+
+                        <!-- Wettelijke disclaimer -->
+                        <TextBlock TextWrapping="Wrap" FontSize="11" Margin="0,8,0,8"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   Text="Bronnen: Belastingdienst.nl gepubliceerde tarieven (box 3). De app is niet verantwoordelijk voor fouten in uw belastingaangifte. Raadpleeg altijd de Belastingdienst of een fiscaal adviseur voor uw persoonlijke situatie."/>
+
+                    </StackPanel>
+                </ScrollViewer>
+                </PivotItem>
+
+            </Pivot>
         </Grid>
     </Grid>
 </Page>

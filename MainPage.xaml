@@ -54,17 +54,17 @@
                 <NavigationViewItemSeparator  Margin="0,5,0,5"/>
 
 
-                <NavigationViewItem x:Name="AssetsView" l:Uids.Uid="Navigation_Assets" Tag="AssetsView" >
+                <NavigationViewItem x:Name="AssetsNavItem" l:Uids.Uid="Navigation_Assets" Tag="AssetsView" >
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE825;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="AccountsView" l:Uids.Uid="Navigation_Accounts" Tag="AccountsView" >
+                <NavigationViewItem x:Name="AccountsNavItem" l:Uids.Uid="Navigation_Accounts" Tag="AccountsView" >
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE910;"/>
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
-                <NavigationViewItem x:Name="NarrativeView" l:Uids.Uid="Navigation_Narratives" Tag="NarrativesView" >
+                <NavigationViewItem x:Name="NarrativesNavItem" l:Uids.Uid="Navigation_Narratives" Tag="NarrativesView" >
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xED0E;"/>
                     </NavigationViewItem.Icon>
@@ -72,8 +72,40 @@
 
                 <NavigationViewItemSeparator  Margin="0,5,0,5"/>
 
+                <NavigationViewItem x:Name="AnalysisNavItem" Content="Analysis" Tag="SignalsView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE9D9;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
 
-                <NavigationViewItem x:Name="CoinLibraryView" l:Uids.Uid="Navigation_CoinLibrary" Tag="CoinLibraryView" >
+                <NavigationViewItem x:Name="TradeAdviesNavItem" Content="Trade Advies" Tag="TradeAnalysisView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8D4;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem x:Name="TradeJournalNavItem" Content="Trade Journal" Tag="TradeJournalView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8C3;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem x:Name="StatisticsNavItem" Content="Statistieken" Tag="StatisticsView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE9D2;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItem x:Name="SourcesNavItem" Content="Bronnen" Tag="SourcesView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE774;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
+                <NavigationViewItemSeparator  Margin="0,5,0,5"/>
+
+
+                <NavigationViewItem x:Name="CoinLibraryNavItem" l:Uids.Uid="Navigation_CoinLibrary" Tag="CoinLibraryView" >
                         <NavigationViewItem.Icon>
                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE8F1;"/>
                         </NavigationViewItem.Icon>

@@ -17,4 +17,5 @@ public interface IIndicatorService
     Task<double> CalculateStochRsiAsync(Coin coin);
     Task<TaScore> CalculateTaScoreAsync(Coin coin, Timeframe tf);
     Task RecalculateAllAsync(Coin coin);
+    Task CalculateExtendedIndicatorsAsync(Coin coin);
 }

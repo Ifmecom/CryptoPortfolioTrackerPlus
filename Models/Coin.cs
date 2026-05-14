@@ -60,7 +60,15 @@ public partial class Coin : BaseModel
     public double LatestSignalScore { get; set; }
     public MarketRegimeEnum MarketRegime { get; set; }
 
-    [NotMapped] public double Rsi { get; set; }
+    // Extended indicator fields — persisted to DB (populated by RecalculateAllAsync)
+    public double Rsi { get; set; }
+    public string EmaCross { get; set; } = "–";   // "Bullish" / "Bearish" / "–"
+    public int    EmaCrossBarsAgo { get; set; }
+    public double BollingerPctB { get; set; }
+    public double Ma50DistPerc { get; set; }
+    public double Adx { get; set; }
+    public bool   IsSqueeze { get; set; }
+    public double High52wPerc { get; set; }
     [NotMapped] public double Ema { get; set; }
     [NotMapped] private List<double> ClosingPrices { get; set; } = new();
     [NotMapped] private DateTime FileDateMarketChart { get; set; } = DateTime.MinValue;

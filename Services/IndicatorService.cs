@@ -20,58 +20,15 @@ public class IndicatorService : IIndicatorService
 
         try
         {
-            var prices = await LoadClosingPricesAsync(coin);
-            prices.Add(coin.Price);
-
-            int period = _settings.RsiPeriod;
-            if (period == 0 || prices == null || prices.Count < period + 1)
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 15)
             {
                 coin.Rsi = 0;
                 return;
             }
 
-            var rsiValues = new List<double>();
-            var gains = new List<double>();
-            var losses = new List<double>();
-
-            for (int i = 1; i <= period; i++)
-            {
-                double change = prices[i] - prices[i - 1];
-                if (change > 0)
-                {
-                    gains.Add(change);
-                    losses.Add(0);
-                }
-                else
-                {
-                    gains.Add(0);
-                    losses.Add(-change);
-                }
-            }
-
-            double avgGain = gains.Average();
-            double avgLoss = losses.Average();
-            double alpha = 1.0 / period;
-
-            double rs = avgGain / avgLoss;
-            double rsi = 100 - (100 / (1 + rs));
-            rsiValues.Add(rsi);
-
-            for (int i = period + 1; i < prices.Count; i++)
-            {
-                double change = prices[i] - prices[i - 1];
-                double gain = change > 0 ? change : 0;
-                double loss = change < 0 ? -change : 0;
-
-                avgGain = (gain * alpha) + (avgGain * (1 - alpha));
-                avgLoss = (loss * alpha) + (avgLoss * (1 - alpha));
-
-                rs = avgGain / avgLoss;
-                rsi = 100 - (100 / (1 + rs));
-                rsiValues.Add(rsi);
-            }
-
-            coin.Rsi = rsiValues.Last();
+            var rsiResult = quotes.GetRsi(14).LastOrDefault();
+            coin.Rsi = rsiResult?.Rsi is not null ? (double)rsiResult.Rsi : 0;
         }
         catch
         {
@@ -304,6 +261,7 @@ public class IndicatorService : IIndicatorService
             await CalculateAtrAsync(coin);
             await CalculateStochRsiAsync(coin);
             await CalculateRsiAsync(coin);
+            await CalculateExtendedIndicatorsAsync(coin);
 
             // RSI rules
             if (coin.Rsi > 0)
@@ -338,6 +296,62 @@ public class IndicatorService : IIndicatorService
                 else if (coin.StochRsi > 80) { score -= 10; triggered.Add("StochRSI overbought (>80)"); }
             }
 
+            // EMA Cross rules
+            if (coin.EmaCross == "Bullish")  { score += 8; triggered.Add($"EMA 9/21 bullish cross ({coin.EmaCrossBarsAgo}d ago)"); }
+            else if (coin.EmaCross == "Bearish") { score -= 8; triggered.Add($"EMA 9/21 bearish cross ({coin.EmaCrossBarsAgo}d ago)"); }
+
+            // MA50 distance
+            if (coin.Ma50DistPerc > 0) { score += 5; triggered.Add($"Price above MA50 (+{coin.Ma50DistPerc:F1}%)"); }
+            else if (coin.Ma50DistPerc < 0) { score -= 5; triggered.Add($"Price below MA50 ({coin.Ma50DistPerc:F1}%)"); }
+
+            // %B — momentum context
+            if (coin.BollingerPctB < 15) { score += 5; triggered.Add($"%B oversold ({coin.BollingerPctB:F0})"); }
+            else if (coin.BollingerPctB > 85) { score -= 5; triggered.Add($"%B overbought ({coin.BollingerPctB:F0})"); }
+
+            // ADX — trendsterkte als versterker/demper
+            // Sterke trend (>25): versterkt de dominante richting met +5 of -5
+            // Zijwaartse markt (<20): dempt alle richtingssignalen richting neutraal
+            if (coin.Adx >= 25)
+            {
+                if (score > 50) { score += 5;  triggered.Add($"ADX={coin.Adx:F0} strong trend confirms bullish"); }
+                else            { score -= 5;  triggered.Add($"ADX={coin.Adx:F0} strong trend confirms bearish"); }
+            }
+            else if (coin.Adx > 0 && coin.Adx < 20)
+            {
+                // Zijwaartse markt: trek score richting 50 (demping van ±4)
+                double dampen = (score - 50) * 0.08;
+                score -= dampen;
+                triggered.Add($"ADX={coin.Adx:F0} sideways market, signals dampened");
+            }
+
+            // Squeeze — volatiliteitscompressie: breakout-verwachting in richting van de score
+            // Actieve squeeze voegt vertrouwen toe dat een aankomende beweging sterker zal zijn
+            if (coin.IsSqueeze)
+            {
+                if (score > 55)      { score += 4; triggered.Add("Squeeze active — bullish breakout expected"); }
+                else if (score < 45) { score -= 4; triggered.Add("Squeeze active — bearish breakout expected"); }
+                else                  { triggered.Add("Squeeze active — direction unclear, wait for breakout"); }
+            }
+
+            // 52-weeks afstand — contrair signaal bij extreme dips + bevestiging bij toppen
+            // Ver onder 52w high én oversold RSI = potentieel koopmoment
+            // Dichtbij 52w high = overbought risico op lange termijn
+            if (coin.High52wPerc <= -50 && coin.Rsi < 40)
+            {
+                score += 8;
+                triggered.Add($"Deep discount: {coin.High52wPerc:F0}% from 52w high + RSI oversold");
+            }
+            else if (coin.High52wPerc <= -30 && coin.Rsi < 35)
+            {
+                score += 5;
+                triggered.Add($"Significant discount: {coin.High52wPerc:F0}% from 52w high + RSI low");
+            }
+            else if (coin.High52wPerc >= -5 && coin.Rsi > 65)
+            {
+                score -= 5;
+                triggered.Add($"Near 52w high ({coin.High52wPerc:F0}%) + RSI elevated — overbought risk");
+            }
+
             score = Math.Clamp(score, 0, 100);
             var direction = score >= 60 ? SignalDirection.Long
                           : score <= 40 ? SignalDirection.Short
@@ -360,6 +374,81 @@ public class IndicatorService : IIndicatorService
         await CalculateBollingerAsync(coin);
         await CalculateAtrAsync(coin);
         await CalculateStochRsiAsync(coin);
+        await CalculateExtendedIndicatorsAsync(coin);
+    }
+
+    public async Task CalculateExtendedIndicatorsAsync(Coin coin)
+    {
+        if (coin is null) throw new ArgumentNullException(nameof(coin));
+        try
+        {
+            var quotes = await LoadQuotesAsync(coin);
+            if (quotes.Count < 22) return;
+
+            var closes = quotes.Select(q => (double)q.Close).ToList();
+
+            // EMA Cross (9/21)
+            var ema9List  = quotes.GetEma(9).Select(r => r.Ema ?? 0).ToList();
+            var ema21List = quotes.GetEma(21).Select(r => r.Ema ?? 0).ToList();
+            coin.EmaCross = "–";
+            coin.EmaCrossBarsAgo = 0;
+            for (int i = ema9List.Count - 1; i >= 1; i--)
+            {
+                bool currAbove = ema9List[i] > ema21List[i];
+                bool prevAbove = ema9List[i - 1] > ema21List[i - 1];
+                if (currAbove != prevAbove)
+                {
+                    coin.EmaCross = currAbove ? "Bullish" : "Bearish";
+                    coin.EmaCrossBarsAgo = ema9List.Count - 1 - i;
+                    break;
+                }
+            }
+
+            // %B — Bollinger position (uses already-computed upper/lower if available)
+            if (coin.BollingerUpper > 0 && coin.BollingerUpper != coin.BollingerLower)
+            {
+                coin.BollingerPctB = Math.Round(
+                    Math.Clamp((coin.Price - coin.BollingerLower) / (coin.BollingerUpper - coin.BollingerLower) * 100.0, -50, 150), 1);
+            }
+
+            // MA50 distance %
+            if (quotes.Count >= 50)
+            {
+                var sma50 = quotes.GetSma(50).LastOrDefault()?.Sma ?? 0;
+                if (sma50 > 0)
+                    coin.Ma50DistPerc = Math.Round((coin.Price - sma50) / sma50 * 100.0, 1);
+            }
+
+            // ADX
+            if (quotes.Count >= 28)
+            {
+                var adxResult = quotes.GetAdx(14).LastOrDefault();
+                coin.Adx = Math.Round(adxResult?.Adx ?? 0, 1);
+            }
+
+            // Squeeze: BB(20,2) width vs Keltner(20,1.5,10) width
+            if (quotes.Count >= 30)
+            {
+                var bbLast = quotes.GetBollingerBands(20, 2).LastOrDefault();
+                var kcLast = quotes.GetKeltner(20, 1.5, 10).LastOrDefault();
+                if (bbLast is not null && kcLast is not null)
+                {
+                    double bbWidth = (bbLast.UpperBand ?? 0) - (bbLast.LowerBand ?? 0);
+                    double kcWidth = (kcLast.UpperBand ?? 0) - (kcLast.LowerBand ?? 0);
+                    coin.IsSqueeze = kcWidth > 0 && bbWidth < kcWidth;
+                }
+            }
+
+            // % from 52-week high (max of last ~180 daily closes)
+            if (closes.Count >= 2)
+            {
+                int lookback = Math.Min(closes.Count, 180);
+                double high52w = closes.TakeLast(lookback).Max();
+                if (high52w > 0)
+                    coin.High52wPerc = Math.Round((coin.Price - high52w) / high52w * 100.0, 1);
+            }
+        }
+        catch { /* per-coin failures are silent */ }
     }
 
     // Loads closing prices as Skender Quote objects (OHLCV with close = price from chart)

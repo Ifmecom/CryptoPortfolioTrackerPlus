@@ -1,0 +1,359 @@
+<Page
+    x:Class="CryptoPortfolioTracker.Views.TradeJournalView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:CryptoPortfolioTracker.ViewModels"
+    xmlns:helpers="using:CryptoPortfolioTracker.Helpers"
+    xmlns:converters="using:CryptoPortfolioTracker.Converters"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Loaded="View_Loaded"
+    Unloaded="View_Unloaded"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid CornerRadius="8,8,0,0"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,0,5,10" VerticalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="110"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="3" Height="265" VerticalAlignment="Top"/>
+
+            <!-- Header -->
+            <RelativePanel>
+                <TextBlock AutomationProperties.AutomationId="__ClickableAreaTextBlock"/>
+                <TextBlock x:Name="appTitle"
+                           Text="Crypto Portfolio Tracker Plus"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           VerticalAlignment="Top"
+                           Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock x:Name="txtPortfolio"
+                           Text="{x:Bind _viewModel.PortfolioName, Mode=OneWay}"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           Style="{StaticResource SubSampleHeaderTextStyle}"
+                           RelativePanel.Below="appTitle"/>
+                <TextBlock x:Name="txtTitle"
+                           Text="Trade Journal"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,5,0,0"
+                           Style="{StaticResource SampleHeaderTextStyle}"
+                           RelativePanel.Below="txtPortfolio"/>
+            </RelativePanel>
+
+            <!-- Explainer -->
+            <TextBlock Grid.Row="1" VerticalAlignment="Bottom"
+                       Style="{StaticResource ExplainerTextStyle}"
+                       Margin="35,0,20,20" TextWrapping="Wrap"
+                       Text="All paper and live orders. PnL is estimated based on current price vs. fill price. R-multiple shows how many units of risk were earned or lost."/>
+
+            <!-- Main content -->
+            <Border Grid.Row="2" VerticalAlignment="Stretch" Margin="10,0,0,0">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- Filter toolbar -->
+                    <Grid Grid.Row="0" Margin="0,0,0,8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+
+                        <!-- Filter knoppen -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Filter:" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       FontSize="12"/>
+                            <Button Content="All"    Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="All"
+                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                            <Button Content="Open"   Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Open"
+                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                            <Button Content="Closed" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Closed"
+                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                            <Button Content="Paper"  Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Paper"
+                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                            <Button Content="Live"   Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Live"
+                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                        </StackPanel>
+
+                        <!-- Refresh knop + Kill All + tijdstempel -->
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <TextBlock Text="{x:Bind _viewModel.LastRefreshedDisplay, Mode=OneWay}"
+                                       VerticalAlignment="Center" FontSize="11"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <Button Command="{x:Bind _viewModel.RefreshCommand}"
+                                    ToolTipService.ToolTip="Gegevens vernieuwen"
+                                    Padding="8,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE72C;" FontSize="12"/>
+                                    <TextBlock Text="Vernieuwen" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                            <Button Command="{x:Bind _viewModel.KillAllCommand}"
+                                    Background="#CC3B1E"
+                                    Foreground="White"
+                                    ToolTipService.ToolTip="Sluit ALLE open papierposities direct op de huidige marktprijs (met bevestiging)"
+                                    Padding="8,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE711;" FontSize="12"/>
+                                    <TextBlock Text="Kill All" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Grid>
+
+                    <!-- Status -->
+                    <TextBlock Grid.Row="1"
+                               Text="{x:Bind _viewModel.StatusMessage, Mode=OneWay}"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               FontSize="12" Margin="2,0,0,8"/>
+
+                    <!-- Table -->
+                    <ListView Grid.Row="2"
+                              ItemsSource="{x:Bind _viewModel.Rows, Mode=OneWay}"
+                              SelectionMode="None"
+                              IsItemClickEnabled="False">
+
+                        <!-- Column headers -->
+                        <ListView.Header>
+                            <Grid Padding="12,6,12,6"
+                                  Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40"/>   <!-- 0  ID -->
+                                    <ColumnDefinition Width="95"/>   <!-- 1  Symbol -->
+                                    <ColumnDefinition Width="48"/>   <!-- 2  Side -->
+                                    <ColumnDefinition Width="*"/>    <!-- 3  Entry -->
+                                    <ColumnDefinition Width="*"/>    <!-- 4  Huidig -->
+                                    <ColumnDefinition Width="*"/>    <!-- 5  SL -->
+                                    <ColumnDefinition Width="*"/>    <!-- 6  TP -->
+                                    <ColumnDefinition Width="65"/>   <!-- 7  Qty -->
+                                    <ColumnDefinition Width="80"/>   <!-- 8  Status -->
+                                    <ColumnDefinition Width="90"/>   <!-- 9  Created -->
+                                    <ColumnDefinition Width="105"/>  <!-- 10 PnL USDT + % -->
+                                    <ColumnDefinition Width="110"/>  <!-- 11 Unrealised P&amp;L -->
+                                    <ColumnDefinition Width="50"/>   <!-- 12 R -->
+                                    <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
+                                    <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
+                                    <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
+                                    <ColumnDefinition Width="36"/>   <!-- 16 Close position -->
+                                </Grid.ColumnDefinitions>
+
+                                <TextBlock Grid.Column="0"  Text="#"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Order ID"/>
+                                <TextBlock Grid.Column="1"  Text="Symbol"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Handelspaar en type (Paper/Live)"/>
+                                <TextBlock Grid.Column="2"  Text="Side"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Buy (Long) of Sell (Short)"/>
+                                <TextBlock Grid.Column="3"  Text="Entry"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Instapprijs van de order"/>
+                                <TextBlock Grid.Column="4"  Text="Huidig"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Huidige marktprijs op het moment van de laatste prijsupdate"/>
+                                <TextBlock Grid.Column="5"  Text="SL"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Stop-loss niveau"/>
+                                <TextBlock Grid.Column="6"  Text="TP"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Take-profit niveau"/>
+                                <TextBlock Grid.Column="7"  Text="Qty"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Hoeveelheid (eenheden)"/>
+                                <TextBlock Grid.Column="8"  Text="Status"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           Margin="12,0,0,0"
+                                           ToolTipService.ToolTip="Orderstatus: Pending, Filled, Cancelled..."/>
+                                <TextBlock Grid.Column="9"  Text="Datum"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Aanmaakdatum van de order"/>
+                                <TextBlock Grid.Column="10" Text="PnL"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Winst/verlies in USDT en percentage t.o.v. de instapprijs. Alleen berekend voor gevulde orders."/>
+                                <TextBlock Grid.Column="11" Text="Unrealised P&amp;L"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Live ongerealiseerde winst/verlies in USDT op basis van de huidige marktprijs t.o.v. de instapprijs."/>
+                                <TextBlock Grid.Column="12" Text="R"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="R-multiple: hoeveel maal de initiële risicogrootte (Entry − SL × Qty) is verdiend of verloren. +2R = twee maal het risico verdiend."/>
+                                <TextBlock Grid.Column="13" Text="Notitie"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Persoonlijke notitie bij deze trade. Klik het potlood-icoon om te bewerken."/>
+                            </Grid>
+                        </ListView.Header>
+
+                        <ListView.ItemContainerStyle>
+                            <Style TargetType="ListViewItem">
+                                <Setter Property="Padding" Value="0"/>
+                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                <Setter Property="BorderThickness" Value="0,0,0,1"/>
+                                <Setter Property="BorderBrush" Value="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"/>
+                            </Style>
+                        </ListView.ItemContainerStyle>
+
+                        <ListView.ItemTemplate>
+                            <DataTemplate x:DataType="viewmodels:TradeJournalRow">
+                                <Grid Padding="12,6,12,6" MinHeight="40">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40"/>   <!-- 0  ID -->
+                                        <ColumnDefinition Width="95"/>   <!-- 1  Symbol -->
+                                        <ColumnDefinition Width="48"/>   <!-- 2  Side -->
+                                        <ColumnDefinition Width="*"/>    <!-- 3  Entry -->
+                                        <ColumnDefinition Width="*"/>    <!-- 4  Huidig -->
+                                        <ColumnDefinition Width="*"/>    <!-- 5  SL -->
+                                        <ColumnDefinition Width="*"/>    <!-- 6  TP -->
+                                        <ColumnDefinition Width="65"/>   <!-- 7  Qty -->
+                                        <ColumnDefinition Width="80"/>   <!-- 8  Status -->
+                                        <ColumnDefinition Width="90"/>   <!-- 9  Created -->
+                                        <ColumnDefinition Width="105"/>  <!-- 10 PnL USDT + % -->
+                                        <ColumnDefinition Width="110"/>  <!-- 11 Unrealised P&amp;L -->
+                                        <ColumnDefinition Width="50"/>   <!-- 12 R -->
+                                        <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
+                                        <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
+                                        <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
+                                        <ColumnDefinition Width="36"/>   <!-- 16 Close position -->
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- ID -->
+                                    <TextBlock Grid.Column="0" Text="{x:Bind Id}"
+                                               VerticalAlignment="Center" FontSize="11"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                    <!-- Symbol + Kind badge -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{x:Bind Symbol}" FontSize="12" FontWeight="SemiBold"/>
+                                        <Border CornerRadius="3" Padding="4,1" HorizontalAlignment="Left"
+                                                Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}">
+                                            <TextBlock Text="{x:Bind Kind}" FontSize="10"/>
+                                        </Border>
+                                    </StackPanel>
+
+                                    <!-- Side -->
+                                    <TextBlock Grid.Column="2" Text="{x:Bind Side}"
+                                               VerticalAlignment="Center" FontSize="12"
+                                               Foreground="{x:Bind helpers:AnalysisHelpers.SideColor(Side)}"/>
+
+                                    <!-- Entry -->
+                                    <TextBlock Grid.Column="3" Text="{x:Bind EntryDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"/>
+
+                                    <!-- Huidig -->
+                                    <TextBlock Grid.Column="4" Text="{x:Bind CurrentPriceDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                    <!-- SL -->
+                                    <TextBlock Grid.Column="5" Text="{x:Bind SlDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
+                                               Foreground="IndianRed"/>
+
+                                    <!-- TP -->
+                                    <TextBlock Grid.Column="6" Text="{x:Bind TpDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
+                                               Foreground="MediumSeaGreen"/>
+
+                                    <!-- Qty -->
+                                    <TextBlock Grid.Column="7" Text="{x:Bind QtyDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"/>
+
+                                    <!-- Status -->
+                                    <TextBlock Grid.Column="8" Text="{x:Bind Status}"
+                                               VerticalAlignment="Center" FontSize="11"
+                                               Margin="12,0,0,0"/>
+
+                                    <!-- Datum -->
+                                    <TextBlock Grid.Column="9" Text="{x:Bind CreatedDisplay}"
+                                               VerticalAlignment="Center" FontSize="11"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                    <!-- PnL (USDT + %) -->
+                                    <TextBlock Grid.Column="10" Text="{x:Bind PnlDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
+                                               Foreground="{x:Bind PnlBrush}"/>
+
+                                    <!-- Unrealised P&L (live USDT waarde) -->
+                                    <TextBlock Grid.Column="11" Text="{x:Bind UnrealisedPnlDisplay}"
+                                               VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
+                                               FontWeight="SemiBold"
+                                               Foreground="{x:Bind PnlBrush}"/>
+
+                                    <!-- R-multiple -->
+                                    <TextBlock Grid.Column="12" Text="{x:Bind RDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
+                                               Foreground="{x:Bind PnlBrush}"/>
+
+                                    <!-- Notitie -->
+                                    <TextBlock Grid.Column="13" Text="{x:Bind Notes}"
+                                               VerticalAlignment="Center" FontSize="11"
+                                               TextTrimming="CharacterEllipsis"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               Margin="0,0,4,0"/>
+
+                                    <!-- Notitie bewerken -->
+                                    <Button Grid.Column="14"
+                                            VerticalAlignment="Center" Padding="4,3"
+                                            ToolTipService.ToolTip="Notitie bewerken"
+                                            Tag="{x:Bind}"
+                                            Click="EditNote_Click">
+                                        <FontIcon Glyph="&#xE70F;" FontSize="11"/>
+                                    </Button>
+
+                                    <!-- Cancel button (only for pending orders) -->
+                                    <Button Grid.Column="15"
+                                            Visibility="{x:Bind converters:Functions.TrueToVisible(IsCancellable)}"
+                                            VerticalAlignment="Center" Padding="4,3"
+                                            ToolTipService.ToolTip="Order annuleren (nog niet gevuld)"
+                                            Tag="{x:Bind}"
+                                            Click="CancelOrder_Click">
+                                        <FontIcon Glyph="&#xE711;" FontSize="11"/>
+                                    </Button>
+
+                                    <!-- Close button (only for open filled paper positions) -->
+                                    <Button Grid.Column="16"
+                                            Visibility="{x:Bind converters:Functions.TrueToVisible(IsCloseable)}"
+                                            VerticalAlignment="Center" Padding="4,3"
+                                            Background="#CC3B1E" Foreground="White"
+                                            ToolTipService.ToolTip="Positie sluiten op huidige marktprijs"
+                                            Tag="{x:Bind}"
+                                            Click="ClosePosition_Click">
+                                        <FontIcon Glyph="&#xE8BB;" FontSize="11"/>
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListView.ItemTemplate>
+                    </ListView>
+
+                    <!-- ── Totaal-PnL footer ── -->
+                    <Border Grid.Row="3"
+                            BorderBrush="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                            BorderThickness="0,1,0,0"
+                            Padding="12,6">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <TextBlock Text="Totaal PnL (gefilterd):"
+                                       VerticalAlignment="Center" FontSize="12"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock Text="{x:Bind _viewModel.TotalPnlDisplay, Mode=OneWay}"
+                                       VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                       FontFamily="Consolas"
+                                       Foreground="{x:Bind _viewModel.TotalPnlBrush, Mode=OneWay}"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+            </Border>
+        </Grid>
+    </Grid>
+</Page>

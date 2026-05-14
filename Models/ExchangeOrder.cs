@@ -20,6 +20,13 @@ public class ExchangeOrder
     public bool IsPaper { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? FilledAt { get; set; }
+    /// <summary>Exit price when the user manually closes the position.</summary>
+    public double ClosePrice { get; set; }
+    /// <summary>UTC timestamp when the position was manually closed.</summary>
+    public DateTime? ClosedAt { get; set; }
+
+    /// <summary>Free-text note the user can attach to this trade.</summary>
+    public string Notes { get; set; } = string.Empty;
 
     public Signal? Signal { get; set; }
 }

@@ -12,6 +12,18 @@
 
     <Grid>
         <Image Source="Assets\Splash_Image_1000x565.jpg" VerticalAlignment="Center" HorizontalAlignment="Center"/>
-        <TextBlock Name="versionTxt" VerticalAlignment="Bottom" FontWeight="SemiBold" Foreground="DarkGoldenrod" HorizontalAlignment="Right" Margin="0,0,22,5"/>
+        <StackPanel VerticalAlignment="Bottom" HorizontalAlignment="Right" Margin="0,0,22,5" Spacing="0">
+            <TextBlock Name="plusTxt"
+                       Text="Plus"
+                       FontWeight="SemiBold"
+                       Foreground="DarkGoldenrod"
+                       HorizontalAlignment="Right"
+                       FontSize="14"/>
+            <TextBlock Name="versionTxt"
+                       FontWeight="SemiBold"
+                       Foreground="DarkGoldenrod"
+                       HorizontalAlignment="Right"
+                       FontSize="12"/>
+        </StackPanel>
     </Grid>
 </Window>

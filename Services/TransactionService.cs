@@ -181,9 +181,8 @@ public partial class TransactionService :  ObservableObject, ITransactionService
         {
             _result = await context.Assets
                 .AsNoTracking()
-                .Include(x => x.Coin)
-                .GroupBy(asset => asset.Coin)
-                .Select(assetGroup => assetGroup.Key.Symbol.ToUpper() + " " + assetGroup.Key.Name)
+                .Select(a => a.Coin.Symbol.ToUpper() + " " + a.Coin.Name)
+                .Distinct()
                 .ToListAsync();
         }
         catch (Exception ex)
@@ -201,9 +200,8 @@ public partial class TransactionService :  ObservableObject, ITransactionService
             _result = await context.Assets
                 .AsNoTracking()
                 .Where(s => s.Coin.Symbol.ToLower() != "usdt" && s.Coin.Symbol.ToLower() != "usdc")
-                .Include(x => x.Coin)
-                .GroupBy(asset => asset.Coin)
-                .Select(assetGroup => assetGroup.Key.Symbol.ToUpper() + " " + assetGroup.Key.Name)
+                .Select(a => a.Coin.Symbol.ToUpper() + " " + a.Coin.Name)
+                .Distinct()
                 .ToListAsync();
         }
         catch (Exception ex)
@@ -240,13 +238,12 @@ public partial class TransactionService :  ObservableObject, ITransactionService
         {
             _result = await context.Assets
                 .AsNoTracking()
-               .Where(s => 
-                    s.Coin.Symbol.ToLower() == "usdt" 
+                .Where(s =>
+                    s.Coin.Symbol.ToLower() == "usdt"
                     || s.Coin.Symbol.ToLower() == "usdc")
-               .Include(x => x.Coin)
-               .GroupBy(asset => asset.Coin)
-               .Select(assetGroup => assetGroup.Key.Symbol.ToUpper() + " " + assetGroup.Key.Name)
-               .ToListAsync();
+                .Select(a => a.Coin.Symbol.ToUpper() + " " + a.Coin.Name)
+                .Distinct()
+                .ToListAsync();
         }
         catch (Exception ex)
         {

@@ -13,7 +13,7 @@ public partial class App : Application
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
 
     private Mutex _mutex;
-    private const string MutexName = "MyUniqueWinUIMutex";
+    private const string MutexName = "CryptoPortfolioTrackerPlusMutex";
     private static ILogger? Logger;
     public static readonly SemaphoreSlim UpdateSemaphore = new SemaphoreSlim(1, 1);
     private static Settings _appSettings { get; set; }
@@ -84,11 +84,31 @@ public partial class App : Application
 
         await Container.GetService<PortfolioService>().InitializeAsync();
 
+        // Automatisch nieuwe MEXC spot-trades importeren
+        var mexcSync = Container.GetService<IExchangeAccountService>();
+        if (mexcSync is not null)
+        {
+            try
+            {
+                var (imported, skipped) = await mexcSync.SyncMexcTradesAsync("MEXC");
+                if (imported > 0)
+                    Logger?.Information("MEXC sync: {Imported} nieuwe transacties geïmporteerd, {Skipped} overgeslagen", imported, skipped);
+            }
+            catch (Exception ex)
+            {
+                Logger?.Warning(ex, "MEXC sync bij opstarten mislukt — app werkt normaal verder");
+            }
+        }
+
         var iconCacheService = new IconCacheService(AppConstants.IconsPath, Container.GetService<PortfolioService>(), Logger);
         await iconCacheService.CacheLibraryIconsAsync();
 
         Window = Container.GetService<MainWindow>();
         Window?.Activate();
+
+        // Start the 15-minute sentiment collection background timer AFTER the window is visible
+        // so the background DbContext queries don't race with startup initialization queries
+        Container.GetRequiredService<ISentimentService>().Start();
     }
 
     private async Task MoveUserPreferencesToSettingsIfNeeded()
@@ -172,7 +192,12 @@ public partial class App : Application
         services.AddScoped<NarrativesView>();
         services.AddScoped<SwitchPortfolioView>();
         services.AddScoped<AdminView>();
-
+        services.AddScoped<SignalsView>();
+        services.AddScoped<TradeJournalView>();
+        services.AddScoped<SourcesView>();
+        services.AddScoped<WhatsNewView>();
+        services.AddScoped<TradeAnalysisView>();
+        services.AddScoped<StatisticsView>();
 
         services.AddScoped<AssetsViewModel>();
         services.AddScoped<AccountsViewModel>();
@@ -184,8 +209,12 @@ public partial class App : Application
         services.AddScoped<NarrativesViewModel>();
         services.AddScoped<SwitchPortfolioViewModel>();
         services.AddScoped<AdminViewModel>();
-
-
+        services.AddScoped<SignalsViewModel>();
+        services.AddScoped<TradeJournalViewModel>();
+        services.AddScoped<SourcesViewModel>();
+        services.AddScoped<TradeAnalysisViewModel>();
+        services.AddScoped<StatisticsViewModel>();
+        services.AddScoped<TaxViewModel>();
 
         // Register the factory
         services.AddSingleton<IPortfolioContextFactory, PortfolioContextFactory>();
@@ -228,7 +257,25 @@ public partial class App : Application
         services.AddScoped<PortfolioService>();
         services.AddSingleton<IMessenger, WeakReferenceMessenger>();
         services.AddSingleton<IQuestPdfService, QuestPdfService>();
-        services.AddScoped<ISentimentService, SentimentService>();
+        services.AddSingleton<ISentimentService, SentimentService>();
+
+        // Sprint 1.4 — Signal engine + paper trading
+        services.AddScoped<IMarketRegimeService, MarketRegimeService>();
+        services.AddScoped<ISignalEngine, SignalEngine>();
+        services.AddScoped<ITradeService, TradeService>();
+
+        // Sprint 1.5 — Telegram notifications + Sources
+        services.AddSingleton<INotifierService, NotifierService>();
+        services.AddScoped<ISourcesService, SourcesService>();
+
+        // Sprint 1.8 — Trade Advies (Binance multi-TF + KuCoin / Gate.io / MEXC fallback)
+        services.AddSingleton<IBinanceDataService, BinanceDataService>();
+        services.AddSingleton<IKuCoinDataService,  KuCoinDataService>();
+        services.AddSingleton<IGateIoDataService,  GateIoDataService>();
+        services.AddSingleton<IMexcDataService,    MexcDataService>();
+        services.AddScoped<ITradeAnalysisService, TradeAnalysisService>();
+
+        services.AddScoped<IExchangeAccountService, ExchangeAccountService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 

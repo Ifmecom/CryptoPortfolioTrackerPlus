@@ -29,7 +29,7 @@ public class FormatValueToString : IValueConverter
                 return null;
 
             // If your App exposes a ServiceProvider property (common pattern), try to resolve Settings:
-            var prop = app.GetType().GetProperty("Services", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
+            var prop = app.GetType().GetProperty("Container", BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static);
             var services = prop?.GetValue(app) as IServiceProvider;
             if (services != null)
                 return services.GetService(typeof(Settings)) as Settings;
@@ -50,6 +50,15 @@ public class FormatValueToString : IValueConverter
         if (parameter == null)
         {
             return value;
+        }
+
+        // Veiligheidsnet: als settings niet via DI opgelost kon worden, val terug op huidige cultuur
+        if (_settings == null)
+        {
+            var fallback = CultureInfo.CurrentUICulture;
+            if (value is double dv) return string.Format(fallback, (string)parameter, dv);
+            if (value is int iv)    return string.Format(fallback, (string)parameter, iv);
+            return string.Empty;
         }
 
         CultureInfo ci;

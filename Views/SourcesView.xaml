@@ -1,0 +1,311 @@
+<Page
+    x:Class="CryptoPortfolioTracker.Views.SourcesView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:CryptoPortfolioTracker.ViewModels"
+    xmlns:models="using:CryptoPortfolioTracker.Models"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
+    xmlns:converters="using:CryptoPortfolioTracker.Converters"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Loaded="View_Loaded"
+    Unloaded="View_Unloaded"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid CornerRadius="8,8,0,0"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,0,5,10" VerticalAlignment="Stretch">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="100"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="3" Height="265" VerticalAlignment="Top"/>
+
+            <!-- Header -->
+            <RelativePanel>
+                <TextBlock AutomationProperties.AutomationId="__ClickableAreaTextBlock"/>
+                <TextBlock x:Name="appTitle"
+                           Text="Crypto Portfolio Tracker Plus"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           VerticalAlignment="Top"
+                           Style="{StaticResource TitleTextBlockStyle}"/>
+                <TextBlock x:Name="txtPortfolio"
+                           Text="{x:Bind _viewModel.PortfolioName, Mode=OneWay}"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,0,0,0"
+                           Style="{StaticResource SubSampleHeaderTextStyle}"
+                           RelativePanel.Below="appTitle"/>
+                <TextBlock Text="Bronnen"
+                           Foreground="DarkGoldenrod"
+                           Margin="36,10,0,0"
+                           Style="{StaticResource SampleHeaderTextStyle}"
+                           RelativePanel.Below="txtPortfolio"/>
+            </RelativePanel>
+
+            <!-- Toolbar Row -->
+            <Grid Grid.Row="1" Margin="16,8,16,4"
+                  Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <TextBlock Grid.Column="0"
+                           Text="{x:Bind _viewModel.StatusMessage, Mode=OneWay}"
+                           VerticalAlignment="Center" FontSize="12"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                <Button Grid.Column="1"
+                        Content="+ Bron toevoegen"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Command="{x:Bind _viewModel.OpenAddPanelCommand}"/>
+            </Grid>
+
+            <!-- Sentiment collection bar -->
+            <Border Grid.Row="2"
+                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderBrush="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderThickness="0,0,0,1"
+                    Margin="16,0,16,4" CornerRadius="6" Padding="12,8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Run button + spinner -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                        <Button Content="▶  Ophalen"
+                                Style="{StaticResource AccentButtonStyle}"
+                                Command="{x:Bind _viewModel.RunCollectionNowCommand}"
+                                IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsCollecting), Mode=OneWay}"/>
+                        <ProgressRing IsActive="{x:Bind _viewModel.IsCollecting, Mode=OneWay}"
+                                      Width="20" Height="20"/>
+                    </StackPanel>
+
+                    <!-- Last run status -->
+                    <TextBlock Grid.Column="1"
+                               Text="{x:Bind _viewModel.LastRunText, Mode=OneWay}"
+                               VerticalAlignment="Center"
+                               Margin="16,0,0,0" FontSize="12"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                    <!-- Reading stats -->
+                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="Totaal:" FontSize="11"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Bind _viewModel.TotalReadings, Mode=OneWay}"
+                                       FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="24u:" FontSize="11"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       VerticalAlignment="Center"/>
+                            <TextBlock Text="{x:Bind _viewModel.Readings24H, Mode=OneWay}"
+                                       FontSize="11" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Column headers row — solid background so image doesn't show through -->
+            <Border Grid.Row="3"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+                    BorderBrush="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    BorderThickness="0,0,0,1"
+                    Padding="24,6,24,6">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="100"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="180"/>
+                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="64"/>
+                        <ColumnDefinition Width="72"/>
+                        <ColumnDefinition Width="Auto"/><!-- edit panel spacer -->
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="Type" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               ToolTipService.ToolTip="Het platform van de bron: Reddit, Telegram, RSS-feed of CryptoPanic."/>
+                    <TextBlock Grid.Column="1" Text="Handle" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               ToolTipService.ToolTip="Naam of handle van de bron, bijv. r/CryptoCurrency of @whale_alert."/>
+                    <TextBlock Grid.Column="2" Text="URL" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               ToolTipService.ToolTip="Directe URL van de feed of API-endpoint die door de sentiment-collector wordt aangeroepen."/>
+                    <TextBlock Grid.Column="3" Text="Score" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               HorizontalAlignment="Center"
+                               ToolTipService.ToolTip="Betrouwbaarheidsscore (0–1). Hogere waarde = meer gewicht bij de sentimentberekening. Past zichzelf aan op basis van historische nauwkeurigheid."/>
+                    <TextBlock Grid.Column="4" Text="Actief" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               HorizontalAlignment="Center"
+                               ToolTipService.ToolTip="Alleen actieve bronnen worden meegenomen door de sentiment-collector. Schakel uit om een bron tijdelijk te negeren zonder hem te verwijderen."/>
+                    <TextBlock Grid.Column="5" Text="Acties" FontWeight="SemiBold" FontSize="12" Foreground="DarkGoldenrod"
+                               ToolTipService.ToolTip="Bewerken of verwijderen van de bron."/>
+                </Grid>
+            </Border>
+
+            <!-- Main content: list + edit panel side by side -->
+            <Grid Grid.Row="4" Margin="16,0,16,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Sources list -->
+                <ListView x:Name="sourcesListView"
+                          Grid.Column="0"
+                          ItemsSource="{x:Bind _viewModel.Sources, Mode=OneWay}"
+                          SelectionMode="None"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto">
+                    <ListView.ItemContainerStyle>
+                        <Style TargetType="ListViewItem">
+                            <Setter Property="Padding" Value="0,2"/>
+                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                        </Style>
+                    </ListView.ItemContainerStyle>
+                    <!-- no ListView.Header — column headers are in the dedicated row above -->
+                    <ListView.ItemTemplate>
+                        <DataTemplate x:DataType="models:BronSource">
+                            <Border BorderBrush="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                    BorderThickness="0,0,0,1" Padding="8,6">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="100"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="180"/>
+                                        <ColumnDefinition Width="90"/>
+                                        <ColumnDefinition Width="64"/>
+                                        <ColumnDefinition Width="72"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Type badge -->
+                                    <Border Grid.Column="0" CornerRadius="4" Padding="6,2"
+                                            HorizontalAlignment="Left" VerticalAlignment="Center"
+                                            Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}">
+                                        <TextBlock Text="{x:Bind Type}" FontSize="11" FontWeight="SemiBold"/>
+                                    </Border>
+
+                                    <TextBlock Grid.Column="1" Text="{x:Bind Handle}"
+                                               VerticalAlignment="Center" FontSize="13"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+
+                                    <TextBlock Grid.Column="2" Text="{x:Bind Url}"
+                                               VerticalAlignment="Center" FontSize="11"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               TextTrimming="CharacterEllipsis" Margin="0,0,8,0"/>
+
+                                    <TextBlock Grid.Column="3"
+                                               Text="{x:Bind ReliabilityScore}"
+                                               VerticalAlignment="Center" FontSize="12"
+                                               HorizontalAlignment="Center"/>
+
+                                    <!-- Active indicator -->
+                                    <Grid Grid.Column="4" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                        <FontIcon Glyph="&#xE73E;" FontSize="14"
+                                                  Foreground="#FF3CB371"
+                                                  Visibility="{x:Bind IsActive}"/>
+                                        <FontIcon Glyph="&#xE711;" FontSize="14"
+                                                  Foreground="#FFCD5C5C"
+                                                  Visibility="{x:Bind !IsActive}"/>
+                                    </Grid>
+
+                                    <!-- Edit / Delete buttons -->
+                                    <StackPanel Grid.Column="5" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                                        <Button Padding="6,4"
+                                                ToolTipService.ToolTip="Bewerken"
+                                                Tag="{x:Bind}"
+                                                Click="EditSource_Click">
+                                            <FontIcon Glyph="&#xE70F;" FontSize="12"/>
+                                        </Button>
+                                        <Button Padding="6,4"
+                                                ToolTipService.ToolTip="Verwijderen"
+                                                Tag="{x:Bind}"
+                                                Click="DeleteSource_Click">
+                                            <FontIcon Glyph="&#xE74D;" FontSize="12"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ListView.ItemTemplate>
+                </ListView>
+
+                <!-- Edit / Add panel -->
+                <Border Grid.Column="1"
+                        Width="320"
+                        Margin="8,0,0,0"
+                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                        CornerRadius="8" Padding="16,12"
+                        Visibility="{x:Bind _viewModel.IsEditPanelVisible, Mode=OneWay}">
+                    <ScrollViewer VerticalScrollBarVisibility="Auto">
+                        <StackPanel Spacing="12">
+                            <TextBlock Text="{x:Bind _viewModel.EditPanelTitle, Mode=OneWay}"
+                                       FontWeight="SemiBold" FontSize="14"
+                                       Foreground="DarkGoldenrod"/>
+
+                            <!-- Type -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Type" FontSize="12"/>
+                                <ComboBox SelectedIndex="{x:Bind _viewModel.EditTypeIndex, Mode=TwoWay}"
+                                          HorizontalAlignment="Stretch">
+                                    <ComboBoxItem Content="Reddit"/>
+                                    <ComboBoxItem Content="Telegram"/>
+                                    <ComboBoxItem Content="RSS"/>
+                                    <ComboBoxItem Content="CryptoPanic"/>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Handle -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Handle / naam" FontSize="12"/>
+                                <TextBox Text="{x:Bind _viewModel.EditHandle, Mode=TwoWay}"
+                                         PlaceholderText="bijv. r/CryptoCurrency of @kanaal"/>
+                            </StackPanel>
+
+                            <!-- URL -->
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="URL (optioneel)" FontSize="12"/>
+                                <TextBox Text="{x:Bind _viewModel.EditUrl, Mode=TwoWay}"
+                                         PlaceholderText="https://..."/>
+                            </StackPanel>
+
+                            <!-- Reliability -->
+                            <StackPanel Spacing="4">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBlock Text="Betrouwbaarheidsscore" FontSize="12" VerticalAlignment="Center"/>
+                                    <TextBlock Text="{x:Bind _viewModel.EditReliability, Mode=OneWay}"
+                                               FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <Slider Value="{x:Bind _viewModel.EditReliability, Mode=TwoWay}"
+                                        Minimum="0" Maximum="1" StepFrequency="0.05"/>
+                            </StackPanel>
+
+                            <!-- Active -->
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="Actief" FontSize="12" VerticalAlignment="Center"/>
+                                <ToggleSwitch IsOn="{x:Bind _viewModel.EditIsActive, Mode=TwoWay}"
+                                             OnContent="Ja" OffContent="Nee" MinWidth="0"/>
+                            </StackPanel>
+
+                            <!-- Buttons -->
+                            <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+                                <Button Content="Opslaan"
+                                        Style="{StaticResource AccentButtonStyle}"
+                                        Command="{x:Bind _viewModel.SaveSourceCommand}"/>
+                                <Button Content="Annuleren"
+                                        Command="{x:Bind _viewModel.CloseEditPanelCommand}"/>
+                            </StackPanel>
+                        </StackPanel>
+                    </ScrollViewer>
+                </Border>
+            </Grid>
+        </Grid>
+    </Grid>
+</Page>

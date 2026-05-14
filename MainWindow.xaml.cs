@@ -1,4 +1,4 @@
-namespace CryptoPortfolioTracker;
+﻿namespace CryptoPortfolioTracker;
 
 public sealed partial class MainWindow : Window
 {
@@ -37,7 +37,7 @@ public sealed partial class MainWindow : Window
         this.CenterOnScreen();
         //Window.CenterOnScreen();
 #endif
-        _manager.AppWindow.Title = "Crypto Portfolio Tracker";
+        _manager.AppWindow.Title = "Crypto Portfolio Tracker Plus";
         _manager.AppWindow.SetIcon(AppConstants.AppPath + "\\Assets\\AppIcons\\CryptoPortfolioTracker.ico");
        
         

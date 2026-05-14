@@ -30,8 +30,33 @@ public class AuthenticationService
         var vault = new PasswordVault();
         string? passwordHash = null;
         string? duressPasswordHash = null;
-        try { passwordHash = vault.Retrieve("CryptoPortfolioTracker", "Password")?.Password; } catch { }
-        try { duressPasswordHash = vault.Retrieve("CryptoPortfolioTracker", "DuressPassword")?.Password; } catch { }
+        try { passwordHash = vault.Retrieve("CryptoPortfolioTrackerPlus", "Password")?.Password; } catch { }
+        try { duressPasswordHash = vault.Retrieve("CryptoPortfolioTrackerPlus", "DuressPassword")?.Password; } catch { }
+
+        // One-time migration: copy credentials from original app vault if Plus vault is still empty
+        if (string.IsNullOrEmpty(passwordHash))
+            try
+            {
+                var legacy = vault.Retrieve("CryptoPortfolioTracker", "Password");
+                if (legacy != null)
+                {
+                    vault.Add(new PasswordCredential("CryptoPortfolioTrackerPlus", "Password", legacy.Password));
+                    passwordHash = legacy.Password;
+                }
+            }
+            catch { }
+
+        if (string.IsNullOrEmpty(duressPasswordHash))
+            try
+            {
+                var legacy = vault.Retrieve("CryptoPortfolioTracker", "DuressPassword");
+                if (legacy != null)
+                {
+                    vault.Add(new PasswordCredential("CryptoPortfolioTrackerPlus", "DuressPassword", legacy.Password));
+                    duressPasswordHash = legacy.Password;
+                }
+            }
+            catch { }
         if (string.IsNullOrEmpty(passwordHash) && string.IsNullOrEmpty(duressPasswordHash))
             return true;
 
@@ -140,13 +165,13 @@ public class AuthenticationService
                     state.LockoutUntil = null;
                     SaveAuthState(state);
                     PasswordCredential credential = null;
-                    try { credential = vault.Retrieve("CryptoPortfolioTracker", "Password"); } catch { }
+                    try { credential = vault.Retrieve("CryptoPortfolioTrackerPlus", "Password"); } catch { }
                     if (credential != null)
                     {
                         vault.Remove(credential);
                     }
                     PasswordCredential duressCredential = null;
-                    try {duressCredential = vault.Retrieve("CryptoPortfolioTracker", "DuressPassword"); } catch { }
+                    try { duressCredential = vault.Retrieve("CryptoPortfolioTrackerPlus", "DuressPassword"); } catch { }
                     if (duressCredential != null)
                     {
                         vault.Remove(duressCredential);
