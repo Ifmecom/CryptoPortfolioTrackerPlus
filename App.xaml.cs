@@ -1,6 +1,5 @@
 ﻿using CommunityToolkit.Mvvm.Messaging;
 using CryptoPortfolioTracker.Converters;
-using CryptoPortfolioTracker.Reporting.Services;
 using Microsoft.EntityFrameworkCore;
 
 using System.Reflection;
@@ -196,6 +195,7 @@ public partial class App : Application
         services.AddScoped<TradeJournalView>();
         services.AddScoped<SourcesView>();
         services.AddScoped<WhatsNewView>();
+        services.AddScoped<HelpView>();
         services.AddScoped<TradeAnalysisView>();
         services.AddScoped<StatisticsView>();
 
@@ -256,7 +256,6 @@ public partial class App : Application
 
         services.AddScoped<PortfolioService>();
         services.AddSingleton<IMessenger, WeakReferenceMessenger>();
-        services.AddSingleton<IQuestPdfService, QuestPdfService>();
         services.AddSingleton<ISentimentService, SentimentService>();
 
         // Sprint 1.4 — Signal engine + paper trading

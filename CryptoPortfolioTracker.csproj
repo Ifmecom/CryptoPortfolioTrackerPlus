@@ -73,7 +73,6 @@
     <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.26100.1742" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageReference Include="Polly.Core" Version="8.3.0" />
-    <PackageReference Include="QuestPDF" Version="2025.7.3" />
     <PackageReference Include="Serilog" Version="4.2.1-dev-02337" />
     <PackageReference Include="Serilog.Expressions" Version="5.1.0-dev-00186" />
     <PackageReference Include="Serilog.Extensions.Logging" Version="9.0.1-dev-02308" />
@@ -173,8 +172,6 @@
   <ItemGroup>
     <Folder Include="Fonts\" />
     <Folder Include="Preferences\" />
-    <Folder Include="Reporting\Models\" />
-    <Folder Include="Reporting\Queries\" />
     <Folder Include="Resources\" />
   </ItemGroup>
   <ItemGroup>
@@ -249,9 +246,6 @@
     <Page Update="Controls\ColumnHeaderButton.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>
-    <None Update="HelpFile_NL.rtf">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
     <Page Update="SplashScreen.xaml">
       <Generator>MSBuild:Compile</Generator>
     </Page>

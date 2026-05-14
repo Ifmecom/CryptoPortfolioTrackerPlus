@@ -27,6 +27,17 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.13 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.13", "Ingebouwde help-pagina");
+
+        AddFeature("📖", "Help & Gebruikshandleiding — volledig in de app",
+            "De helppagina is herschreven als interactieve on-page module. " +
+            "U vindt hem onderaan het navigatiemenu (vraagteken-icoon). " +
+            "De pagina bevat uitklapbare secties voor alle onderwerpen: " +
+            "portfolio-beheer, transacties, Trade Advies, Trade Journal, Statistieken, " +
+            "Box 3-belasting, instellingen, databronnen en veelgestelde vragen. " +
+            "Formules, tips en stapsgewijze instructies zijn direct beschikbaar — zonder PDF of externe browser.");
+
         // ── v1.12 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.12", "Belasting · Statistieken-filters");
 

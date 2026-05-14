@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.12
+## CryptoPortfolioTracker Plus — v1.13
 
 | | |
 |---|---|
-| **Versie** | 1.12 |
+| **Versie** | 1.13 |
 | **Datum** | Mei 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -144,7 +144,12 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 
 ### 3.2 Footer-items
 
-What's New · Instellingen · Help · Afsluiten
+| Footer-item | View / actie | Beschrijving |
+|-------------|--------------|--------------|
+| Help | `HelpView` | On-page gebruikshandleiding (uitklapbare secties, formules, FAQ) |
+| What's New | `WhatsNewView` | Versiegeschiedenis |
+| Instellingen | `SettingsView` | App-configuratie |
+| Afsluiten | — | `Environment.Exit(0)` |
 
 ### 3.3 Conditionele items
 
@@ -396,6 +401,44 @@ Box 3-calculator (zie §10).
 ### 4.13 What's New
 
 Versiehistorie van de app. Bij eerste opstart na een update toont een dialog een samenvatting.
+
+---
+
+### 4.14 Help
+
+**Doel:** On-page gebruikshandleiding — vervangt de externe PDF.
+
+**Structuur:** `HelpView` (View) + code-behind (`HelpView.xaml.cs`). Geen ViewModel nodig — statische content.
+
+**Opbouw:**
+- Header-sectie identiek aan `WhatsNewView` (hero image, goudkleurige titels)
+- `ScrollViewer` met `StackPanel` (`ContentPanel`)
+- Categorie-headers (`AddCategoryHeader`) en uitklapbare `Expander`-secties (`AddSection`)
+- Vier content-helpers:
+  - `AddParagraph` — lopende tekst
+  - `AddBullets` — ongeordende lijst met •
+  - `AddFormula` — `Consolas`-achtergrondblok voor wiskundige uitdrukkingen
+  - `AddNote` — blauwe info-box voor waarschuwingen en aanwijzingen
+
+**Secties:**
+| # | Categorie | Onderwerpen |
+|---|-----------|-------------|
+| 1 | Aan de slag | Portfolio aanmaken, coins toevoegen, transacties invoeren |
+| 2 | Portfolio & Assets | P&L-berekening, accounts, narratieven, prijsniveaus |
+| 3 | Trade Journal | Trades registreren, R-multiple |
+| 4 | Trade Advies | CombinedScore, databronnen, SL/TP/ATR, pivotdetectie |
+| 5 | Signalen & TA | 6 indicatoren, signaalregels configureren |
+| 6 | Statistieken | Pagina-overzicht, periodefilters |
+| 7 | Belasting (Box 3) | Berekenmethode, tarieven per jaar, invoervelden |
+| 8 | Instellingen | Thema/taal, Telegram, Exchange API-koppelingen |
+| 9 | Databronnen & privacy | Externe API's, lokale opslag |
+| 10 | Veelgestelde vragen | Koersen, crash, backup, MEXC-sync |
+
+**Uitbreiden:** voeg een nieuwe `AddSection(...)` toe in de juiste categorie in `HelpView.xaml.cs`.
+
+**Navigatie:** Tag `"HelpView"` in `MainPage.xaml` — laadt via `LoadView(typeof(HelpView))` als standaard-view.
+
+**Verwijderd:** externe PDF-help (`DisplayHelpFile()`), `QuestPdfService`, `IQuestPdfService`, `TestDocument`, QuestPDF NuGet-pakket.
 
 ---
 
@@ -1320,8 +1363,9 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.10 | Trade Advies: "Analyseer alles", Paper Trade-knop, KuCoin fallback |
 | v1.11 | Statistieken-pagina: P&L, win rate, taartdiagrammen, top-symbols |
 | v1.12 | Box 3 belastingcalculator (NL, 2022–2024) · Live/Paper filter · Aangepaste periode |
+| v1.13 | On-page Help-module (HelpView) · QuestPDF verwijderd |
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.12 (mei 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.13 (mei 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*

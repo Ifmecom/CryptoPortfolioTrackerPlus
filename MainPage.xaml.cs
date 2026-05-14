@@ -1,7 +1,3 @@
-using CryptoPortfolioTracker.Reporting.Services;
-using QuestPDF.Companion;
-using CryptoPortfolioTracker.Reporting.Documents;
-
 namespace CryptoPortfolioTracker;
 [ObservableObject]
 public partial class MainPage : Page //INotifyPropertyChanged
@@ -11,7 +7,6 @@ public partial class MainPage : Page //INotifyPropertyChanged
 #pragma warning restore CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
     public IGraphUpdateService _graphUpdateService;
     public IPriceUpdateService _priceUpdateService;
-    private readonly IQuestPdfService _pdfService;
     private readonly Settings _appSettings;
     private Type lastPageType;
     private NavigationViewItem lastSelectedNavigationItem;
@@ -19,7 +14,7 @@ public partial class MainPage : Page //INotifyPropertyChanged
     [ObservableProperty] public partial Visibility NavigationVisibility { get; set; }
     [ObservableProperty] public partial bool IsSettingsVisible { get; set; }
 
-    public MainPage(PortfolioService portfolioService, IGraphUpdateService graphUpdateService, IPriceUpdateService priceUpdateService, IQuestPdfService pdfService, Settings appSettings)
+    public MainPage(PortfolioService portfolioService, IGraphUpdateService graphUpdateService, IPriceUpdateService priceUpdateService, Settings appSettings)
     {
         _appSettings = appSettings;
         InitializeComponent();
@@ -28,7 +23,6 @@ public partial class MainPage : Page //INotifyPropertyChanged
 
         _graphUpdateService = graphUpdateService;
         _priceUpdateService = priceUpdateService;
-        _pdfService = pdfService;
     }
 
     private async void MainPage_Loaded(object sender, RoutedEventArgs e)
@@ -159,12 +153,6 @@ public partial class MainPage : Page //INotifyPropertyChanged
                             Environment.Exit(0);
                             break;
                         }
-                    case "Help":
-                        {
-                            DisplayHelpFile();
-                            Logger.Information("Help File Requested");
-                            break;
-                        }
                     case "WhatsNew":
                         {
                             LoadView(typeof(WhatsNewView));
@@ -217,70 +205,6 @@ public partial class MainPage : Page //INotifyPropertyChanged
         lastPageType = pageType;
         contentFrame.Content = App.Container.GetService(pageType);
     }
-
-    private async void DisplayHelpFile()
-    {
-        var loc = Localizer.Get();
-        var fileName = "HelpFile_NL.pdf";
-
-        if (string.Equals(_appSettings.AppCultureLanguage, "en-US", StringComparison.OrdinalIgnoreCase))
-        {
-            fileName = "HelpFile_EN.pdf";
-        }
-        try
-        {
-            Process.Start(new ProcessStartInfo(AppConstants.Url + fileName) { UseShellExecute = true });
-            Logger.Information("HelpFile Displayed");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning(ex, "Failed to display HelpFile");
-            await ShowMessageDialog(
-                loc.GetLocalizedString("Messages_HelpFile_FailedTitle"),
-                loc.GetLocalizedString("Messages_HelpFile_FailedMsg"),
-                loc.GetLocalizedString("Common_CloseButton"));
-        }
-    }
-
-
-    private async void DisplayTestPDF()
-    {
-        try
-        {
-            //var document = Document.Create(container =>
-            //{
-            //    container.Page(page =>
-            //    {
-            //        page.Size(PageSizes.A4);
-            //        page.Margin(2, Unit.Centimetre);
-            //        page.DefaultTextStyle(x => x.FontSize(20));
-            //        page.Header().Text("Test123").SemiBold().FontSize(36).FontColor(Colors.Blue.Medium);
-            //        page.Content().PaddingVertical(1, Unit.Centimetre).Column(x =>
-            //        {
-            //            x.Spacing(20);
-            //            x.Item().Text(Placeholders.LoremIpsum());
-            //            x.Item().Image(Placeholders.Image(200, 110));
-            //        });
-            //        page.Footer().AlignCenter().Text(x => { x.Span("Page "); x.CurrentPageNumber(); });
-            //    });
-            //});
-
-
-            //// Create document instance
-            var doc = new TestDocument("What's New");
-            doc.ShowInCompanionAsync();
-
-            ////Render & save off UI thread inside service
-            //var outputPath = Path.Combine(AppConstants.AppDataPath, "Reports", "TestDocument.pdf");
-            //await _pdfService.SaveAsync(doc, outputPath);
-            //Process.Start(new ProcessStartInfo(outputPath) { UseShellExecute = true });
-        }
-        catch (Exception ex) 
-        {
-            Debug.WriteLine(ex);
-        }
-    }
-
 
     public async Task<ContentDialogResult> ShowMessageDialog(string title, string message, string primaryButtonText = "OK", string closeButtonText = "")
     {
