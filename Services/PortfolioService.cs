@@ -398,6 +398,12 @@ namespace CryptoPortfolioTracker.Services
                 // ExchangeOrders — close-position support (v1.11)
                 await TryAddColumnAsync(db,         "ExchangeOrders", "ClosePrice", "REAL", "0");
                 await TryAddNullableColumnAsync(db, "ExchangeOrders", "ClosedAt",   "TEXT");
+                // ExchangeOrders — notes support (v1.x)
+                await TryAddColumnAsync(db,         "ExchangeOrders", "Notes",       "TEXT",    "''");
+                // ExchangeOrders — exchange-style paper trade (v1.14)
+                await TryAddColumnAsync(db,         "ExchangeOrders", "TakeProfit2", "REAL",    "0");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "Leverage",    "INTEGER", "1");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "MarketType",  "INTEGER", "0");
 
                 await db.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS SentimentReadings (
