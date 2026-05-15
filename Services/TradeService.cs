@@ -29,16 +29,18 @@ public class TradeService : ITradeService
         if (coin.Price <= 0)
             throw new ArgumentException($"Coin '{coin.Name}' has no current price — cannot place paper order.");
 
-        var entry = coin.Price;
-        var qty   = req.AmountUsdt / entry;
+        // Entry price: limit orders use the specified limit price; market orders use current price.
+        var entry = req.OrderType == OrderType.Limit && req.LimitPrice > 0
+            ? req.LimitPrice
+            : coin.Price;
 
-        var sl = req.Side == OrderSide.Buy
-            ? Math.Round(entry * (1.0 - req.StopLossPerc   / 100.0), 8)
-            : Math.Round(entry * (1.0 + req.StopLossPerc   / 100.0), 8);
+        // Effective amount including leverage for quantity calculation
+        var effectiveAmount = req.AmountUsdt * req.Leverage;
+        var qty = Math.Round(effectiveAmount / entry, 8);
 
-        var tp = req.Side == OrderSide.Buy
-            ? Math.Round(entry * (1.0 + req.TakeProfitPerc / 100.0), 8)
-            : Math.Round(entry * (1.0 - req.TakeProfitPerc / 100.0), 8);
+        // Status: limit orders wait to fill; market orders fill instantly
+        var status  = req.OrderType == OrderType.Market ? OrderStatus.Filled : OrderStatus.Pending;
+        var filledAt = req.OrderType == OrderType.Market ? (DateTime?)DateTime.UtcNow : null;
 
         var order = new ExchangeOrder
         {
@@ -46,24 +48,30 @@ public class TradeService : ITradeService
             Exchange        = req.Exchange,
             Symbol          = $"{coin.Symbol?.ToUpperInvariant()}USDT",
             Side            = req.Side,
-            Type            = OrderType.Market,
-            Qty             = Math.Round(qty, 8),
+            Type            = req.OrderType,
+            MarketType      = req.MarketType,
+            Leverage        = req.Leverage,
+            Qty             = qty,
             Entry           = entry,
-            StopLoss        = sl,
-            TakeProfit      = tp,
-            Status          = OrderStatus.Filled,          // instant fill for paper
+            StopLoss        = req.StopLossPrice,
+            TakeProfit      = req.TakeProfitPrice,
+            TakeProfit2     = req.TakeProfit2Price,
+            Status          = status,
             ExternalOrderId = $"PAPER-{Guid.NewGuid():N}",
             IsPaper         = true,
             CreatedAt       = DateTime.UtcNow,
-            FilledAt        = DateTime.UtcNow,
+            FilledAt        = filledAt,
+            Notes           = req.Notes,
         };
 
         context.ExchangeOrders.Add(order);
         await context.SaveChangesAsync();
 
         Logger.Information(
-            "TradeService: paper {Side} {Symbol} qty={Qty:F6} @ {Entry:F4}  SL={SL:F4}  TP={TP:F4}",
-            order.Side, order.Symbol, order.Qty, order.Entry, order.StopLoss, order.TakeProfit);
+            "TradeService: paper {Type} {MarketType} {Side} {Symbol} qty={Qty:F6} @ {Entry}  " +
+            "SL={SL}  TP1={TP}  TP2={TP2}  lev={Lev}×  status={Status}",
+            order.Type, order.MarketType, order.Side, order.Symbol, order.Qty, order.Entry,
+            order.StopLoss, order.TakeProfit, order.TakeProfit2, order.Leverage, order.Status);
 
         return order;
     }

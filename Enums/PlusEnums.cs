@@ -58,3 +58,10 @@ public enum MarketRegime
     Neutral,
     RiskOff
 }
+
+public enum MarketType
+{
+    Spot    = 0,
+    Futures = 1,
+    Margin  = 2,
+}

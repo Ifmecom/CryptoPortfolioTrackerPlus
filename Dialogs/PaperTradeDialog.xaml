@@ -5,90 +5,354 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
-    DefaultButton="Primary"
+    CloseButtonText="Annuleren"
     Loading="Dialog_Loading">
 
     <ContentDialog.Resources>
-        <x:Double x:Key="ContentDialogMaxWidth">460</x:Double>
+        <x:Double x:Key="ContentDialogMaxWidth">600</x:Double>
     </ContentDialog.Resources>
 
-    <Grid Width="400" RowSpacing="12">
+    <Grid Width="540" RowSpacing="10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>  <!-- 0: Coin banner          -->
+            <RowDefinition Height="Auto"/>  <!-- 1: Market type + Exch  -->
+            <RowDefinition Height="1"/>     <!-- 2: Divider             -->
+            <RowDefinition Height="Auto"/>  <!-- 3: Order type          -->
+            <RowDefinition Height="Auto"/>  <!-- 4: Limit price         -->
+            <RowDefinition Height="Auto"/>  <!-- 5: Amount + quick %    -->
+            <RowDefinition Height="Auto"/>  <!-- 6: Leverage            -->
+            <RowDefinition Height="Auto"/>  <!-- 7: SL / TP             -->
+            <RowDefinition Height="Auto"/>  <!-- 8: Summary bar         -->
+            <RowDefinition Height="Auto"/>  <!-- 9: Reasoning           -->
+            <RowDefinition Height="Auto"/>  <!-- 10: Action buttons     -->
         </Grid.RowDefinitions>
 
-        <!-- Coin info banner -->
-        <Border Grid.Row="0" Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
-                CornerRadius="6" Padding="12,8">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <TextBlock x:Name="txtSymbol" FontSize="20" FontWeight="Bold" Foreground="DarkGoldenrod"/>
-                <StackPanel VerticalAlignment="Center">
-                    <TextBlock x:Name="txtName" FontSize="13"/>
-                    <TextBlock x:Name="txtPrice" FontSize="12"
-                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+        <!-- ── 0 · Coin banner ────────────────────────────────────────────── -->
+        <Border Grid.Row="0"
+                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="14,10">
+            <Grid>
+                <StackPanel Orientation="Horizontal" Spacing="12">
+                    <TextBlock x:Name="txtSymbol"
+                               FontSize="22" FontWeight="Bold"
+                               Foreground="DarkGoldenrod"
+                               VerticalAlignment="Center"/>
+                    <StackPanel VerticalAlignment="Center" Spacing="2">
+                        <TextBlock x:Name="txtName" FontSize="13" FontWeight="SemiBold"/>
+                        <TextBlock x:Name="txtCurrentPrice" FontSize="12"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    </StackPanel>
                 </StackPanel>
+                <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center" Spacing="2">
+                    <TextBlock x:Name="txtChange" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Right"/>
+                    <TextBlock Text="24u wijziging" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Right"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── 1 · Market type + Exchange ────────────────────────────────── -->
+        <Grid Grid.Row="1">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Spot / Futures / Margin segment -->
+            <Border Grid.Column="0"
+                    BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                    BorderThickness="1" CornerRadius="6"
+                    Padding="3" HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal" Spacing="3">
+                    <RadioButton x:Name="rdSpot"    Content="Spot"    GroupName="MktType"
+                                 IsChecked="True"   Checked="MarketType_Changed" Padding="12,5"/>
+                    <RadioButton x:Name="rdFutures" Content="Futures" GroupName="MktType"
+                                 Checked="MarketType_Changed"          Padding="12,5"/>
+                    <RadioButton x:Name="rdMargin"  Content="Margin"  GroupName="MktType"
+                                 Checked="MarketType_Changed"          Padding="12,5"/>
+                </StackPanel>
+            </Border>
+
+            <!-- Exchange ComboBox -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                <TextBlock Text="Exchange" FontSize="12"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                           VerticalAlignment="Center"/>
+                <ComboBox x:Name="cmbExchange" Width="130" VerticalAlignment="Center">
+                    <ComboBoxItem Content="Bybit"   Tag="Bybit"   IsSelected="True"/>
+                    <ComboBoxItem Content="MEXC"    Tag="Mexc"/>
+                    <ComboBoxItem Content="Binance" Tag="Binance"/>
+                    <ComboBoxItem Content="KuCoin"  Tag="KuCoin"/>
+                </ComboBox>
+            </StackPanel>
+        </Grid>
+
+        <!-- ── 2 · Divider ────────────────────────────────────────────────── -->
+        <Rectangle Grid.Row="2"
+                   Fill="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                   Margin="0,2"/>
+
+        <!-- ── 3 · Order type ─────────────────────────────────────────────── -->
+        <Border Grid.Row="3"
+                BorderBrush="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                BorderThickness="1" CornerRadius="6"
+                Padding="3" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal" Spacing="3">
+                <RadioButton x:Name="rdLimit"  Content="Limit"  GroupName="OrdType"
+                             IsChecked="True"  Checked="OrderType_Changed" Padding="12,5"/>
+                <RadioButton x:Name="rdMarket" Content="Market" GroupName="OrdType"
+                             Checked="OrderType_Changed"         Padding="12,5"/>
             </StackPanel>
         </Border>
 
-        <!-- Exchange -->
-        <StackPanel Grid.Row="1" Spacing="4">
-            <TextBlock Text="Exchange" Style="{StaticResource CaptionTextBlockStyle}"/>
-            <ComboBox x:Name="cmbExchange" HorizontalAlignment="Stretch">
-                <ComboBoxItem Content="Bybit"  Tag="Bybit"  IsSelected="True"/>
-                <ComboBoxItem Content="MEXC"   Tag="Mexc"/>
-            </ComboBox>
+        <!-- ── 4 · Limit price ────────────────────────────────────────────── -->
+        <StackPanel x:Name="pnlLimitPrice" Grid.Row="4" Spacing="4">
+            <TextBlock Text="Limit prijs (USDT)"
+                       Style="{StaticResource CaptionTextBlockStyle}"/>
+            <NumberBox x:Name="nbLimitPrice"
+                       HorizontalAlignment="Stretch"
+                       Minimum="0" Maximum="10000000"
+                       SpinButtonPlacementMode="Hidden"
+                       ValueChanged="OnLimitPriceChanged"/>
         </StackPanel>
 
-        <!-- Side -->
-        <StackPanel Grid.Row="2" Spacing="4">
-            <TextBlock Text="Side" Style="{StaticResource CaptionTextBlockStyle}"/>
-            <StackPanel Orientation="Horizontal" Spacing="16">
-                <RadioButton x:Name="rdBuy"  Content="Buy (Long)"  GroupName="Side" IsChecked="True"/>
-                <RadioButton x:Name="rdSell" Content="Sell (Short)" GroupName="Side"/>
+        <!-- ── 5 · Amount + quick % ───────────────────────────────────────── -->
+        <StackPanel Grid.Row="5" Spacing="6">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <StackPanel Grid.Column="0" Spacing="4">
+                    <TextBlock Text="Bedrag (USDT)"
+                               Style="{StaticResource CaptionTextBlockStyle}"/>
+                    <NumberBox x:Name="nbAmount"
+                               Minimum="1" Maximum="10000000"
+                               Value="100"
+                               SpinButtonPlacementMode="Hidden"
+                               ValueChanged="OnAmountChanged"/>
+                </StackPanel>
+
+                <!-- Quick % buttons -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4"
+                            VerticalAlignment="Bottom" Margin="12,0,0,0">
+                    <Button Content="25%"  Tag="25"  Click="QuickPct_Click" Padding="10,6" FontSize="11"/>
+                    <Button Content="50%"  Tag="50"  Click="QuickPct_Click" Padding="10,6" FontSize="11"/>
+                    <Button Content="75%"  Tag="75"  Click="QuickPct_Click" Padding="10,6" FontSize="11"/>
+                    <Button Content="Max"  Tag="100" Click="QuickPct_Click" Padding="10,6" FontSize="11"/>
+                </StackPanel>
+            </Grid>
+
+            <!-- Available capital display -->
+            <TextBlock x:Name="txtAvailable" FontSize="11"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                       Text="Beschikbaar: 10.000 USDT (virtual)"/>
+        </StackPanel>
+
+        <!-- ── 6 · Leverage (Futures / Margin only) ──────────────────────── -->
+        <StackPanel x:Name="pnlLeverage" Grid.Row="6" Spacing="4" Visibility="Collapsed">
+            <TextBlock Text="Hefboom" Style="{StaticResource CaptionTextBlockStyle}"/>
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <ComboBox x:Name="cmbLeverage" Width="110" SelectionChanged="OnLeverageChanged">
+                    <ComboBoxItem Content="1×"   Tag="1"   IsSelected="True"/>
+                    <ComboBoxItem Content="2×"   Tag="2"/>
+                    <ComboBoxItem Content="3×"   Tag="3"/>
+                    <ComboBoxItem Content="5×"   Tag="5"/>
+                    <ComboBoxItem Content="10×"  Tag="10"/>
+                    <ComboBoxItem Content="20×"  Tag="20"/>
+                    <ComboBoxItem Content="25×"  Tag="25"/>
+                    <ComboBoxItem Content="50×"  Tag="50"/>
+                    <ComboBoxItem Content="75×"  Tag="75"/>
+                    <ComboBoxItem Content="100×" Tag="100"/>
+                </ComboBox>
+                <TextBlock x:Name="txtLeverageInfo" VerticalAlignment="Center" FontSize="12"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
             </StackPanel>
         </StackPanel>
 
-        <!-- Amount USDT -->
-        <StackPanel Grid.Row="3" Spacing="4">
-            <TextBlock Text="Amount (USDT)" Style="{StaticResource CaptionTextBlockStyle}"/>
-            <NumberBox x:Name="nbAmount"
-                       Minimum="1" Maximum="100000" Value="100"
-                       SpinButtonPlacementMode="Inline"
-                       HorizontalAlignment="Stretch"/>
-        </StackPanel>
+        <!-- ── 7 · SL / TP section ───────────────────────────────────────── -->
+        <Border Grid.Row="7"
+                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="12,10">
+            <StackPanel Spacing="10">
 
-        <!-- SL / TP -->
-        <Grid Grid.Row="4" ColumnSpacing="12">
+                <!-- Stop Loss -->
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="chkSL" Grid.Column="0"
+                              IsChecked="True" Content="Stop Loss"
+                              Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
+                              VerticalAlignment="Center"/>
+                    <NumberBox x:Name="nbSL" Grid.Column="1"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               ValueChanged="OnSLTPChanged"/>
+                    <TextBlock x:Name="txtSLPct" Grid.Column="2"
+                               VerticalAlignment="Center"
+                               FontSize="12" FontWeight="SemiBold"
+                               HorizontalAlignment="Right"/>
+                </Grid>
+
+                <!-- Take Profit 1 -->
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="chkTP1" Grid.Column="0"
+                              IsChecked="True" Content="Take Profit 1"
+                              Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
+                              VerticalAlignment="Center"/>
+                    <NumberBox x:Name="nbTP1" Grid.Column="1"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               ValueChanged="OnSLTPChanged"/>
+                    <TextBlock x:Name="txtTP1Pct" Grid.Column="2"
+                               VerticalAlignment="Center"
+                               FontSize="12" FontWeight="SemiBold"
+                               HorizontalAlignment="Right"/>
+                </Grid>
+
+                <!-- Take Profit 2 -->
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="130"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                    <CheckBox x:Name="chkTP2" Grid.Column="0"
+                              IsChecked="False" Content="Take Profit 2"
+                              Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
+                              VerticalAlignment="Center"/>
+                    <NumberBox x:Name="nbTP2" Grid.Column="1"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               IsEnabled="False"
+                               ValueChanged="OnSLTPChanged"/>
+                    <TextBlock x:Name="txtTP2Pct" Grid.Column="2"
+                               VerticalAlignment="Center"
+                               FontSize="12" FontWeight="SemiBold"
+                               HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ── 8 · Summary bar ────────────────────────────────────────────── -->
+        <Border Grid.Row="8"
+                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="0,8">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Kostprijs -->
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Kostprijs" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtCost" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="1" Width="1"
+                           Fill="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- Hoeveelheid -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Hoeveelheid" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtQty" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="3" Width="1"
+                           Fill="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- R/R ratio -->
+                <StackPanel Grid.Column="4" HorizontalAlignment="Center" Spacing="2">
+                    <TextBlock Text="R/R ratio" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtRR" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="5" Width="1"
+                           Fill="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"/>
+
+                <!-- Eff. risico -->
+                <StackPanel Grid.Column="6" HorizontalAlignment="Center" Spacing="2">
+                    <TextBlock Text="Max risico" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtMaxRisk" FontSize="13" FontWeight="SemiBold"
+                               HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── 9 · Signal reasoning ───────────────────────────────────────── -->
+        <Expander x:Name="reasoningExpander" Grid.Row="9"
+                  Header="📊  Signaal redenering"
+                  HorizontalAlignment="Stretch"
+                  Visibility="Collapsed">
+            <TextBlock x:Name="txtReasoning"
+                       FontSize="11" FontFamily="Consolas"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                       TextWrapping="Wrap" Margin="4,4,4,4"/>
+        </Expander>
+
+        <!-- ── 10 · Action buttons ────────────────────────────────────────── -->
+        <Grid Grid.Row="10" ColumnSpacing="8" Margin="0,4,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
-            <StackPanel Grid.Column="0" Spacing="4">
-                <TextBlock Text="Stop Loss %" Style="{StaticResource CaptionTextBlockStyle}"/>
-                <NumberBox x:Name="nbStopLoss"
-                           Minimum="0.1" Maximum="50" Value="5"
-                           SpinButtonPlacementMode="Inline"/>
-            </StackPanel>
-            <StackPanel Grid.Column="1" Spacing="4">
-                <TextBlock Text="Take Profit %" Style="{StaticResource CaptionTextBlockStyle}"/>
-                <NumberBox x:Name="nbTakeProfit"
-                           Minimum="0.1" Maximum="200" Value="10"
-                           SpinButtonPlacementMode="Inline"/>
-            </StackPanel>
+
+            <Button x:Name="btnLong" Grid.Column="0"
+                    Content="📈  Open Long"
+                    HorizontalAlignment="Stretch"
+                    Height="46" FontSize="15" FontWeight="SemiBold"
+                    CornerRadius="6"
+                    Click="OpenLong_Click">
+                <Button.Background>
+                    <SolidColorBrush Color="#1B5E20"/>
+                </Button.Background>
+                <Button.Foreground>
+                    <SolidColorBrush Color="White"/>
+                </Button.Foreground>
+            </Button>
+
+            <Button x:Name="btnShort" Grid.Column="1"
+                    Content="📉  Open Short"
+                    HorizontalAlignment="Stretch"
+                    Height="46" FontSize="15" FontWeight="SemiBold"
+                    CornerRadius="6"
+                    Click="OpenShort_Click">
+                <Button.Background>
+                    <SolidColorBrush Color="#B71C1C"/>
+                </Button.Background>
+                <Button.Foreground>
+                    <SolidColorBrush Color="White"/>
+                </Button.Foreground>
+            </Button>
         </Grid>
 
-        <!-- Signal reasoning (if available) -->
-        <Expander Grid.Row="5" Header="Signal reasoning" HorizontalAlignment="Stretch"
-                  Visibility="{x:Bind _hasReasoning}">
-            <TextBlock x:Name="txtReasoning"
-                       FontSize="11" FontFamily="Consolas"
-                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                       TextWrapping="Wrap"/>
-        </Expander>
     </Grid>
 </ContentDialog>

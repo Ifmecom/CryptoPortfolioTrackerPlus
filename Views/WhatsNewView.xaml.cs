@@ -27,6 +27,21 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.14 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.14", "Volledig herbouwd trade-venster");
+
+        AddFeature("🏦", "Exchange-stijl ordervenster",
+            "Het plaatsen van een paper trade is volledig herbouwd naar een echt exchange-interface. " +
+            "U kiest nu een markttype (Spot / Futures / Margin), een ordertype (Limit / Market) en exchange. " +
+            "Futures- en Margin-orders hebben een instelbare hefboom (1× t/m 100×). " +
+            "Bij een Limit-order stelt u zelf de gewenste prijs in; bij Market wordt de huidige koers gebruikt. " +
+            "SL en TP worden ingevoerd als absolute prijzen met live procentuele weergave naast elk veld. " +
+            "Een tweede take-profit niveau (TP2) is optioneel in te schakelen. " +
+            "De samenvattingsbalk toont continu de kostprijs, hoeveelheid, R/R-ratio en maximaal risico in USDT. " +
+            "Via de snelknoppen 25% / 50% / 75% / Max stelt u snel een bedrag in als percentage van uw " +
+            "virtuele handelskapitaal (10.000 USDT). " +
+            "Sluit af met de groene 'Open Long'- of rode 'Open Short'-knop.");
+
         // ── v1.13 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.13", "Ingebouwde help-pagina");
 

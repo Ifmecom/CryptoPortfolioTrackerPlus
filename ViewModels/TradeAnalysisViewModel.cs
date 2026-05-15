@@ -185,8 +185,8 @@ public partial class TradeAnalysisViewModel : BaseViewModel
 
         var dialog = new PaperTradeDialog(SelectedCoin, setup, AppSettings);
         dialog.XamlRoot = MainPage.Current?.XamlRoot;
-        var result = await App.ShowContentDialogAsync(dialog);
-        if (result != ContentDialogResult.Primary) return;
+        await App.ShowContentDialogAsync(dialog);
+        if (!dialog.Confirmed) return;
 
         var req = dialog.BuildOrderRequest();
         if (req is null) return;

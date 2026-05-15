@@ -28,5 +28,14 @@ public class ExchangeOrder
     /// <summary>Free-text note the user can attach to this trade.</summary>
     public string Notes { get; set; } = string.Empty;
 
+    /// <summary>Second take-profit target (0 = not set).</summary>
+    public double TakeProfit2 { get; set; }
+
+    /// <summary>Leverage multiplier (1 = spot / no leverage).</summary>
+    public int Leverage { get; set; } = 1;
+
+    /// <summary>Spot, Futures or Margin.</summary>
+    public MarketType MarketType { get; set; } = MarketType.Spot;
+
     public Signal? Signal { get; set; }
 }

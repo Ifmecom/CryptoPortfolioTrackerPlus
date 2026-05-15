@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.13
+## CryptoPortfolioTracker Plus — v1.14
 
 | | |
 |---|---|
-| **Versie** | 1.13 |
+| **Versie** | 1.14 |
 | **Datum** | Mei 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -70,7 +70,6 @@ Eén persoon: de eigenaar van het portfolio. Er is geen multi-user functionalite
 | Indicators | Skender.Stock.Indicators (MIT) |
 | HTTP | HttpClient (CoinGecko, Binance, KuCoin, exchange APIs) |
 | Encryptie | Windows Data Protection API (DPAPI) |
-| PDF | QuestPDF |
 
 ### 2.2 MVVM-patroon
 
@@ -237,6 +236,7 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 **Knoppen:**
 - **Refresh Analysis** — herlaadt prices + berekent alle indicatoren (skippt herlaad als recent)
 - **Evaluate Signals** — voert volledige signaal-engine uit, slaat signalen op in DB
+- **Paper Trade** (per rij) — opent `PaperTradeDialog` voor die coin
 
 **Sortering:** alle kolommen klikbaar met pijl-indicator
 
@@ -259,7 +259,8 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 - Elke rij toont: logo · naam · richting · entry · SL · TP · R/R · databron
 
 **Paper Trade vanuit advies:**
-- Bij Long/Short-signaal: knop "Paper Trade" pre-fills entry, SL%, TP%, richting
+- Bij Long/Short-signaal: knop "Paper Trade" opent de `PaperTradeDialog` met exchange-stijl interface
+- Pre-fills: entry (limit), SL/TP/TP2 als absolute USDT-prijzen, richting (Long/Short)
 - Direct opgeslagen in Trade Journal
 
 **Zie §6.5 voor de gedetailleerde berekeningen.**
@@ -276,14 +277,16 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 |-------|-------------|
 | Symbool | Handelspaar (bijv. BTCUSDT) |
 | Exchange | MEXC / Bybit |
+| Markt | Spot / Futures / Margin |
 | Kant | Long / Short |
+| Hefboom | 1× – 100× (alleen Futures/Margin) |
 | Hoeveelheid | Aantal coins |
 | Instap | Instapprijs (USDT) |
 | Huidig/Sluit | Huidige marktprijs of sluitprijs |
 | P&L (USDT) | Gerealiseerde of ongerealiseerde winst/verlies |
 | P&L % | Procentueel rendement |
 | R-Multiple | Rendement uitgedrukt in risico-eenheden |
-| SL / TP | Stop-loss en take-profit prijzen |
+| SL / TP1 / TP2 | Stop-loss en twee take-profit niveaus (absolute USDT-prijzen) |
 | Status | Pending / Filled / Closed / Cancelled |
 | Type | Paper / Live |
 | Datum | Aanmaakdatum |
@@ -299,6 +302,51 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 **Totaalregel:** som van alle gerealiseerde P&L voor de actieve filter
 
 **Zie §6.1 voor P&L- en R-multiple-berekeningen.**
+
+---
+
+#### 4.7.1 PaperTradeDialog
+
+Exchange-stijl orderformulier (540 px breed, `ContentDialog`).
+
+**Rij-indeling:**
+
+| Sectie | Inhoud |
+|--------|--------|
+| Coin banner | Symbool · naam · actuele prijs · 24h-wijziging |
+| Markttype | RadioButtons: Spot / Futures / Margin + Exchange ComboBox |
+| Ordertype | RadioButtons: Limit / Market |
+| Limietprijs | `NumberBox` (verborgen bij Market-order) |
+| Bedrag | `NumberBox` (USDT) + snelknoppen 25 % / 50 % / 75 % / Max op virtueel kapitaal (€ 10 000) |
+| Hefboom | ComboBox 1× – 100× (verborgen bij Spot) |
+| SL / TP1 / TP2 | `CheckBox` + `NumberBox` (absolute USDT-prijzen) + live %-label |
+| Samenvatting | Kostprijs · Hoeveelheid · R/R-ratio · Max risico |
+| Signaalreden | `Expander` met reasoning-tekst (uit Trade Advies of Signaalengine) |
+| Actieknoppen | 📈 **Open Long** (groen) · 📉 **Open Short** (rood) |
+
+**Gedrag:**
+- `Recalculate()` herberekent realtime bij elke invoerwijziging
+- `OrderType_Changed` toont/verbergt limietprijs-rij
+- `MarketType_Changed` toont/verbergt hefboom-rij
+- Actieklant stelt `Confirmed = true` en `SelectedSide` in; caller controleert `dialog.Confirmed`
+- `BuildOrderRequest()` levert een `OrderRequest`-record terug aan de ViewModel
+
+**OrderRequest (record):**
+
+```csharp
+public record OrderRequest(
+    ExchangeKind Exchange,
+    OrderSide    Side,
+    MarketType   MarketType,
+    OrderType    OrderType,
+    double       AmountUsdt,
+    double       LimitPrice,       // 0 = market order
+    double       StopLossPrice,    // 0 = geen stop
+    double       TakeProfitPrice,  // 0 = geen take-profit
+    double       TakeProfit2Price, // 0 = geen tweede take-profit
+    int          Leverage,         // 1 = geen hefboom
+    string       Notes = "");
+```
 
 ---
 
@@ -542,10 +590,13 @@ Handelsorder (paper of live).
 | `Symbol` | string | Handelspaar (bijv. "BTCUSDT") |
 | `Side` | OrderSide | Buy / Sell |
 | `Type` | OrderType | Market / Limit / StopLimit |
-| `Qty` | double | Hoeveelheid |
-| `Entry` | double | Instapprijs |
-| `StopLoss` | double | Stop-loss prijs |
-| `TakeProfit` | double | Take-profit prijs |
+| `MarketType` | MarketType | Spot / Futures / Margin (default Spot) |
+| `Leverage` | int | Hefboomfactor 1–100 (default 1) |
+| `Qty` | double | Hoeveelheid (gecorrigeerd voor hefboom) |
+| `Entry` | double | Instapprijs (absolute USDT) |
+| `StopLoss` | double | Stop-loss prijs (absolute USDT, 0 = geen) |
+| `TakeProfit` | double | Take-profit 1 prijs (absolute USDT, 0 = geen) |
+| `TakeProfit2` | double | Take-profit 2 prijs (absolute USDT, 0 = geen) |
 | `Status` | OrderStatus | Pending / Filled / Closed / Cancelled |
 | `IsPaper` | bool | Paper trade of live |
 | `CreatedAt` | DateTime | Aanmaaktijdstip |
@@ -1338,6 +1389,7 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | `OrderType` | Market · Limit · StopLimit |
 | `OrderStatus` | Pending · Filled · PartiallyFilled · Cancelled · Rejected · Closed |
 | `MarketRegime` | RiskOn · Neutral · RiskOff |
+| `MarketType` | Spot · Futures · Margin |
 | `SentimentSource` | Reddit · Telegram · Rss · CryptoPanic |
 | `TransactionKind` | Deposit · Withdraw · Buy · Sell · Convert · Transfer · Fee |
 | `MutationDirection` | In · Out · NotSet |
@@ -1364,8 +1416,9 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.11 | Statistieken-pagina: P&L, win rate, taartdiagrammen, top-symbols |
 | v1.12 | Box 3 belastingcalculator (NL, 2022–2024) · Live/Paper filter · Aangepaste periode |
 | v1.13 | On-page Help-module (HelpView) · QuestPDF verwijderd |
+| v1.14 | Exchange-stijl PaperTradeDialog: Spot/Futures/Margin · Limit/Market · hefboom · SL/TP2 · R/R-samenvatting |
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.13 (mei 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.14 (mei 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*

@@ -176,9 +176,9 @@ public partial class SignalsViewModel : BaseViewModel
         // Show dialog
         var dialog = new PaperTradeDialog(row, AppSettings);
         dialog.XamlRoot = MainPage.Current?.XamlRoot;
-        var result = await App.ShowContentDialogAsync(dialog);
+        await App.ShowContentDialogAsync(dialog);
 
-        if (result != ContentDialogResult.Primary) return;
+        if (!dialog.Confirmed) return;
 
         var req = dialog.BuildOrderRequest();
         if (req is null) return;
