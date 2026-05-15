@@ -1,3 +1,4 @@
+using CryptoPortfolioTracker.Dialogs;
 using CryptoPortfolioTracker.ViewModels;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -38,6 +39,21 @@ public sealed partial class TradeJournalView : Page
     {
         if (sender is Button btn && btn.Tag is TradeJournalRow row)
             await _viewModel.CloseOrderCommand.ExecuteAsync(row);
+    }
+
+    private async void EditTrade_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button btn || btn.Tag is not TradeJournalRow row) return;
+
+        var dialog = new EditTradeDialog(row.Order, row.CurrentPrice, _viewModel.Settings)
+        {
+            XamlRoot = XamlRoot,
+        };
+
+        await App.ShowContentDialogAsync(dialog);
+        if (!dialog.Confirmed) return;
+
+        await _viewModel.SaveTradeEditsAsync(row, dialog.NewStopLoss, dialog.NewTakeProfit, dialog.NewTakeProfit2);
     }
 
     private async void EditNote_Click(object sender, RoutedEventArgs e)

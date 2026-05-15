@@ -27,6 +27,40 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.17 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.17", "Lopende trades aanpassen");
+
+        AddFeature("✏️", "SL / TP aanpassen vanuit het Trade Journal",
+            "Via het goudkleurige potlood-icoon naast elke open papierpositie opent u het aanpas-venster. " +
+            "Daarin ziet u in één oogopslag het symbool, de richting (Long/Short), de instapprijs, " +
+            "de huidige koers en de ongerealiseerde winst/verlies. " +
+            "Gebruik de snelknoppen Breakeven, ½R vrij en +1R om de stop-loss met één klik naar een " +
+            "risicoveilig niveau te verplaatsen. " +
+            "De samenvattingsbalk toont live de nieuwe R/R-ratio, het maximale risico in USDT en de " +
+            "procentuele afstand van de stop-loss ten opzichte van de instapprijs. " +
+            "Bevestig met 'Wijzigingen opslaan' — de journaalrij wordt direct bijgewerkt.");
+
+        // ── v1.16 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.16", "Automatisch sluiten bij TP / SL");
+
+        AddFeature("⚡", "Auto-close bij TP en SL bereikt",
+            "Het Trade Journal controleert bij elke vernieuwopdracht of de huidige koers " +
+            "een ingesteld TP- of SL-niveau heeft geraakt. " +
+            "Wordt een niveau overschreden, dan sluit de trade automatisch op de exacte TP/SL-prijs " +
+            "en verschijnt er een melding bovenaan de lijst. " +
+            "Stop-loss heeft prioriteit boven take-profit. " +
+            "Als TP2 én TP1 beide zijn geraakt, sluit de trade op TP2 (het betere resultaat). " +
+            "De reden wordt automatisch als notitie bij de trade opgeslagen.");
+
+        // ── v1.15 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.15", "Gedeeltelijk sluiten bij TP");
+
+        AddFeature("📐", "TP-sluitpercentage instellen (25 / 50 / 75 / 100 %)",
+            "Bij het plaatsen van een paper trade kunt u per take-profit niveau aangeven welk " +
+            "percentage van de positie u daar wilt sluiten. " +
+            "Gebruik de snelknoppen 25% / 50% / 75% / 100% of stel een exacte waarde in via de slider. " +
+            "Het gekozen percentage wordt opgeslagen met de order en zichtbaar bij het beheren van de trade.");
+
         // ── v1.14 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.14", "Volledig herbouwd trade-venster");
 

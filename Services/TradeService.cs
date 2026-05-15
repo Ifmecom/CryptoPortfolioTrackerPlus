@@ -259,4 +259,22 @@ public class TradeService : ITradeService
         await context.SaveChangesAsync();
         Logger.Information("Order #{Id} notes updated", orderId);
     }
+
+    public async Task UpdateOrderLevelsAsync(int orderId, double stopLoss, double takeProfit, double takeProfit2)
+    {
+        var context = _portfolioService.Context;
+        if (context is null) return;
+
+        var order = await context.ExchangeOrders.FindAsync(orderId);
+        if (order is null) return;
+
+        order.StopLoss    = stopLoss;
+        order.TakeProfit  = takeProfit;
+        order.TakeProfit2 = takeProfit2;
+        await context.SaveChangesAsync();
+
+        Logger.Information(
+            "TradeService: order #{Id} levels updated — SL={SL}  TP1={TP1}  TP2={TP2}",
+            orderId, stopLoss, takeProfit, takeProfit2);
+    }
 }

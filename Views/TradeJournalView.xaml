@@ -147,7 +147,8 @@
                                     <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
                                     <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
                                     <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
-                                    <ColumnDefinition Width="36"/>   <!-- 16 Close position -->
+                                    <ColumnDefinition Width="36"/>   <!-- 16 Edit trade levels -->
+                                    <ColumnDefinition Width="36"/>   <!-- 17 Close position -->
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0"  Text="#"
@@ -225,7 +226,8 @@
                                         <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
                                         <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
                                         <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
-                                        <ColumnDefinition Width="36"/>   <!-- 16 Close position -->
+                                        <ColumnDefinition Width="36"/>   <!-- 16 Edit trade levels -->
+                                        <ColumnDefinition Width="36"/>   <!-- 17 Close position -->
                                     </Grid.ColumnDefinitions>
 
                                     <!-- ID -->
@@ -322,8 +324,19 @@
                                         <FontIcon Glyph="&#xE711;" FontSize="11"/>
                                     </Button>
 
-                                    <!-- Close button (only for open filled paper positions) -->
+                                    <!-- Edit trade levels (SL / TP) — only for open paper positions -->
                                     <Button Grid.Column="16"
+                                            Visibility="{x:Bind converters:Functions.TrueToVisible(IsEditable)}"
+                                            VerticalAlignment="Center" Padding="4,3"
+                                            Background="#B8860B" Foreground="White"
+                                            ToolTipService.ToolTip="SL / TP aanpassen"
+                                            Tag="{x:Bind}"
+                                            Click="EditTrade_Click">
+                                        <FontIcon Glyph="&#xE8D6;" FontSize="11"/>
+                                    </Button>
+
+                                    <!-- Close button (only for open filled paper positions) -->
+                                    <Button Grid.Column="17"
                                             Visibility="{x:Bind converters:Functions.TrueToVisible(IsCloseable)}"
                                             VerticalAlignment="Center" Padding="4,3"
                                             Background="#CC3B1E" Foreground="White"

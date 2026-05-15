@@ -36,6 +36,9 @@ public partial class TradeJournalViewModel : BaseViewModel
     // Skip full reload on re-navigation; manual Vernieuwen still forces a reload.
     private bool _isDataLoaded;
 
+    /// <summary>Exposed so views can forward settings to dialogs they construct.</summary>
+    public Settings Settings => AppSettings;
+
     public TradeJournalViewModel(PortfolioService portfolioService, ITradeService tradeService, Settings appSettings)
         : base(appSettings)
     {
@@ -198,6 +201,25 @@ public partial class TradeJournalViewModel : BaseViewModel
     }
 
     // -----------------------------------------------------------------------
+    // Trade level editing (called from code-behind after dialog confirmed)
+    // -----------------------------------------------------------------------
+
+    public async Task SaveTradeEditsAsync(TradeJournalRow row, double sl, double tp1, double tp2)
+    {
+        try
+        {
+            await _tradeService.UpdateOrderLevelsAsync(row.Id, sl, tp1, tp2);
+            await LoadRowsAsync();
+            StatusMessage = $"Trade {row.Symbol} bijgewerkt — SL/TP aangepast.";
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "SaveTradeEdits failed for order #{Id}", row.Id);
+            StatusMessage = $"Aanpassen mislukt: {ex.Message}";
+        }
+    }
+
+    // -----------------------------------------------------------------------
     // Data loading
     // -----------------------------------------------------------------------
 
@@ -328,6 +350,9 @@ public class TradeJournalRow
 
     /// <summary>True for open paper positions that the user can close at current price.</summary>
     public bool IsCloseable => Status == "Filled" && Order.IsPaper && CurrentPrice > 0;
+
+    /// <summary>True for open or pending paper trades whose SL/TP can be edited.</summary>
+    public bool IsEditable => Status is "Filled" or "Pending" && Order.IsPaper;
 
     // PnL colour: green / red / grey — stored once in constructor, never reallocated per render.
     public Microsoft.UI.Xaml.Media.SolidColorBrush PnlBrush { get; }

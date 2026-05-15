@@ -1,0 +1,273 @@
+<ContentDialog
+    x:Class="CryptoPortfolioTracker.Dialogs.EditTradeDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="520"
+    CloseButtonText="Annuleren"
+    Loading="Dialog_Loading">
+
+    <ContentDialog.Resources>
+        <!-- Label style for section headers -->
+        <Style x:Key="SectionLabelStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="10"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="DarkGoldenrod"/>
+            <Setter Property="CharacterSpacing" Value="80"/>
+        </Style>
+        <!-- Current value style (dim) -->
+        <Style x:Key="CurrentValStyle" TargetType="TextBlock">
+            <Setter Property="FontSize"   Value="11"/>
+            <Setter Property="FontFamily" Value="Consolas"/>
+            <Setter Property="Foreground" Value="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+    </ContentDialog.Resources>
+
+    <StackPanel Spacing="0" Width="476">
+
+        <!-- ── Banner ─────────────────────────────────────────────────────── -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="8,8,0,0" Padding="16,12" Margin="0,0,0,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: symbol + entry -->
+                <StackPanel Grid.Column="0" Spacing="3">
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="txtSymbol"
+                                   FontSize="22" FontWeight="Bold"/>
+                        <Border x:Name="bdgSide" CornerRadius="4" Padding="8,3"
+                                VerticalAlignment="Center">
+                            <TextBlock x:Name="txtSide" FontSize="11" FontWeight="SemiBold"/>
+                        </Border>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="16">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="Entry"
+                                       Style="{StaticResource CurrentValStyle}"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock x:Name="txtEntry" Style="{StaticResource CurrentValStyle}"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Text="Huidig"
+                                       Style="{StaticResource CurrentValStyle}"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <TextBlock x:Name="txtCurrent" Style="{StaticResource CurrentValStyle}"
+                                       FontWeight="SemiBold"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Right: P&L -->
+                <StackPanel Grid.Column="1" HorizontalAlignment="Right" Spacing="2">
+                    <TextBlock x:Name="txtPnl"
+                               FontSize="18" FontWeight="Bold" HorizontalAlignment="Right"/>
+                    <TextBlock x:Name="txtPnlPct"
+                               FontSize="12" HorizontalAlignment="Right"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── STOP LOSS ──────────────────────────────────────────────────── -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="14,10" Margin="0,0,0,8">
+            <StackPanel Spacing="8">
+
+                <!-- Header row -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="STOP LOSS" Style="{StaticResource SectionLabelStyle}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Huidig:" Style="{StaticResource CurrentValStyle}"/>
+                        <TextBlock x:Name="txtCurrentSL" Style="{StaticResource CurrentValStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock x:Name="txtCurrentSLPct"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="IndianRed" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+
+                <!-- Preset quick buttons -->
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <TextBlock Text="Snel:" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               Margin="0,0,4,0"/>
+                    <Button x:Name="btnBreakeven" Content="⚡ Breakeven"
+                            Click="Preset_Click" Tag="breakeven"
+                            ToolTipService.ToolTip="SL verplaatsen naar instapprijs — trade is risicovrij"
+                            Padding="10,5" FontSize="11"/>
+                    <Button x:Name="btnHalfR" Content="½R vrij"
+                            Click="Preset_Click" Tag="halfr"
+                            ToolTipService.ToolTip="SL verplaatsen naar Entry + ½ × initieel risico"
+                            Padding="10,5" FontSize="11"/>
+                    <Button x:Name="btnOneR" Content="+1R"
+                            Click="Preset_Click" Tag="oner"
+                            ToolTipService.ToolTip="SL verplaatsen naar Entry + 1 × initieel risico"
+                            Padding="10,5" FontSize="11"/>
+                </StackPanel>
+
+                <!-- Input row -->
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+                    <NumberBox x:Name="nbSL"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               PlaceholderText="0 = geen stop loss"
+                               ValueChanged="OnValueChanged"/>
+                    <TextBlock x:Name="txtNewSLPct" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="13"
+                               FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ── TAKE PROFIT 1 ──────────────────────────────────────────────── -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="14,10" Margin="0,0,0,8">
+            <StackPanel Spacing="8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="TAKE PROFIT 1" Style="{StaticResource SectionLabelStyle}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Huidig:" Style="{StaticResource CurrentValStyle}"/>
+                        <TextBlock x:Name="txtCurrentTP1" Style="{StaticResource CurrentValStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock x:Name="txtCurrentTP1Pct"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="MediumSeaGreen" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+                    <NumberBox x:Name="nbTP1"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               PlaceholderText="0 = geen take profit"
+                               ValueChanged="OnValueChanged"/>
+                    <TextBlock x:Name="txtNewTP1Pct" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="13"
+                               FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ── TAKE PROFIT 2 ──────────────────────────────────────────────── -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="14,10" Margin="0,0,0,12">
+            <StackPanel Spacing="8">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Text="TAKE PROFIT 2" Style="{StaticResource SectionLabelStyle}"
+                               VerticalAlignment="Center"/>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Huidig:" Style="{StaticResource CurrentValStyle}"/>
+                        <TextBlock x:Name="txtCurrentTP2" Style="{StaticResource CurrentValStyle}"
+                                   FontWeight="SemiBold"/>
+                        <TextBlock x:Name="txtCurrentTP2Pct"
+                                   FontSize="11" FontWeight="SemiBold"
+                                   Foreground="MediumSeaGreen" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Grid>
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="80"/>
+                    </Grid.ColumnDefinitions>
+                    <NumberBox x:Name="nbTP2"
+                               Minimum="0" Maximum="10000000"
+                               SpinButtonPlacementMode="Hidden"
+                               PlaceholderText="0 = geen tweede take profit"
+                               ValueChanged="OnValueChanged"/>
+                    <TextBlock x:Name="txtNewTP2Pct" Grid.Column="1"
+                               VerticalAlignment="Center" FontSize="13"
+                               FontWeight="SemiBold" HorizontalAlignment="Right"/>
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <!-- ── Summary bar ────────────────────────────────────────────────── -->
+        <Border Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                CornerRadius="6" Padding="0,10" Margin="0,0,0,14">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="1"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- R/R -->
+                <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Nieuw R/R" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtRR" Text="—" FontSize="14" FontWeight="SemiBold"
+                               FontFamily="Consolas" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="1"
+                           Fill="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                           Width="1" Margin="0,4"/>
+
+                <!-- Max risico -->
+                <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="3">
+                    <TextBlock Text="Max risico" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtMaxRisk" Text="—" FontSize="14" FontWeight="SemiBold"
+                               FontFamily="Consolas" HorizontalAlignment="Center"/>
+                </StackPanel>
+
+                <Rectangle Grid.Column="3"
+                           Fill="{ThemeResource SystemControlForegroundBaseMediumLowBrush}"
+                           Width="1" Margin="0,4"/>
+
+                <!-- SL afstand -->
+                <StackPanel Grid.Column="4" HorizontalAlignment="Center" Spacing="3">
+                    <TextBlock Text="SL afstand" FontSize="10"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                               HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="txtSlDistance" Text="—" FontSize="14" FontWeight="SemiBold"
+                               FontFamily="Consolas" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ── Opslaan button ──────────────────────────────────────────────── -->
+        <Button x:Name="btnSave"
+                HorizontalAlignment="Stretch"
+                Click="Save_Click"
+                Background="#1E7E34" Foreground="White"
+                Padding="0,12" FontSize="14" FontWeight="SemiBold"
+                CornerRadius="6">
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <FontIcon Glyph="&#xE74E;" FontSize="14"/>
+                <TextBlock Text="Wijzigingen opslaan" VerticalAlignment="Center"/>
+            </StackPanel>
+        </Button>
+
+    </StackPanel>
+</ContentDialog>
