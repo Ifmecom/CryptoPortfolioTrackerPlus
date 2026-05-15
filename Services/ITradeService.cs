@@ -19,6 +19,13 @@ public interface ITradeService
     /// <summary>Close all open paper positions at their current market prices.</summary>
     Task<int> CloseAllPaperAsync(Dictionary<string, double> priceMap);
 
+    /// <summary>
+    /// Check all Filled paper orders against the provided price map and auto-close
+    /// those whose TP or SL level has been reached. Returns (closed, reasons) pairs.
+    /// </summary>
+    Task<List<(int OrderId, string Symbol, string Reason)>> AutoCloseTriggeredAsync(
+        Dictionary<string, double> priceMap);
+
     /// <summary>Sync live fill statuses from exchange. (Sprint 2)</summary>
     Task SyncFillsAsync();
 

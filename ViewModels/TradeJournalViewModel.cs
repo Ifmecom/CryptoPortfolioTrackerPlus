@@ -240,6 +240,20 @@ public partial class TradeJournalViewModel : BaseViewModel
 
         _lastPriceMap = priceMap;   // keep for Kill All
 
+        // ── Auto-close any orders whose TP/SL has been hit ──────────────────
+        var triggered = await _tradeService.AutoCloseTriggeredAsync(priceMap);
+        if (triggered.Count > 0)
+        {
+            // Reload orders so the closed ones appear with correct status
+            orders = await query
+                .OrderByDescending(o => o.CreatedAt)
+                .Take(500)
+                .ToListAsync();
+
+            var autoMsg = string.Join(", ", triggered.Select(t => $"{t.Symbol} {t.Reason}"));
+            StatusMessage = $"⚡ Auto-gesloten: {autoMsg}";
+        }
+
         Rows = new ObservableCollection<TradeJournalRow>(
             orders.Select(o => new TradeJournalRow(o, priceMap)));
 

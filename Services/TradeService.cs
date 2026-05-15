@@ -161,6 +161,92 @@ public class TradeService : ITradeService
 
     public Task SyncFillsAsync() => Task.CompletedTask; // Sprint 2
 
+    // -----------------------------------------------------------------------
+    // Automatic TP / SL monitoring
+    // -----------------------------------------------------------------------
+
+    public async Task<List<(int OrderId, string Symbol, string Reason)>> AutoCloseTriggeredAsync(
+        Dictionary<string, double> priceMap)
+    {
+        var context = _portfolioService.Context;
+        if (context is null) return new();
+
+        var openOrders = await context.ExchangeOrders
+            .Where(o => o.IsPaper && o.Status == OrderStatus.Filled)
+            .ToListAsync();
+
+        var closed = new List<(int, string, string)>();
+
+        foreach (var order in openOrders)
+        {
+            var baseSymbol = order.Symbol.Replace("USDT", "").ToUpperInvariant();
+            if (!priceMap.TryGetValue(baseSymbol, out var price) || price <= 0) continue;
+
+            bool isLong = order.Side == OrderSide.Buy;
+            string? reason = null;
+            double  closeAt = 0;
+
+            // ── Check Stop Loss (priority over TP) ──────────────────────────
+            if (order.StopLoss > 0)
+            {
+                bool slHit = isLong ? price <= order.StopLoss : price >= order.StopLoss;
+                if (slHit)
+                {
+                    reason  = $"🛑 SL geraakt @ {order.StopLoss:#,0.########}";
+                    closeAt = order.StopLoss;
+                }
+            }
+
+            // ── Check TP2 first (if price already passed TP1 as well) ───────
+            if (reason is null && order.TakeProfit2 > 0)
+            {
+                bool tp2Hit = isLong ? price >= order.TakeProfit2 : price <= order.TakeProfit2;
+                if (tp2Hit)
+                {
+                    reason  = $"🎯 TP2 geraakt @ {order.TakeProfit2:#,0.########}";
+                    closeAt = order.TakeProfit2;
+                }
+            }
+
+            // ── Check TP1 ───────────────────────────────────────────────────
+            if (reason is null && order.TakeProfit > 0)
+            {
+                bool tp1Hit = isLong ? price >= order.TakeProfit : price <= order.TakeProfit;
+                if (tp1Hit)
+                {
+                    reason  = $"🎯 TP1 geraakt @ {order.TakeProfit:#,0.########}";
+                    closeAt = order.TakeProfit;
+                }
+            }
+
+            if (reason is null) continue;
+
+            // Close the order at the TP/SL price
+            order.Status     = OrderStatus.Closed;
+            order.ClosePrice = closeAt;
+            order.ClosedAt   = DateTime.UtcNow;
+            // Prepend auto-close reason to notes
+            order.Notes = string.IsNullOrWhiteSpace(order.Notes)
+                ? $"[Auto] {reason}"
+                : $"[Auto] {reason} | {order.Notes}";
+
+            closed.Add((order.Id, order.Symbol, reason));
+
+            double pnl = order.Side == OrderSide.Buy
+                ? Math.Round((closeAt - order.Entry) * order.Qty, 2)
+                : Math.Round((order.Entry - closeAt) * order.Qty, 2);
+
+            Logger.Information(
+                "TradeService AUTO-CLOSE: #{Id} {Symbol} {Reason} PnL={Pnl:+0.00;-0.00} USDT",
+                order.Id, order.Symbol, reason, pnl);
+        }
+
+        if (closed.Count > 0)
+            await context.SaveChangesAsync();
+
+        return closed;
+    }
+
     public async Task UpdateNotesAsync(int orderId, string notes)
     {
         var context = _portfolioService.Context;
