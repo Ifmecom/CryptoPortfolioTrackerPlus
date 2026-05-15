@@ -18,6 +18,10 @@ public sealed partial class PaperTradeDialog : ContentDialog
     private bool    _initialising = true;           // suppress recalc during setup
     private const double VirtualCapital = 10_000.0; // simulated USDT balance
 
+    // TP close percentages (% of total position to close at each TP level)
+    private double _tp1ClosePct = 50.0;
+    private double _tp2ClosePct = 50.0;
+
     // ── Public result ────────────────────────────────────────────────────────
     /// <summary>True when the user clicked Open Long or Open Short (not Annuleren).</summary>
     public bool      Confirmed    { get; private set; }
@@ -92,6 +96,13 @@ public sealed partial class PaperTradeDialog : ContentDialog
         chkSL.IsChecked   = true;
         chkTP1.IsChecked  = true;
         chkTP2.IsChecked  = false;
+
+        // ── TP close-% defaults ──────────────────────────────────────────────
+        _tp1ClosePct = 50.0;
+        _tp2ClosePct = 50.0;
+        sldTP1Close.Value = _tp1ClosePct;
+        sldTP2Close.Value = _tp2ClosePct;
+        UpdateTpClosePctLabels();
 
         // ── Coin banner ──────────────────────────────────────────────────────
         txtSymbol.Text       = $"{_symbolBase}/USDT";
@@ -203,6 +214,11 @@ public sealed partial class PaperTradeDialog : ContentDialog
         nbSL.IsEnabled  = chkSL.IsChecked  == true;
         nbTP1.IsEnabled = chkTP1.IsChecked == true;
         nbTP2.IsEnabled = chkTP2.IsChecked == true;
+
+        // Show/hide close-% panels
+        pnlTP1Close.Visibility = chkTP1.IsChecked == true ? Visibility.Visible   : Visibility.Collapsed;
+        pnlTP2Close.Visibility = chkTP2.IsChecked == true ? Visibility.Visible   : Visibility.Collapsed;
+
         Recalculate();
     }
 
@@ -210,6 +226,69 @@ public sealed partial class PaperTradeDialog : ContentDialog
     {
         if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int pct))
             nbAmount.Value = Math.Round(VirtualCapital * pct / 100.0, 2);
+    }
+
+    // ── TP1 close-% ─────────────────────────────────────────────────────────
+
+    private void TP1ClosePct_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && double.TryParse(btn.Tag?.ToString(), out double pct))
+        {
+            _tp1ClosePct      = pct;
+            sldTP1Close.Value = pct;
+            UpdateTpClosePctLabels();
+        }
+    }
+
+    private void OnTP1CloseSlider(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        _tp1ClosePct = Math.Round(e.NewValue);
+        UpdateTpClosePctLabels();
+    }
+
+    // ── TP2 close-% ─────────────────────────────────────────────────────────
+
+    private void TP2ClosePct_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button btn && double.TryParse(btn.Tag?.ToString(), out double pct))
+        {
+            _tp2ClosePct      = pct;
+            sldTP2Close.Value = pct;
+            UpdateTpClosePctLabels();
+        }
+    }
+
+    private void OnTP2CloseSlider(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        _tp2ClosePct = Math.Round(e.NewValue);
+        UpdateTpClosePctLabels();
+    }
+
+    // ── Shared: update labels + highlight active quick-button ────────────────
+
+    private void UpdateTpClosePctLabels()
+    {
+        txtTP1ClosePct.Text = $"{_tp1ClosePct:0}%";
+        txtTP2ClosePct.Text = $"{_tp2ClosePct:0}%";
+
+        HighlightClosePctButtons(
+            btnTP1_25, btnTP1_50, btnTP1_75, btnTP1_100, _tp1ClosePct);
+        HighlightClosePctButtons(
+            btnTP2_25, btnTP2_50, btnTP2_75, btnTP2_100, _tp2ClosePct);
+    }
+
+    private static void HighlightClosePctButtons(Button b25, Button b50, Button b75, Button b100, double val)
+    {
+        b25.Style  = val == 25  ? null : null;   // keep default style; use Opacity to signal active
+        b50.Style  = null;
+        b75.Style  = null;
+        b100.Style = null;
+
+        // Dim inactive buttons, full opacity for the matching one
+        b25.Opacity  = val == 25  ? 1.0 : 0.55;
+        b50.Opacity  = val == 50  ? 1.0 : 0.55;
+        b75.Opacity  = val == 75  ? 1.0 : 0.55;
+        b100.Opacity = val == 100 ? 1.0 : 0.55;
     }
 
     // ────────────────────────────────────────────────────────────────────────
@@ -338,7 +417,9 @@ public sealed partial class PaperTradeDialog : ContentDialog
 
         return new OrderRequest(
             exchange, SelectedSide, marketType, orderType,
-            amount, limitPrice, slPrice, tp1Price, tp2Price, leverage);
+            amount, limitPrice, slPrice, tp1Price, tp2Price, leverage,
+            Tp1ClosePct: tp1Price > 0 ? _tp1ClosePct : 100,
+            Tp2ClosePct: tp2Price > 0 ? _tp2ClosePct : 100);
     }
 
     // ────────────────────────────────────────────────────────────────────────

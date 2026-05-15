@@ -401,9 +401,12 @@ namespace CryptoPortfolioTracker.Services
                 // ExchangeOrders — notes support (v1.x)
                 await TryAddColumnAsync(db,         "ExchangeOrders", "Notes",       "TEXT",    "''");
                 // ExchangeOrders — exchange-style paper trade (v1.14)
-                await TryAddColumnAsync(db,         "ExchangeOrders", "TakeProfit2", "REAL",    "0");
-                await TryAddColumnAsync(db,         "ExchangeOrders", "Leverage",    "INTEGER", "1");
-                await TryAddColumnAsync(db,         "ExchangeOrders", "MarketType",  "INTEGER", "0");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "TakeProfit2",  "REAL",    "0");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "Leverage",     "INTEGER", "1");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "MarketType",   "INTEGER", "0");
+                // ExchangeOrders — TP partial close % (v1.15)
+                await TryAddColumnAsync(db,         "ExchangeOrders", "Tp1ClosePct",  "REAL",    "100");
+                await TryAddColumnAsync(db,         "ExchangeOrders", "Tp2ClosePct",  "REAL",    "100");
 
                 await db.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS SentimentReadings (

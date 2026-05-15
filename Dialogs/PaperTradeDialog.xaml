@@ -201,47 +201,116 @@
                 </Grid>
 
                 <!-- Take Profit 1 -->
-                <Grid ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="130"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="70"/>
-                    </Grid.ColumnDefinitions>
-                    <CheckBox x:Name="chkTP1" Grid.Column="0"
-                              Content="Take Profit 1"
-                              Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
-                              VerticalAlignment="Center"/>
-                    <NumberBox x:Name="nbTP1" Grid.Column="1"
-                               Minimum="0" Maximum="10000000"
-                               SpinButtonPlacementMode="Hidden"
-                               ValueChanged="OnSLTPChanged"/>
-                    <TextBlock x:Name="txtTP1Pct" Grid.Column="2"
-                               VerticalAlignment="Center"
-                               FontSize="12" FontWeight="SemiBold"
-                               HorizontalAlignment="Right"/>
-                </Grid>
+                <StackPanel Spacing="6">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkTP1" Grid.Column="0"
+                                  Content="Take Profit 1"
+                                  Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
+                                  VerticalAlignment="Center"/>
+                        <NumberBox x:Name="nbTP1" Grid.Column="1"
+                                   Minimum="0" Maximum="10000000"
+                                   SpinButtonPlacementMode="Hidden"
+                                   ValueChanged="OnSLTPChanged"/>
+                        <TextBlock x:Name="txtTP1Pct" Grid.Column="2"
+                                   VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+
+                    <!-- TP1 close-percentage -->
+                    <StackPanel x:Name="pnlTP1Close" Spacing="4" Margin="4,0,0,2">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="46"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="% sluiten"
+                                       FontSize="11" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,10,0"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                <Button x:Name="btnTP1_25"  Content="25%"  Tag="25"
+                                        Click="TP1ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP1_50"  Content="50%"  Tag="50"
+                                        Click="TP1ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP1_75"  Content="75%"  Tag="75"
+                                        Click="TP1ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP1_100" Content="100%" Tag="100"
+                                        Click="TP1ClosePct_Click" Padding="8,4" FontSize="11"/>
+                            </StackPanel>
+                            <TextBlock x:Name="txtTP1ClosePct" Grid.Column="2"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Slider x:Name="sldTP1Close"
+                                Minimum="1" Maximum="100" Value="50"
+                                StepFrequency="1"
+                                ValueChanged="OnTP1CloseSlider"/>
+                    </StackPanel>
+                </StackPanel>
 
                 <!-- Take Profit 2 -->
-                <Grid ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="130"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="70"/>
-                    </Grid.ColumnDefinitions>
-                    <CheckBox x:Name="chkTP2" Grid.Column="0"
-                              Content="Take Profit 2"
-                              Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
-                              VerticalAlignment="Center"/>
-                    <NumberBox x:Name="nbTP2" Grid.Column="1"
-                               Minimum="0" Maximum="10000000"
-                               SpinButtonPlacementMode="Hidden"
-                               IsEnabled="False"
-                               ValueChanged="OnSLTPChanged"/>
-                    <TextBlock x:Name="txtTP2Pct" Grid.Column="2"
-                               VerticalAlignment="Center"
-                               FontSize="12" FontWeight="SemiBold"
-                               HorizontalAlignment="Right"/>
-                </Grid>
+                <StackPanel Spacing="6">
+                    <Grid ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="130"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="70"/>
+                        </Grid.ColumnDefinitions>
+                        <CheckBox x:Name="chkTP2" Grid.Column="0"
+                                  Content="Take Profit 2"
+                                  Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
+                                  VerticalAlignment="Center"/>
+                        <NumberBox x:Name="nbTP2" Grid.Column="1"
+                                   Minimum="0" Maximum="10000000"
+                                   SpinButtonPlacementMode="Hidden"
+                                   IsEnabled="False"
+                                   ValueChanged="OnSLTPChanged"/>
+                        <TextBlock x:Name="txtTP2Pct" Grid.Column="2"
+                                   VerticalAlignment="Center"
+                                   FontSize="12" FontWeight="SemiBold"
+                                   HorizontalAlignment="Right"/>
+                    </Grid>
+
+                    <!-- TP2 close-percentage -->
+                    <StackPanel x:Name="pnlTP2Close" Spacing="4" Margin="4,0,0,2"
+                                Visibility="Collapsed">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="46"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="% sluiten"
+                                       FontSize="11" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       Margin="0,0,10,0"/>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="4">
+                                <Button x:Name="btnTP2_25"  Content="25%"  Tag="25"
+                                        Click="TP2ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP2_50"  Content="50%"  Tag="50"
+                                        Click="TP2ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP2_75"  Content="75%"  Tag="75"
+                                        Click="TP2ClosePct_Click" Padding="8,4" FontSize="11"/>
+                                <Button x:Name="btnTP2_100" Content="100%" Tag="100"
+                                        Click="TP2ClosePct_Click" Padding="8,4" FontSize="11"/>
+                            </StackPanel>
+                            <TextBlock x:Name="txtTP2ClosePct" Grid.Column="2"
+                                       FontSize="12" FontWeight="SemiBold"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                        <Slider x:Name="sldTP2Close"
+                                Minimum="1" Maximum="100" Value="50"
+                                StepFrequency="1"
+                                ValueChanged="OnTP2CloseSlider"/>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </Border>
 

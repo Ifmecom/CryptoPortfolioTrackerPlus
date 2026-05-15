@@ -37,5 +37,11 @@ public class ExchangeOrder
     /// <summary>Spot, Futures or Margin.</summary>
     public MarketType MarketType { get; set; } = MarketType.Spot;
 
+    /// <summary>Percentage of position to close when TP1 is hit (1–100, default 100).</summary>
+    public double Tp1ClosePct { get; set; } = 100;
+
+    /// <summary>Percentage of position to close when TP2 is hit (1–100, default 100).</summary>
+    public double Tp2ClosePct { get; set; } = 100;
+
     public Signal? Signal { get; set; }
 }

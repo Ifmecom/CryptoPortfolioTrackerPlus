@@ -56,6 +56,8 @@ public class TradeService : ITradeService
             StopLoss        = req.StopLossPrice,
             TakeProfit      = req.TakeProfitPrice,
             TakeProfit2     = req.TakeProfit2Price,
+            Tp1ClosePct     = req.Tp1ClosePct,
+            Tp2ClosePct     = req.Tp2ClosePct,
             Status          = status,
             ExternalOrderId = $"PAPER-{Guid.NewGuid():N}",
             IsPaper         = true,
