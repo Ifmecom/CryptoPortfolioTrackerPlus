@@ -86,6 +86,13 @@ public sealed partial class PaperTradeDialog : ContentDialog
         _currentPrice = price;
         _symbolBase   = symbol.Replace("USDT", "").Replace("usdt", "").ToUpperInvariant();
 
+        // ── Default radio / checkbox state (bool? needs code-behind in WinUI 3) ─
+        rdSpot.IsChecked  = true;
+        rdLimit.IsChecked = true;
+        chkSL.IsChecked   = true;
+        chkTP1.IsChecked  = true;
+        chkTP2.IsChecked  = false;
+
         // ── Coin banner ──────────────────────────────────────────────────────
         txtSymbol.Text       = $"{_symbolBase}/USDT";
         txtName.Text         = name;

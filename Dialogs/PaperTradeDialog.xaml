@@ -67,7 +67,7 @@
                     Padding="3" HorizontalAlignment="Left">
                 <StackPanel Orientation="Horizontal" Spacing="3">
                     <RadioButton x:Name="rdSpot"    Content="Spot"    GroupName="MktType"
-                                 IsChecked="True"   Checked="MarketType_Changed" Padding="12,5"/>
+                                 Checked="MarketType_Changed" Padding="12,5"/>
                     <RadioButton x:Name="rdFutures" Content="Futures" GroupName="MktType"
                                  Checked="MarketType_Changed"          Padding="12,5"/>
                     <RadioButton x:Name="rdMargin"  Content="Margin"  GroupName="MktType"
@@ -101,7 +101,7 @@
                 Padding="3" HorizontalAlignment="Left">
             <StackPanel Orientation="Horizontal" Spacing="3">
                 <RadioButton x:Name="rdLimit"  Content="Limit"  GroupName="OrdType"
-                             IsChecked="True"  Checked="OrderType_Changed" Padding="12,5"/>
+                             Checked="OrderType_Changed" Padding="12,5"/>
                 <RadioButton x:Name="rdMarket" Content="Market" GroupName="OrdType"
                              Checked="OrderType_Changed"         Padding="12,5"/>
             </StackPanel>
@@ -187,7 +187,7 @@
                         <ColumnDefinition Width="70"/>
                     </Grid.ColumnDefinitions>
                     <CheckBox x:Name="chkSL" Grid.Column="0"
-                              IsChecked="True" Content="Stop Loss"
+                              Content="Stop Loss"
                               Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
                               VerticalAlignment="Center"/>
                     <NumberBox x:Name="nbSL" Grid.Column="1"
@@ -208,7 +208,7 @@
                         <ColumnDefinition Width="70"/>
                     </Grid.ColumnDefinitions>
                     <CheckBox x:Name="chkTP1" Grid.Column="0"
-                              IsChecked="True" Content="Take Profit 1"
+                              Content="Take Profit 1"
                               Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
                               VerticalAlignment="Center"/>
                     <NumberBox x:Name="nbTP1" Grid.Column="1"
@@ -229,7 +229,7 @@
                         <ColumnDefinition Width="70"/>
                     </Grid.ColumnDefinitions>
                     <CheckBox x:Name="chkTP2" Grid.Column="0"
-                              IsChecked="False" Content="Take Profit 2"
+                              Content="Take Profit 2"
                               Checked="SLTP_Toggled" Unchecked="SLTP_Toggled"
                               VerticalAlignment="Center"/>
                     <NumberBox x:Name="nbTP2" Grid.Column="1"
