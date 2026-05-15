@@ -71,21 +71,57 @@
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Filter knoppen -->
-                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="6">
+                        <!-- Filter knoppen — actieve tab krijgt gouden onderstreping -->
+                        <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="2"
+                                    VerticalAlignment="Center">
                             <TextBlock Text="Filter:" VerticalAlignment="Center"
                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                       FontSize="12"/>
-                            <Button Content="All"    Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="All"
-                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
-                            <Button Content="Open"   Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Open"
-                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
-                            <Button Content="Closed" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Closed"
-                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
-                            <Button Content="Paper"  Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Paper"
-                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
-                            <Button Content="Live"   Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Live"
-                                    Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                       FontSize="12" Margin="0,0,4,0"/>
+
+                            <!-- All -->
+                            <StackPanel Orientation="Vertical" Spacing="0">
+                                <Button Content="All" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="All"
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
+                                           Fill="DarkGoldenrod"
+                                           Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterAll), Mode=OneWay}"/>
+                            </StackPanel>
+
+                            <!-- Open -->
+                            <StackPanel Orientation="Vertical" Spacing="0">
+                                <Button Content="Open" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Open"
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
+                                           Fill="DarkGoldenrod"
+                                           Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterOpen), Mode=OneWay}"/>
+                            </StackPanel>
+
+                            <!-- Closed -->
+                            <StackPanel Orientation="Vertical" Spacing="0">
+                                <Button Content="Closed" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Closed"
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
+                                           Fill="DarkGoldenrod"
+                                           Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterClosed), Mode=OneWay}"/>
+                            </StackPanel>
+
+                            <!-- Paper -->
+                            <StackPanel Orientation="Vertical" Spacing="0">
+                                <Button Content="Paper" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Paper"
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
+                                           Fill="DarkGoldenrod"
+                                           Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterPaper), Mode=OneWay}"/>
+                            </StackPanel>
+
+                            <!-- Live -->
+                            <StackPanel Orientation="Vertical" Spacing="0">
+                                <Button Content="Live" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Live"
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
+                                           Fill="DarkGoldenrod"
+                                           Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterLive), Mode=OneWay}"/>
+                            </StackPanel>
                         </StackPanel>
 
                         <!-- Refresh knop + Kill All + tijdstempel -->
@@ -332,7 +368,7 @@
                                             ToolTipService.ToolTip="SL / TP aanpassen"
                                             Tag="{x:Bind}"
                                             Click="EditTrade_Click">
-                                        <FontIcon Glyph="&#xE8D6;" FontSize="11"/>
+                                        <FontIcon Glyph="&#xE90F;" FontSize="11"/>
                                     </Button>
 
                                     <!-- Close button (only for open filled paper positions) -->

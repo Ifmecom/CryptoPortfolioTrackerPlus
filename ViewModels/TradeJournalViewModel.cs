@@ -21,14 +21,21 @@ public partial class TradeJournalViewModel : BaseViewModel
     [ObservableProperty] private ObservableCollection<TradeJournalRow> rows = new();
     [ObservableProperty] private string portfolioName       = string.Empty;
     [ObservableProperty] private string statusMessage       = string.Empty;
-    [ObservableProperty] private string filterLabel         = "All";
+    [ObservableProperty] private string filterLabel         = "Open";
     [ObservableProperty] private string totalPnlDisplay     = "–";
     [ObservableProperty] private string lastRefreshedDisplay = "–";
     [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush totalPnlBrush
         = new(Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0));
 
     // Filter state
-    private string _activeFilter = "All"; // All | Open | Closed | Paper | Live
+    private string _activeFilter = "Open"; // All | Open | Closed | Paper | Live
+
+    // Active-filter indicators — bound by view to highlight the current tab
+    public bool IsFilterAll    => _activeFilter == "All";
+    public bool IsFilterOpen   => _activeFilter == "Open";
+    public bool IsFilterClosed => _activeFilter == "Closed";
+    public bool IsFilterPaper  => _activeFilter == "Paper";
+    public bool IsFilterLive   => _activeFilter == "Live";
 
     // Last known price map — reused by Kill All without a separate DB round-trip
     private Dictionary<string, double> _lastPriceMap = new();
@@ -67,6 +74,11 @@ public partial class TradeJournalViewModel : BaseViewModel
     {
         _activeFilter = filter;
         FilterLabel   = filter;
+        OnPropertyChanged(nameof(IsFilterAll));
+        OnPropertyChanged(nameof(IsFilterOpen));
+        OnPropertyChanged(nameof(IsFilterClosed));
+        OnPropertyChanged(nameof(IsFilterPaper));
+        OnPropertyChanged(nameof(IsFilterLive));
         await LoadRowsAsync();
     }
 
@@ -339,8 +351,9 @@ public class TradeJournalRow
     public string PnlDisplay => PnlUsdt == 0 ? "–"
         : $"{PnlUsdt:+0.00;-0.00} USDT\n{PnlPerc:+0.0;-0.0} %";
 
-    /// <summary>Live ongerealiseerde winst/verlies in USDT-waarde (voor open posities).</summary>
-    public string UnrealisedPnlDisplay => PnlUsdt == 0 ? "–" : $"{PnlUsdt:+0.00;-0.00} USDT";
+    /// <summary>Live ongerealiseerde winst/verlies in USDT-waarde — alleen voor open (Filled) posities.</summary>
+    public string UnrealisedPnlDisplay =>
+        Status == "Filled" && PnlUsdt != 0 ? $"{PnlUsdt:+0.00;-0.00} USDT" : "–";
 
     public string RDisplay => RMultiple == 0 ? "–" : $"{RMultiple:+0.0;-0.0}R";
 
