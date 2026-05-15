@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.14
+## CryptoPortfolioTracker Plus — v1.17
 
 | | |
 |---|---|
-| **Versie** | 1.14 |
+| **Versie** | 1.17 |
 | **Datum** | Mei 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -292,14 +292,28 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 | Datum | Aanmaakdatum |
 | Notities | Vrij tekstveld (bewerkbaar) |
 
-**Filters:** Alles · Open · Gesloten · Paper · Live
+**Filters:** Alles · Open · Gesloten · Paper · Live  
+Standaardfilter bij openen: **Open**. De actieve tab wordt gemarkeerd met een gouden onderstreping (2 px).
 
-**Acties:**
-- **Positie sluiten** — sluit paper order op huidige marktprijs, registreert P&L
-- **Notities bewerken** — pencil-icon opent inline-edit
-- **Vernieuwen** — herlaadt orders + actualiseert ongerealiseerde P&L
+**Acties per rij:**
 
-**Totaalregel:** som van alle gerealiseerde P&L voor de actieve filter
+| Knop | Icoon | Zichtbaar wanneer | Actie |
+|------|-------|-------------------|-------|
+| Notitie bewerken | ✏️ (potlood) | Altijd | Opent inline teksteditor |
+| Order annuleren | ✕ | Status = Pending / PartiallyFilled | Zet status op Cancelled |
+| SL / TP aanpassen | 🔧 (moersleutel) | Paper + Status Filled of Pending | Opent `EditTradeDialog` |
+| Positie sluiten | ✓ | Paper + Status Filled + koers bekend | Sluit op huidige marktprijs |
+
+**Kill All:** sluit alle open papierposities in één keer na bevestiging.
+
+**Vernieuwen:** herlaadt orders, actualiseert koersen en voert auto-close check uit.
+
+**Kolom Unrealised P&L:** toont alleen waarden voor orders met status `Filled`. Voor gesloten of geannuleerde orders staat `–`.
+
+**Auto-close bij TP/SL bereikt:**  
+Bij elke vernieuwopdracht roept de ViewModel `AutoCloseTriggeredAsync()` aan. Orders worden automatisch gesloten als de huidige koers een ingesteld niveau heeft bereikt (zie §6.1.4).
+
+**Totaalregel:** som van alle gerealiseerde P&L voor de actieve filter.
 
 **Zie §6.1 voor P&L- en R-multiple-berekeningen.**
 
@@ -320,6 +334,7 @@ Exchange-stijl orderformulier (540 px breed, `ContentDialog`).
 | Bedrag | `NumberBox` (USDT) + snelknoppen 25 % / 50 % / 75 % / Max op virtueel kapitaal (€ 10 000) |
 | Hefboom | ComboBox 1× – 100× (verborgen bij Spot) |
 | SL / TP1 / TP2 | `CheckBox` + `NumberBox` (absolute USDT-prijzen) + live %-label |
+| TP-sluitpercentage | Per TP-niveau: snelknoppen 25 / 50 / 75 / 100 % + `Slider` (1–100) — welk deel van de positie op dat niveau gesloten wordt |
 | Samenvatting | Kostprijs · Hoeveelheid · R/R-ratio · Max risico |
 | Signaalreden | `Expander` met reasoning-tekst (uit Trade Advies of Signaalengine) |
 | Actieknoppen | 📈 **Open Long** (groen) · 📉 **Open Short** (rood) |
@@ -345,8 +360,56 @@ public record OrderRequest(
     double       TakeProfitPrice,  // 0 = geen take-profit
     double       TakeProfit2Price, // 0 = geen tweede take-profit
     int          Leverage,         // 1 = geen hefboom
+    double       Tp1ClosePct = 100, // % van positie te sluiten op TP1 (1–100)
+    double       Tp2ClosePct = 100, // % van positie te sluiten op TP2 (1–100)
     string       Notes = "");
 ```
+
+---
+
+#### 4.7.2 EditTradeDialog
+
+Dialoog voor het aanpassen van SL / TP1 / TP2 van een lopende paper trade (520 px breed, `ContentDialog`).
+
+**Bereikbaar via:** moersleutel-knop (🔧) naast elke `IsEditable`-rij in het Trade Journal.  
+`IsEditable = Status is "Filled" or "Pending" && IsPaper`
+
+**Layout:**
+
+| Sectie | Inhoud |
+|--------|--------|
+| Banner | Symbool · Long ▲ / Short ▼ badge (groen/rood) · instapprijs · huidige koers · ongerealiseerde P&L (USDT + %) |
+| Stop Loss | Huidig SL + %-afstand van entry · preset-knoppen · `NumberBox` + live %-label |
+| Take Profit 1 | Huidig TP1 + % · `NumberBox` + live %-label |
+| Take Profit 2 | Huidig TP2 + % · `NumberBox` + live %-label |
+| Samenvatting | Nieuw R/R-ratio · Max risico (USDT) · SL-afstand van entry |
+| Actie | Groene knop **Wijzigingen opslaan** |
+
+**Preset-knoppen Stop Loss:**
+
+| Knop | Formule Long | Formule Short |
+|------|-------------|---------------|
+| ⚡ Breakeven | SL = entry | SL = entry |
+| ½R vrij | SL = entry + ½ × initialRisk | SL = entry − ½ × initialRisk |
+| +1R | SL = entry + initialRisk | SL = entry − initialRisk |
+
+`initialRisk = |entry − oorspronkelijkeSL|`
+
+Een preset is **uitgeschakeld** (opacity 0.4, `IsEnabled = false`) als het berekende niveau de huidige koers al heeft bereikt — dat zou de auto-close onmiddellijk triggeren:
+- Long: preset uitgeschakeld als `presetSL ≥ huidigeKoers`
+- Short: preset uitgeschakeld als `presetSL ≤ huidigeKoers`
+
+**Inline waarschuwing:** als de handmatig ingevoerde SL een niveau bereikt dat direct auto-close triggert, verschijnt een oranje waarschuwingsregel. Opslaan is geblokkeerd totdat het niveau gecorrigeerd is.
+
+**Resultaat-properties (na bevestiging):**
+```csharp
+bool   Confirmed     // true als de gebruiker opgeslagen heeft
+double NewStopLoss
+double NewTakeProfit
+double NewTakeProfit2
+```
+
+**Service-methode:** `ITradeService.UpdateOrderLevelsAsync(orderId, sl, tp1, tp2)` — past `StopLoss`, `TakeProfit` en `TakeProfit2` aan in de database.
 
 ---
 
@@ -597,6 +660,8 @@ Handelsorder (paper of live).
 | `StopLoss` | double | Stop-loss prijs (absolute USDT, 0 = geen) |
 | `TakeProfit` | double | Take-profit 1 prijs (absolute USDT, 0 = geen) |
 | `TakeProfit2` | double | Take-profit 2 prijs (absolute USDT, 0 = geen) |
+| `Tp1ClosePct` | double | % van positie te sluiten op TP1 (1–100, default 100) |
+| `Tp2ClosePct` | double | % van positie te sluiten op TP2 (1–100, default 100) |
 | `Status` | OrderStatus | Pending / Filled / Closed / Cancelled |
 | `IsPaper` | bool | Paper trade of live |
 | `CreatedAt` | DateTime | Aanmaaktijdstip |
@@ -703,6 +768,34 @@ Voorbeeld: instap $100, SL $95, koers sluit op $110, qty = 10
 → risico = $5 × 10 = $50  
 → P&L = ($110 − $100) × 10 = $100  
 → R = $100 / $50 = **+2R**
+
+#### 6.1.4 Automatisch sluiten bij TP/SL bereikt (`AutoCloseTriggeredAsync`)
+
+Bij elke `LoadRowsAsync()`-aanroep wordt `ITradeService.AutoCloseTriggeredAsync(priceMap)` uitgevoerd. Dit controleert alle open papierposities (`Status = Filled, IsPaper = true`) tegen de meegegeven koersmap.
+
+**Volgorde van controle (prioriteit):**
+
+1. **Stop Loss** — hoogste prioriteit; als prijs SL raakt, wint dit altijd
+2. **Take Profit 2** — controle vóór TP1; als beide geraakt zijn, sluit op TP2 (beter resultaat)
+3. **Take Profit 1**
+
+**Triggerlogica per richting:**
+
+| Niveau | Long (Buy) | Short (Sell) |
+|--------|-----------|--------------|
+| SL geraakt | `koers ≤ SL` | `koers ≥ SL` |
+| TP1 geraakt | `koers ≥ TP1` | `koers ≤ TP1` |
+| TP2 geraakt | `koers ≥ TP2` | `koers ≤ TP2` |
+
+**Bij trigger:**
+- `order.Status = Closed`
+- `order.ClosePrice = exacte TP/SL-prijs` (niet de huidige marktkoers)
+- `order.Notes` wordt voorafgegaan door `[Auto] 🎯 TP1 geraakt @ …` of `[Auto] 🛑 SL geraakt @ …`
+- `SaveChangesAsync()` één keer voor alle gesloten orders
+- Statusbalk toont: `⚡ Auto-gesloten: {symbool} {reden}`
+
+**Veiligheidscontrole in EditTradeDialog:**  
+Een nieuw SL-niveau wordt geblokkeerd als het de huidige koers al heeft bereikt (en dus direct auto-close zou triggeren). Zie §4.7.2.
 
 ---
 
@@ -1417,8 +1510,11 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.12 | Box 3 belastingcalculator (NL, 2022–2024) · Live/Paper filter · Aangepaste periode |
 | v1.13 | On-page Help-module (HelpView) · QuestPDF verwijderd |
 | v1.14 | Exchange-stijl PaperTradeDialog: Spot/Futures/Margin · Limit/Market · hefboom · SL/TP2 · R/R-samenvatting |
+| v1.15 | TP-sluitpercentage per niveau: snelknoppen 25/50/75/100 % + slider; opgeslagen als `Tp1ClosePct` / `Tp2ClosePct` |
+| v1.16 | Auto-close bij TP/SL bereikt: `AutoCloseTriggeredAsync` elke refresh; SL prioriteit boven TP; TP2 vóór TP1 |
+| v1.17 | EditTradeDialog: SL/TP aanpassen vanuit Trade Journal · preset-knoppen BE/½R/+1R · veiligheidscheck huidige koers · UX: standaard Open-filter · actieve tab indicator · unrealised P&L leeg voor gesloten orders |
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.14 (mei 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.17 (mei 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*
