@@ -97,18 +97,22 @@ public sealed partial class EditTradeDialog : ContentDialog
         SetPctLabel(txtCurrentTP1Pct, _order.TakeProfit,  _order.Entry, isLoss: false);
         SetPctLabel(txtCurrentTP2Pct, _order.TakeProfit2, _order.Entry, isLoss: false);
 
-        // Preset-knop tooltips: toon berekende prijs erbij als we risico kennen
+        // Preset-knop tooltips + activeer/deactiveer op basis van veiligheid
         if (_initialRisk > 0)
         {
             var be    = _order.Entry;
             var halfR = _isLong ? _order.Entry + _initialRisk * 0.5 : _order.Entry - _initialRisk * 0.5;
             var oneR  = _isLong ? _order.Entry + _initialRisk       : _order.Entry - _initialRisk;
-            ToolTipService.SetToolTip(btnBreakeven,
-                $"Breakeven — SL naar {FormatPrice(be)} (geen verlies meer mogelijk)");
-            ToolTipService.SetToolTip(btnHalfR,
-                $"½R vrij — SL naar {FormatPrice(halfR)} (+½ initieel risico geborgd)");
-            ToolTipService.SetToolTip(btnOneR,
-                $"+1R — SL naar {FormatPrice(oneR)} (1R winst gegarandeerd)");
+
+            SetPresetButton(btnBreakeven, be,
+                safe:    $"Breakeven — SL naar {FormatPrice(be)} (geen verlies meer mogelijk)",
+                blocked: $"Breakeven ({FormatPrice(be)}) — huidige koers {FormatPrice(_currentPrice)} heeft dit niveau al bereikt");
+            SetPresetButton(btnHalfR, halfR,
+                safe:    $"½R vrij — SL naar {FormatPrice(halfR)} (+½ initieel risico geborgd)",
+                blocked: $"½R ({FormatPrice(halfR)}) — huidige koers {FormatPrice(_currentPrice)} heeft dit niveau al bereikt");
+            SetPresetButton(btnOneR, oneR,
+                safe:    $"+1R — SL naar {FormatPrice(oneR)} (1R winst gegarandeerd)",
+                blocked: $"+1R ({FormatPrice(oneR)}) — huidige koers {FormatPrice(_currentPrice)} heeft dit niveau al bereikt");
         }
         else
         {
@@ -162,7 +166,16 @@ public sealed partial class EditTradeDialog : ContentDialog
 
     private void Save_Click(object sender, RoutedEventArgs e)
     {
-        NewStopLoss   = SafeValue(nbSL,  0);
+        var slValue = SafeValue(nbSL, 0);
+
+        // Prevent saving an SL that would immediately trigger auto-close
+        if (!IsSafeNewSl(slValue))
+        {
+            txtSlWarning.Visibility = Visibility.Visible;
+            return;
+        }
+
+        NewStopLoss    = slValue;
         NewTakeProfit  = SafeValue(nbTP1, 0);
         NewTakeProfit2 = SafeValue(nbTP2, 0);
         Confirmed = true;
@@ -216,9 +229,37 @@ public sealed partial class EditTradeDialog : ContentDialog
             txtSlDistance.Foreground = NeutralBrush;
         }
         else { txtSlDistance.Text = "—"; txtSlDistance.Foreground = NeutralBrush; }
+
+        // Inline waarschuwing als SL de huidige koers al heeft bereikt
+        txtSlWarning.Visibility = (!IsSafeNewSl(sl))
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns true when <paramref name="sl"/> will NOT be triggered immediately
+    /// by the current market price.
+    /// Long:  SL must be strictly below current price (SL triggers when price ≤ SL).
+    /// Short: SL must be strictly above current price (SL triggers when price ≥ SL).
+    /// If current price is unknown, every value is considered safe.
+    /// </summary>
+    private bool IsSafeNewSl(double sl) =>
+        sl <= 0 || _currentPrice <= 0 ||
+        (_isLong ? sl < _currentPrice : sl > _currentPrice);
+
+    /// <summary>
+    /// Enables or disables a preset button based on whether its target price is safe,
+    /// and sets the matching tooltip text.
+    /// </summary>
+    private void SetPresetButton(Button btn, double targetSl, string safe, string blocked)
+    {
+        var isSafe = IsSafeNewSl(targetSl);
+        btn.IsEnabled = isSafe;
+        btn.Opacity   = isSafe ? 1.0 : 0.4;
+        ToolTipService.SetToolTip(btn, isSafe ? safe : $"⛔ {blocked}");
+    }
 
     private void SetPctLabel(TextBlock lbl, double price, double entry, bool isLoss)
     {
@@ -232,9 +273,10 @@ public sealed partial class EditTradeDialog : ContentDialog
 
     private void HighlightPreset(string? tag)
     {
-        btnBreakeven.Opacity = tag == "breakeven" ? 1.0 : 0.6;
-        btnHalfR.Opacity     = tag == "halfr"     ? 1.0 : 0.6;
-        btnOneR.Opacity      = tag == "oner"       ? 1.0 : 0.6;
+        // Disabled (already-triggered) buttons keep their dimmed opacity (0.4)
+        if (btnBreakeven.IsEnabled) btnBreakeven.Opacity = tag == "breakeven" ? 1.0 : 0.6;
+        if (btnHalfR.IsEnabled)     btnHalfR.Opacity     = tag == "halfr"     ? 1.0 : 0.6;
+        if (btnOneR.IsEnabled)      btnOneR.Opacity       = tag == "oner"      ? 1.0 : 0.6;
     }
 
     private static double SafeValue(NumberBox nb, double fallback)

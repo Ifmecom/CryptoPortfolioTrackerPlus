@@ -130,6 +130,15 @@
                                VerticalAlignment="Center" FontSize="13"
                                FontWeight="SemiBold" HorizontalAlignment="Right"/>
                 </Grid>
+
+                <!-- Waarschuwing: SL niveau is al bereikt door huidige koers -->
+                <TextBlock x:Name="txtSlWarning"
+                           Text="⚠️ Dit SL-niveau is al bereikt door de huidige koers — opslaan sluit de trade direct."
+                           Foreground="OrangeRed"
+                           FontSize="11"
+                           FontWeight="SemiBold"
+                           TextWrapping="Wrap"
+                           Visibility="Collapsed"/>
             </StackPanel>
         </Border>
 
