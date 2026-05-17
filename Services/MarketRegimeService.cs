@@ -45,18 +45,22 @@ public class MarketRegimeService : IMarketRegimeService
             }
 
             bool priceAboveEma = btc.Price > btc.Ema;
-            bool rsiBullish    = btc.Rsi is > 0 and < 65;
 
-            var regime = (priceAboveEma, rsiBullish) switch
+            // RSI ≥ 80 = kritisch overbought → voorzichtig.
+            // RSI = 0  = niet berekend (geen chart-data) → niet als bearish behandelen,
+            //            gewoon op EMA-signaal vertrouwen.
+            bool rsiOverbought = btc.Rsi > 0 && btc.Rsi >= 80;
+
+            var regime = (priceAboveEma, rsiOverbought) switch
             {
-                (true, true) => MarketRegime.RiskOn,
-                (false, _)   => MarketRegime.RiskOff,
-                _            => MarketRegime.Neutral,
+                (true,  false) => MarketRegime.RiskOn,   // uptrend, niet extreem overbought
+                (true,  true)  => MarketRegime.Neutral,  // uptrend maar RSI ≥ 80
+                (false, _)     => MarketRegime.RiskOff,  // downtrend
             };
 
             Logger.Information(
-                "MarketRegimeService: {Regime} (BTC price={Price:F0}, EMA={Ema:F0}, RSI={Rsi:F1})",
-                regime, btc.Price, btc.Ema, btc.Rsi);
+                "MarketRegimeService: {Regime} (BTC price={Price:F0}, EMA={Ema:F0}, RSI={Rsi:F1}, overbought={Ob})",
+                regime, btc.Price, btc.Ema, btc.Rsi, rsiOverbought);
 
             return regime;
         }
