@@ -39,9 +39,16 @@ public partial class DashboardViewModel : BaseViewModel
 
     async partial void OnCurrentPortfolioChanged(Portfolio? oldValue, Portfolio newValue)
     {
-        await _dashboardService.CalculateIndicatorsAllCoins();
-        await UpdateDashboardAsync();
-        PortfolioName = newValue.Name;
+        try
+        {
+            await _dashboardService.CalculateIndicatorsAllCoins();
+            await UpdateDashboardAsync();
+            PortfolioName = newValue.Name;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "OnCurrentPortfolioChanged: UpdateDashboard failed");
+        }
     }
 
     [ObservableProperty] private string glyph = "\uEE47";
@@ -171,9 +178,18 @@ public partial class DashboardViewModel : BaseViewModel
     {
         if (newValue)
         {
-            await UpdateDashboardAsync();
-
-            NeedUpdateDashboard = false;
+            try
+            {
+                await UpdateDashboardAsync();
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "OnNeedUpdateDashboardChanged: UpdateDashboard failed");
+            }
+            finally
+            {
+                NeedUpdateDashboard = false;
+            }
         };
     }
 

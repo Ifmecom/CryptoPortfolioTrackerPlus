@@ -47,9 +47,16 @@ public partial class DashboardViewModel : BaseViewModel
 
     public async Task GetTop5()
     {
-        
-        TopWinners = new(await _dashboardService.GetTopWinners());
-        TopLosers = new(await _dashboardService.GetTopLosers());
+        try
+        {
+            TopWinners = new(await _dashboardService.GetTopWinners());
+            TopLosers = new(await _dashboardService.GetTopLosers());
+        }
+        catch (Exception ex)
+        {
+            // Silently swallow — dashboard will simply not refresh Top5
+            Serilog.Log.Warning(ex, "GetTop5 failed");
+        }
     }
 
 }

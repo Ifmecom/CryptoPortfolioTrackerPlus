@@ -258,19 +258,24 @@ public partial class DashboardViewModel : BaseViewModel
 
     private async Task RefreshHeatMapPoints()
     {
-        
-        if (!SeriesHeatMap.Any())
+        try
         {
-            await SetSeriesHeatMap(SelectedHeatMapIndex);
+            if (!SeriesHeatMap.Any())
+            {
+                await SetSeriesHeatMap(SelectedHeatMapIndex);
+            }
+            else
+            {
+                HeatMapPoints = new ObservableCollection<HeatMapPoint>(await _priceLevelService.GetHeatMapPoints(SelectedHeatMapIndex));
+                ObservableCollection<HeatMapPoint> dummyPoints;
+                SetMinMaxY(SelectedHeatMapIndex, out dummyPoints);
+                SeriesHeatMap[0].Values = HeatMapPoints;
+                SeriesHeatMap[1].Values = dummyPoints;
+            }
         }
-        else
+        catch (Exception ex)
         {
-            HeatMapPoints = new ObservableCollection<HeatMapPoint>(await _priceLevelService.GetHeatMapPoints(SelectedHeatMapIndex));
-            ObservableCollection<HeatMapPoint> dummyPoints;
-            SetMinMaxY(SelectedHeatMapIndex, out dummyPoints);
-            SeriesHeatMap[0].Values = HeatMapPoints;
-            SeriesHeatMap[1].Values = dummyPoints;
-
+            Serilog.Log.Warning(ex, "RefreshHeatMapPoints failed");
         }
     }
 
