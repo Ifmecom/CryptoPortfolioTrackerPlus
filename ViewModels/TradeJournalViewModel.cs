@@ -15,6 +15,14 @@ public partial class TradeJournalViewModel : BaseViewModel
 {
     private static readonly ILogger Logger = Log.Logger.ForContext(Constants.SourceContextPropertyName, nameof(TradeJournalViewModel).PadRight(22));
 
+    // Gedeelde brush-instanties — niet per row/refresh aanmaken (DependencyObject is zwaar)
+    internal static readonly Microsoft.UI.Xaml.Media.SolidColorBrush BrushGreen
+        = new(Windows.UI.Color.FromArgb(0xFF, 0x3C, 0xB3, 0x71));
+    internal static readonly Microsoft.UI.Xaml.Media.SolidColorBrush BrushRed
+        = new(Windows.UI.Color.FromArgb(0xFF, 0xCD, 0x5C, 0x5C));
+    internal static readonly Microsoft.UI.Xaml.Media.SolidColorBrush BrushGrey
+        = new(Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0));
+
     private readonly PortfolioService _portfolioService;
     private readonly ITradeService    _tradeService;
 
@@ -24,8 +32,7 @@ public partial class TradeJournalViewModel : BaseViewModel
     [ObservableProperty] private string filterLabel         = "Open";
     [ObservableProperty] private string totalPnlDisplay     = "–";
     [ObservableProperty] private string lastRefreshedDisplay = "–";
-    [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush totalPnlBrush
-        = new(Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0));
+    [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush totalPnlBrush = BrushGrey;
 
     // Filter state
     private string _activeFilter = "Open"; // All | Open | Closed | Paper | Live
@@ -296,10 +303,7 @@ public partial class TradeJournalViewModel : BaseViewModel
         TotalPnlDisplay = totalPnl == 0
             ? "–"
             : $"{totalPnl:+0.00;-0.00} USDT";
-        TotalPnlBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-            totalPnl > 0 ? Windows.UI.Color.FromArgb(0xFF, 0x3C, 0xB3, 0x71)  // green
-          : totalPnl < 0 ? Windows.UI.Color.FromArgb(0xFF, 0xCD, 0x5C, 0x5C)  // red
-          : Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0));               // grey
+        TotalPnlBrush = totalPnl > 0 ? BrushGreen : totalPnl < 0 ? BrushRed : BrushGrey;
 
         StatusMessage        = Rows.Count == 0
             ? "No trades found."
@@ -416,9 +420,9 @@ public class TradeJournalRow
                 RMultiple = Math.Round(PnlUsdt / (riskPerUnit * Qty), 2);
         }
 
-        PnlBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-            PnlUsdt > 0 ? Windows.UI.Color.FromArgb(0xFF, 0x3C, 0xB3, 0x71)
-          : PnlUsdt < 0 ? Windows.UI.Color.FromArgb(0xFF, 0xCD, 0x5C, 0x5C)
-          : Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0));
+        // Gedeelde statische brushes — geen new SolidColorBrush per row-instantie
+        PnlBrush = PnlUsdt > 0 ? TradeJournalViewModel.BrushGreen
+                 : PnlUsdt < 0 ? TradeJournalViewModel.BrushRed
+                 : TradeJournalViewModel.BrushGrey;
     }
 }

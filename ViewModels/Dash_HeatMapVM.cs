@@ -251,8 +251,9 @@ public partial class DashboardViewModel : BaseViewModel
             await _dashboardService.EvaluatePriceLevels();
             await SetSeriesHeatMap(SelectedHeatMapIndex);
         }
-        catch (Exception )
+        catch (Exception ex)
         {
+            Serilog.Log.Warning(ex, "HeatMapControlLoaded failed");
         }
     }
 

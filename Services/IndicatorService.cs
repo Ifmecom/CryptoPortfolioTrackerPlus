@@ -256,12 +256,17 @@ public class IndicatorService : IIndicatorService
 
         try
         {
-            var macd      = await CalculateMacdAsync(coin);
-            var bollinger = await CalculateBollingerAsync(coin);
-            await CalculateAtrAsync(coin);
-            await CalculateStochRsiAsync(coin);
-            await CalculateRsiAsync(coin);
-            await CalculateExtendedIndicatorsAsync(coin);
+            // Laad quotes EENMALIG en geef ze door aan alle sub-methoden.
+            // Zonder cache laadde elk van de 6 sub-methoden het JSON-bestand opnieuw:
+            // 50 coins × 6 reads = 300 I/O-operaties per cyclus.
+            var quotes = await LoadQuotesAsync(coin);
+
+            var macd      = CalculateMacdFromQuotes(coin, quotes);
+            var bollinger = CalculateBollingerFromQuotes(coin, quotes);
+            CalculateAtrFromQuotes(coin, quotes);
+            CalculateStochRsiFromQuotes(coin, quotes);
+            CalculateRsiFromQuotes(coin, quotes);
+            CalculateExtendedIndicatorsFromQuotes(coin, quotes);
 
             // RSI rules
             if (coin.Rsi > 0)
@@ -368,13 +373,15 @@ public class IndicatorService : IIndicatorService
     public async Task RecalculateAllAsync(Coin coin)
     {
         if (coin is null) throw new ArgumentNullException(nameof(coin));
-        await CalculateRsiAsync(coin);
-        await CalculateMaAsync(coin);
-        await CalculateMacdAsync(coin);
-        await CalculateBollingerAsync(coin);
-        await CalculateAtrAsync(coin);
-        await CalculateStochRsiAsync(coin);
-        await CalculateExtendedIndicatorsAsync(coin);
+        // Laad quotes eenmalig — was eerder 7 losse LoadQuotesAsync calls voor dezelfde coin
+        var quotes = await LoadQuotesAsync(coin);
+        CalculateRsiFromQuotes(coin, quotes);
+        await CalculateMaAsync(coin);           // gebruikt aparte LoadClosingPricesAsync
+        CalculateMacdFromQuotes(coin, quotes);
+        CalculateBollingerFromQuotes(coin, quotes);
+        CalculateAtrFromQuotes(coin, quotes);
+        CalculateStochRsiFromQuotes(coin, quotes);
+        CalculateExtendedIndicatorsFromQuotes(coin, quotes);
     }
 
     public async Task CalculateExtendedIndicatorsAsync(Coin coin)
@@ -446,6 +453,121 @@ public class IndicatorService : IIndicatorService
                 double high52w = closes.TakeLast(lookback).Max();
                 if (high52w > 0)
                     coin.High52wPerc = Math.Round((coin.Price - high52w) / high52w * 100.0, 1);
+            }
+        }
+        catch { /* per-coin failures are silent */ }
+    }
+
+    // -----------------------------------------------------------------------
+    // Quotes-first overloads — vermijden herhaalde JSON file reads in CalculateTaScoreAsync
+    // -----------------------------------------------------------------------
+
+    private static MacdData CalculateMacdFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 35) return new MacdData(0, 0, 0);
+            var result = quotes.GetMacd(12, 26, 9).LastOrDefault();
+            if (result is null) return new MacdData(0, 0, 0);
+            coin.Macd       = result.Macd      ?? 0;
+            coin.MacdSignal = result.Signal    ?? 0;
+            return new MacdData(coin.Macd, coin.MacdSignal, result.Histogram ?? 0);
+        }
+        catch { return new MacdData(0, 0, 0); }
+    }
+
+    private static BollingerData CalculateBollingerFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 20) return new BollingerData(0, 0, 0);
+            var result = quotes.GetBollingerBands(20, 2).LastOrDefault();
+            if (result is null) return new BollingerData(0, 0, 0);
+            coin.BollingerUpper = result.UpperBand ?? 0;
+            coin.BollingerLower = result.LowerBand ?? 0;
+            return new BollingerData(coin.BollingerUpper, result.Sma ?? 0, coin.BollingerLower);
+        }
+        catch { return new BollingerData(0, 0, 0); }
+    }
+
+    private static void CalculateAtrFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 14) return;
+            coin.Atr = quotes.GetAtr(14).LastOrDefault()?.Atr ?? 0;
+        }
+        catch { coin.Atr = 0; }
+    }
+
+    private static void CalculateStochRsiFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 50) return;
+            coin.StochRsi = quotes.GetStochRsi(14, 14, 3, 1).LastOrDefault()?.StochRsi ?? 0;
+        }
+        catch { coin.StochRsi = 0; }
+    }
+
+    private static void CalculateRsiFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 15) { coin.Rsi = 0; return; }
+            var r = quotes.GetRsi(14).LastOrDefault();
+            coin.Rsi = r?.Rsi is not null ? (double)r.Rsi : 0;
+        }
+        catch { coin.Rsi = 0; }
+    }
+
+    private void CalculateExtendedIndicatorsFromQuotes(Coin coin, List<Quote> quotes)
+    {
+        try
+        {
+            if (quotes.Count < 22) return;
+            var closes    = quotes.Select(q => (double)q.Close).ToList();
+            var ema9List  = quotes.GetEma(9).Select(r => r.Ema ?? 0).ToList();
+            var ema21List = quotes.GetEma(21).Select(r => r.Ema ?? 0).ToList();
+            coin.EmaCross = "–";
+            coin.EmaCrossBarsAgo = 0;
+            for (int i = ema9List.Count - 1; i >= 1; i--)
+            {
+                bool currAbove = ema9List[i] > ema21List[i];
+                bool prevAbove = ema9List[i - 1] > ema21List[i - 1];
+                if (currAbove != prevAbove)
+                {
+                    coin.EmaCross = currAbove ? "Bullish" : "Bearish";
+                    coin.EmaCrossBarsAgo = ema9List.Count - 1 - i;
+                    break;
+                }
+            }
+            if (coin.BollingerUpper > 0 && coin.BollingerUpper != coin.BollingerLower)
+                coin.BollingerPctB = Math.Round(
+                    Math.Clamp((coin.Price - coin.BollingerLower) / (coin.BollingerUpper - coin.BollingerLower) * 100.0, -50, 150), 1);
+            if (quotes.Count >= 50)
+            {
+                var sma50 = quotes.GetSma(50).LastOrDefault()?.Sma ?? 0;
+                if (sma50 > 0) coin.Ma50DistPerc = Math.Round((coin.Price - sma50) / sma50 * 100.0, 1);
+            }
+            if (quotes.Count >= 28)
+                coin.Adx = Math.Round(quotes.GetAdx(14).LastOrDefault()?.Adx ?? 0, 1);
+            if (quotes.Count >= 30)
+            {
+                var bbLast = quotes.GetBollingerBands(20, 2).LastOrDefault();
+                var kcLast = quotes.GetKeltner(20, 1.5, 10).LastOrDefault();
+                if (bbLast is not null && kcLast is not null)
+                {
+                    double bbWidth = (bbLast.UpperBand ?? 0) - (bbLast.LowerBand ?? 0);
+                    double kcWidth = (kcLast.UpperBand ?? 0) - (kcLast.LowerBand ?? 0);
+                    coin.IsSqueeze = kcWidth > 0 && bbWidth < kcWidth;
+                }
+            }
+            if (closes.Count >= 2)
+            {
+                int lookback = Math.Min(closes.Count, 180);
+                double high52w = closes.TakeLast(lookback).Max();
+                if (high52w > 0) coin.High52wPerc = Math.Round((coin.Price - high52w) / high52w * 100.0, 1);
             }
         }
         catch { /* per-coin failures are silent */ }

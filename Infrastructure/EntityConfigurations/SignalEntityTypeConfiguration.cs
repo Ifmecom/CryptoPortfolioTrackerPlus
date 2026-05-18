@@ -24,5 +24,9 @@ class SignalEntityTypeConfiguration : IEntityTypeConfiguration<Signal>
             .WithMany()
             .HasForeignKey(x => x.NarrativeId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Indexen voor dashboard-queries (filter op CoinId + recente CreatedAt)
+        configuration.HasIndex(x => x.CoinId);
+        configuration.HasIndex(x => x.CreatedAt);
     }
 }

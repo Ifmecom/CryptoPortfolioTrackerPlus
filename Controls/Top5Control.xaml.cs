@@ -62,8 +62,8 @@ public partial class Top5Control : UserControl, INotifyPropertyChanged
 
     public void ShowErrorMessage(string message)
     {
-        // Ensure execution on the UI thread
-        MainPage.Current.DispatcherQueue.TryEnqueue(async () =>
+        // Ensure execution on the UI thread. ContentDialog must be created AND shown on UI thread.
+        MainPage.Current.DispatcherQueue.TryEnqueue(() =>
         {
             var dialog = new ContentDialog
             {
@@ -73,7 +73,12 @@ public partial class Top5Control : UserControl, INotifyPropertyChanged
                 XamlRoot = MainPage.Current.XamlRoot
             };
 
-            await dialog.ShowAsync();
+            // ShowAsync returns IAsyncOperation — fire-and-forget with explicit error logging.
+            _ = dialog.ShowAsync().AsTask().ContinueWith(
+                t => Serilog.Log.Warning(t.Exception!.GetBaseException(), "ShowErrorMessage dialog failed"),
+                System.Threading.CancellationToken.None,
+                TaskContinuationOptions.OnlyOnFaulted,
+                TaskScheduler.Default);
         });
     }
 

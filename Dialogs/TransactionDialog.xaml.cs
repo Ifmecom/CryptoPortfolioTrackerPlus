@@ -161,20 +161,29 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
     }
     private async void GetMaxQtyAndPrice()
     {
-        if (dialogAction == DialogAction.Add && TransactionType != TransactionKind.Deposit)
+        // async void is vereist hier — methode wordt aangeroepen vanuit partial void On*Changed handlers
+        // die niet kunnen awaiten. Wrap in try-catch zodat exceptions niet onopgemerkt verloren gaan.
+        try
         {
-            var result = await _transactionService.GetMaxQtyAndPrice(CoinA, AccountFrom);
-            result.IfSucc(values =>
+            if (dialogAction == DialogAction.Add && TransactionType != TransactionKind.Deposit)
             {
-                MaxQtyA = values[0];
-                ActualPriceA = PriceA = TransactionType != TransactionKind.Transfer ? values[1] : values[2];
-            });
+                var result = await _transactionService.GetMaxQtyAndPrice(CoinA, AccountFrom);
+                result.IfSucc(values =>
+                {
+                    MaxQtyA = values[0];
+                    ActualPriceA = PriceA = TransactionType != TransactionKind.Transfer ? values[1] : values[2];
+                });
+            }
+            else
+            {
+                MaxQtyA = -1;
+                var priceResult = await _transactionService.GetPriceFromLibrary(CoinA);
+                ActualPriceA = PriceA = priceResult.Match(price => price, _ => 0);
+            }
         }
-        else
+        catch (Exception ex)
         {
-            MaxQtyA = -1;
-            var priceResult = await _transactionService.GetPriceFromLibrary(CoinA);
-            ActualPriceA = PriceA = priceResult.Match(price => price, _ => 0);
+            Serilog.Log.Warning(ex, "TransactionDialog.GetMaxQtyAndPrice failed");
         }
     }
 
@@ -645,6 +654,8 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
     
     public async void PrimaryButton_AcceptTransaction(ContentDialog sender, ContentDialogButtonClickEventArgs e)
     {
+        // Deferral voorkomt dat WinUI 3 de dialog sluit vóór het async werk klaar is
+        var deferral = e.GetDeferral();
         try
         {
             Validator.Stop();
@@ -654,6 +665,10 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
         {
             transactionNew = new();
             Exception = ex;
+        }
+        finally
+        {
+            deferral.Complete();
         }
     }
    

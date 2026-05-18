@@ -118,8 +118,12 @@ public sealed partial class AssetsViewModel : BaseViewModel
         _graphService = graphService;
         _accountService = accountService;
 
-        InitializeView();
-
+        // Fire-and-forget met expliciete error-logging (async Task in constructor kan niet worden awaited)
+        _ = InitializeView().ContinueWith(
+            t => Serilog.Log.Error(t.Exception!.GetBaseException(), "AssetsViewModel.InitializeView failed"),
+            System.Threading.CancellationToken.None,
+            TaskContinuationOptions.OnlyOnFaulted,
+            TaskScheduler.Default);
     }
 
     /// <summary>

@@ -52,33 +52,33 @@ public partial class DashboardService : ObservableObject, IDashboardService
 
     public async Task CalculateIndicatorsAllCoins()
     {
-        var coins = _portfolioService.Context.Coins.ToList();
+        // AsNoTracking: read-only, geen save nodig. ToListAsync: niet blokkeren op UI-thread.
+        var coins = await _portfolioService.Context.Coins.AsNoTracking().ToListAsync();
 
         foreach (var coin in coins)
         {
             await _indicatorService.CalculateRsiAsync(coin);
             await _indicatorService.CalculateMaAsync(coin);
-            await Task.Delay(10);
+            // Task.Delay(10) verwijderd — indicator-berekeningen lezen lokale JSON-bestanden,
+            // geen netwerk-rateLimiting nodig. 50 coins × 10ms = 500ms onnodige latentie.
         }
     }
     public async Task CalculateRsiAllCoins()
     {
-        var coins = _portfolioService.Context.Coins.ToList();
+        var coins = await _portfolioService.Context.Coins.AsNoTracking().ToListAsync();
 
         foreach (var coin in coins)
         {
             await _indicatorService.CalculateRsiAsync(coin);
-            await Task.Delay(10);
         }
     }
     public async Task CalculateMaAllCoins()
     {
-        var coins = _portfolioService.Context.Coins.ToList();
+        var coins = await _portfolioService.Context.Coins.AsNoTracking().ToListAsync();
 
         foreach (var coin in coins)
         {
             await _indicatorService.CalculateMaAsync(coin);
-            await Task.Delay(10);
         }
     }
 
@@ -87,56 +87,39 @@ public partial class DashboardService : ObservableObject, IDashboardService
     {
         try
         {
-            var context = _portfolioService.Context;
-            
-            var coins = await context.Assets
+            // Server-side query: alleen de top-5 kolommen ophalen i.p.v. alle Assets laden
+            return await _portfolioService.Context.Assets
                 .AsNoTracking()
                 .Where(x => x.Qty > 0 && x.Coin.Change24Hr > 0)
-                .Include(x => x.Coin)
-                .GroupBy(x => x.Coin) // Group by Coin
+                .Select(x => x.Coin)
+                .Distinct()
+                .OrderByDescending(c => c.Change24Hr)
+                .Take(5)
                 .ToListAsync();
-
-            List<Coin> topWinners = coins
-                .Select(g => g.First().Coin) // Select the first Coin from each group's asset
-                .OrderByDescending(x => x.Change24Hr) // Order by Change24Hr descending
-                .Take(5) // Take the first 5
-                .ToList();
-
-            return topWinners ?? new();
         }
-        catch (Exception ex)
+        catch
         {
             return new();
         }
-       
     }
+
     public async Task<List<Coin>> GetTopLosers()
     {
         try
         {
-            var context = _portfolioService.Context;
-
-            var coins = await context.Assets
+            return await _portfolioService.Context.Assets
                 .AsNoTracking()
                 .Where(x => x.Qty > 0 && x.Coin.Change24Hr < 0)
-                .Include(x => x.Coin)
-                .GroupBy(x => x.Coin) // Group by Coin
-                .ToListAsync();
-
-            List<Coin> topLosers = coins
-                .Select(g => g.First().Coin) // Select the first Coin from each group's asset
-                .OrderBy(x => x.Change24Hr)
+                .Select(x => x.Coin)
+                .Distinct()
+                .OrderBy(c => c.Change24Hr)
                 .Take(5)
-                .ToList();
-
-            return topLosers ?? new();
+                .ToListAsync();
         }
-        catch (Exception ex)
+        catch
         {
-
             return new();
         }
-        
     }
 
 

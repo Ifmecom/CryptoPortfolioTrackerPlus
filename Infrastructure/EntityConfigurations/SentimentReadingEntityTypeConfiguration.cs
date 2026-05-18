@@ -18,5 +18,9 @@ class SentimentReadingEntityTypeConfiguration : IEntityTypeConfiguration<Sentime
             .WithMany()
             .HasForeignKey(x => x.CoinId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Indexen voor veel-gebruikte filtercombinaties
+        configuration.HasIndex(x => x.CoinId);
+        configuration.HasIndex(x => x.Timestamp);
     }
 }

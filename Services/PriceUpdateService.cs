@@ -32,6 +32,7 @@ public class PriceUpdateService : IPriceUpdateService
     private readonly IMessenger _messenger;
 
     private UpdateContext currentContext;
+    private readonly CoinGeckoApiClient _geckoClient;
     private static ILogger Logger { get; set; } = Log.Logger.ForContext(Constants.SourceContextPropertyName, typeof(PriceUpdateService).Name.PadRight(22));
     public bool IsPausRequested { get; private set; }
     public bool IsUpdating { get; private set; }
@@ -60,7 +61,7 @@ public class PriceUpdateService : IPriceUpdateService
 
         IsPausRequested = false;
         timer = new(System.TimeSpan.FromMinutes(_appSettings.PriceUpdateIntervalMinutes));
-
+        _geckoClient = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
     }
 
     public void Start()
@@ -210,10 +211,14 @@ public class PriceUpdateService : IPriceUpdateService
                     await Task.Delay(TimeSpan.FromSeconds(30));
                 }
 
-                MainPage.Current.DispatcherQueue.TryEnqueue( async () =>
+                MainPage.Current.DispatcherQueue.TryEnqueue(() =>
                 {
                     _assetService.SortList();
-                    await _assetService.CalculateAssetsTotalValues();
+                    _ = _assetService.CalculateAssetsTotalValues().ContinueWith(
+                        t => Logger.Error(t.Exception!.GetBaseException(), "CalculateAssetsTotalValues failed"),
+                        System.Threading.CancellationToken.None,
+                        TaskContinuationOptions.OnlyOnFaulted,
+                        TaskScheduler.Default);
                 });
             }
             Logger.Information($"All coins are updated.");
@@ -278,7 +283,6 @@ public class PriceUpdateService : IPriceUpdateService
             }
         }).Build();
 
-        var geckoClient = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
         List<CoinMarkets>? coinMarketsPage = null;
 
         var tokenSource = new CancellationTokenSource();
@@ -291,7 +295,7 @@ public class PriceUpdateService : IPriceUpdateService
                 await strategy.ExecuteAsync(async token =>
                 {
                     Logger.Debug("Getting Market Data; (Retries: {0})", retries);
-                    coinMarketsPage = await geckoClient.GetCoinMarketsAsync(coinIds, dataPerPage, token);
+                    coinMarketsPage = await _geckoClient.GetCoinMarketsAsync(coinIds, dataPerPage, token);
                 }, cancellationToken);
 
                 Logger.Information("Received Market Data; (Count: {0})", coinMarketsPage?.Count.ToString() ?? "0");
@@ -315,10 +319,37 @@ public class PriceUpdateService : IPriceUpdateService
         if (marketDataList == null) return new Result<bool>(new ArgumentNullException(nameof(marketDataList)));
 
         Logger.Information($"Updating Market Data. {marketDataList.Count}");
-        
+
+        // ── Pre-load all coins in ONE batch query (replaces N individual SingleAsync calls) ──
+        await App.UpdateSemaphore.WaitAsync();
+        Dictionary<string, Coin> coinMap;
+        try
+        {
+            var context = _portfolioService.UpdateContext;
+            context.ChangeTracker?.Clear();
+
+            var apiIds = marketDataList
+                .Select(m => m.Id.ToLower())
+                .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+            var coins = await context.Coins
+                .AsNoTracking()
+                .Include(x => x.PriceLevels)
+                .Where(c => apiIds.Contains(c.ApiId.ToLower()))
+                .ToListAsync();
+
+            coinMap = coins.ToDictionary(c => c.ApiId.ToLower(), StringComparer.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            App.UpdateSemaphore.Release();
+        }
+
         foreach (var coinData in marketDataList)
         {
-            var coinResult = await UpdatePriceCoin(coinData);
+            if (!coinMap.TryGetValue(coinData.Id.ToLower(), out var coin)) continue;
+
+            var coinResult = await UpdatePriceCoin(coinData, coin);
             if (coinResult.IsFaulted)
             {
                 return new Result<bool>(false);
@@ -331,19 +362,18 @@ public class PriceUpdateService : IPriceUpdateService
         return true;
     }
 
-    private async Task<Result<Coin>> UpdatePriceCoin(CoinMarkets coinData)
+    /// <summary>
+    /// Updates a single coin price in the UpdateContext.
+    /// The <paramref name="coin"/> must be a detached (AsNoTracking) entity pre-loaded
+    /// by <see cref="UpdatePricesWithMarketData"/> — no per-coin DB fetch needed.
+    /// </summary>
+    private async Task<Result<Coin>> UpdatePriceCoin(CoinMarkets coinData, Coin coin)
     {
         await App.UpdateSemaphore.WaitAsync();
-        await Task.Delay(10);
         var context = _portfolioService.UpdateContext;
-        context.ChangeTracker?.Clear();
 
         try
         {
-            var coin = await context.Coins
-                .Include(x => x.PriceLevels)
-                .SingleAsync(c => c.ApiId.ToLower() == coinData.Id.ToLower());
-
             var oldPrice = coin.Price;
             var newPrice = coinData.CurrentPrice ?? 0;
 
@@ -358,24 +388,26 @@ public class PriceUpdateService : IPriceUpdateService
                 coin.Change1Month = coinData.PriceChangePercentage30DInCurrency ?? 0;
                 coin.Change52Week = coinData.PriceChangePercentage1YInCurrency ?? 0;
 
+                // Coin was loaded AsNoTracking — re-attach for the update
                 context.Coins.Update(coin);
                 Logger.Information("Updating {0} {1} => {2}", coin.Name, oldPrice, newPrice);
 
                 await context.SaveChangesAsync();
 
-                //// Reflect the changes in the Coin entity also in the PortfolioContext
+                // Detach so the next coin iteration starts with a clean tracker
+                context.Entry(coin).State = EntityState.Detached;
+                foreach (var pl in coin.PriceLevels)
+                    context.Entry(pl).State = EntityState.Detached;
+
+                // Reflect the changes in the PortfolioContext (UI context)
                 var entity = await _portfolioService.Context.Coins.FindAsync(coin.Id);
                 if (entity != null)
-                {
                     await _portfolioService.Context.Entry(entity).ReloadAsync();
-                }
 
-                // run indicator calculations (async where needed)
+                // Run indicator calculations
                 await _indicatorService.CalculateRsiAsync(coin);
                 await _indicatorService.CalculateMaAsync(coin);
                 _indicatorService.EvaluatePriceLevels(coin, newPrice);
-
-                // notify UI of derived changes
                 coin.NotifyDerivedValuesChanged();
             }
             return coin;
@@ -392,7 +424,6 @@ public class PriceUpdateService : IPriceUpdateService
         }
         finally
         {
-            context.ChangeTracker?.Clear();
             App.UpdateSemaphore.Release();
         }
     }

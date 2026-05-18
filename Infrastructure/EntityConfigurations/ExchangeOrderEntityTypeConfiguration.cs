@@ -22,5 +22,8 @@ class ExchangeOrderEntityTypeConfiguration : IEntityTypeConfiguration<ExchangeOr
             .WithMany()
             .HasForeignKey(x => x.SignalId)
             .OnDelete(DeleteBehavior.SetNull);
+
+        // Compound index voor auto-close en journal-filter (IsPaper + Status)
+        configuration.HasIndex(x => new { x.IsPaper, x.Status });
     }
 }

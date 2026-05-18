@@ -24,7 +24,7 @@ public partial class AssetService : ObservableObject, IAssetService
     private SortingOrder currentSortingOrder;
     private Func<AssetTotals, object> currentSortFunc;
 
-    [ObservableProperty] private static ObservableCollection<AssetTotals>? listAssetTotals;
+    [ObservableProperty] private ObservableCollection<AssetTotals>? listAssetTotals;
     //[ObservableProperty] public partial double TotalAssetsValue { get; set; }
     //[ObservableProperty] public partial double TotalAssetsCostBase { get; set; }
     //[ObservableProperty] public partial double TotalAssetsPnLPerc { get; set; }

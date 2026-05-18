@@ -201,11 +201,14 @@ public class SentimentService : ISentimentService
             if (readings.Count > 0)
             {
                 context.SentimentReadings.AddRange(readings);
-                await context.SaveChangesAsync(ct);
                 totalReadings += readings.Count;
-                Logger.Debug("SentimentService: {Handle} → {Count} readings saved", source.Handle, readings.Count);
+                Logger.Debug("SentimentService: {Handle} → {Count} readings staged", source.Handle, readings.Count);
             }
         }
+
+        // Eén SaveChangesAsync voor alle bronnen — was eerder per bron (4× losse transacties)
+        if (totalReadings > 0)
+            await context.SaveChangesAsync(ct);
 
         await UpdateCoinSentimentScoresAsync(context, coins, ct);
 
