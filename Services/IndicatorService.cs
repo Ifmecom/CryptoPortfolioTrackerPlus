@@ -573,9 +573,27 @@ public class IndicatorService : IIndicatorService
         catch { /* per-coin failures are silent */ }
     }
 
-    // Loads closing prices as Skender Quote objects (OHLCV with close = price from chart)
+    /// <summary>
+    /// Laadt de lokale MarketChart-JSON als Skender <see cref="Quote"/>-objecten.
+    ///
+    /// ⚠ BELANGRIJKE BEPERKING — geen OHLC en geen volume:
+    /// De MarketChart-JSON bevat uitsluitend [timestamp, prijs]-paren (CoinGecko
+    /// market_chart, prijs-only). Daarom zijn Open=High=Low=Close (allemaal de
+    /// slotprijs) en is <c>Volume = 0</c>.
+    ///
+    /// Gevolg: indicatoren die VOLUME of echte intrabar-range nodig hebben
+    /// (OBV, MFI, ADL, VWAP, candle-body-analyse) leveren op deze quotes
+    /// stille nullen / onzin op en mogen hier NIET worden toegevoegd.
+    /// Gebruik daarvoor <see cref="IBinanceDataService.GetKlinesAsync"/> (echte OHLCV),
+    /// zoals TradeAnalysisService, PatternTradingService en de 3%-trading-tool doen.
+    ///
+    /// De bestaande scores (RSI, MACD, EMA, Bollinger, ATR, StochRSI, ADX, Keltner)
+    /// gebruiken geen volume en zijn dus correct op deze quotes.
+    /// </summary>
     private async Task<List<Quote>> LoadQuotesAsync(Coin coin)
     {
+        const decimal NoVolumeData = 0m;   // expliciet: MarketChart-JSON heeft geen volume
+
         try
         {
             var fileName = Path.Combine(AppConstants.ChartsFolder, $"MarketChart_{coin.ApiId}.json");
@@ -596,7 +614,7 @@ public class IndicatorService : IIndicatorService
                         High   = (decimal)p[1].Value,
                         Low    = (decimal)p[1].Value,
                         Close  = (decimal)p[1].Value,
-                        Volume = 0
+                        Volume = NoVolumeData,
                     })
                     .ToList();
             }

@@ -48,7 +48,9 @@ public class SignalEngine : ISignalEngine
             query = query.Where(c => c.Narrative != null && c.Narrative.Id == watchlist.Id);
 
         var coins  = await query.ToListAsync(ct);
-        var regime = await _marketRegimeService.GetCurrentRegimeAsync();
+        // Rijker regime: EMA50/200-crossover + BTC-dominantie (i.p.v. enkel-EMA op MarketChart-JSON)
+        var regimeCtx = await _marketRegimeService.GetRegimeContextAsync(ct);
+        var regime    = regimeCtx.Regime;
 
         var resultPairs = new List<(Signal Signal, Coin Coin)>();
 
@@ -64,7 +66,8 @@ public class SignalEngine : ISignalEngine
         if (results.Count > 0)
             await context.SaveChangesAsync(ct);
 
-        Logger.Information("SignalEngine: {Count} signals evaluated, regime={Regime}", results.Count, regime);
+        Logger.Information("SignalEngine: {Count} signals evaluated, regime={Regime} ({Summary})",
+            results.Count, regime, regimeCtx.Summary);
 
         // Fire-and-forget notifications (don't block the UI thread)
         _ = _notifierService.NotifySignalsAsync(
@@ -79,7 +82,7 @@ public class SignalEngine : ISignalEngine
         var context = _portfolioService.Context;
         if (context is null) return null;
 
-        var regime = await _marketRegimeService.GetCurrentRegimeAsync();
+        var regime = (await _marketRegimeService.GetRegimeContextAsync()).Regime;
         var signal = await EvaluateCoinCoreAsync(coin, tf, regime, context);
         if (signal is not null)
             await context.SaveChangesAsync();
