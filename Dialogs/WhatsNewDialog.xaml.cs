@@ -28,6 +28,21 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
+
+        AddFeature("📊", "Nieuw tabblad: Fundamentals",
+            "Een objectieve Fundamental Score (0-100) per coin volgens een professioneel due-diligence-raamwerk. " +
+            "De lijst toont market cap, FDV, volume/MC, aanbod en de score met verdict (Exceptional → Avoid).");
+
+        AddFeature("🔎", "Per coin ophalen + detailvenster",
+            "Klik 'Analyseer' om de fundamentals on-demand bij CoinGecko op te halen. Het detailvenster toont alle " +
+            "cijfers plus zes factor-subscores (tokenomics, liquiditeit, waardering, community, development, project) " +
+            "met balken, zodat je ziet wáárom een coin zijn score krijgt.");
+
+        AddFeature("🤝", "Eerlijke hybride score",
+            "Wat meetbaar is wordt automatisch gescoord; team, maturiteit, adoptie, revenue en unlocks komen via " +
+            "handmatige due-diligence (binnenkort). Een betrouwbaarheidsindicator toont hoeveel is onderbouwd.");
+
         AddVersionHeader("v1.33  —  3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
 
         AddFeature("🎯", "Nieuw tabblad: 3% Trading",

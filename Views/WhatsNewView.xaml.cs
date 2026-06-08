@@ -27,6 +27,38 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.34 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
+
+        AddFeature("📊", "Nieuw tabblad: Fundamentals",
+            "Een nieuwe pagina maakt de fundamentals van je coins inzichtelijk en kent een objectieve " +
+            "Fundamental Score (0-100) toe volgens een professioneel due-diligence-raamwerk. De lijst toont " +
+            "per coin de market cap, FDV, 24u-volume, volume/market-cap-ratio, circulerend aanbod en de score " +
+            "met verdict (Exceptional → Avoid). Coins worden gesorteerd op score.");
+
+        AddFeature("🔎", "Per coin ophalen + detailvenster",
+            "Klik op 'Analyseer' bij een coin om de fundamentals on-demand bij CoinGecko op te halen (aanbod, " +
+            "FDV, ATH/ATL, categorieën, links/whitepaper, GitHub-activiteit en community-cijfers). Het detailvenster " +
+            "toont alle cijfers plus de zes factor-subscores (Tokenomics, Liquiditeit, Waardering, Community, " +
+            "Development, Projectvolledigheid) met balken, zodat je ziet wáárom een coin zijn score krijgt.");
+
+        AddFeature("🤝", "Eerlijke hybride score",
+            "Wat meetbaar is, scoort de tool automatisch. Wat dat niet is — team, product-maturiteit, adoptie, " +
+            "revenue en token-unlocks — komt via handmatige due-diligence (binnenkort) en verhoogt de " +
+            "betrouwbaarheid van de totaalscore. Geen verzonnen cijfers: een 'Betrouwbaarheid'-indicator laat " +
+            "zien hoeveel van het raamwerk daadwerkelijk is onderbouwd.");
+
+        AddFeature("💾", "Opgeslagen met datum — geen onnodige API-calls",
+            "Eenmaal opgehaalde fundamentals worden met een datum bewaard en blijven staan; bij het openen wordt " +
+            "niets opnieuw afgeroepen. Elke coin toont hoe oud de data is en krijgt na de versheidsdrempel een " +
+            "'verouderd'-label. De knop 'Verouderde' haalt in één keer alleen op wat nodig is en slaat verse coins over. " +
+            "De versheidsdrempel (standaard 7 dagen) is instelbaar op de pagina.");
+
+        AddFeature("⭐", "Favorieten + 'Refresh favorieten'",
+            "Markeer tot 10 coins als favoriet met de ster; favorieten staan bovenaan en zijn met één filter te tonen. " +
+            "De knop 'Favorieten' ververst in één klik alleen je favoriete coins — ideaal om je vaste shortlist " +
+            "actueel te houden zonder alles af te roepen.");
+
         // ── v1.33 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.33", "3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
 

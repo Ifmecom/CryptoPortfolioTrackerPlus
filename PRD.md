@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.33
+## CryptoPortfolioTracker Plus — v1.34
 
 | | |
 |---|---|
@@ -742,6 +742,52 @@ Een "kans" is hier een historisch gemeten waarschijnlijkheid (uit een backtest),
 
 ---
 
+### 4.18 Fundamentele Analyse *(v1.34)*
+
+**Doel:** Fundamentals per coin inzichtelijk maken en een objectieve **Fundamental Score (0-100)**
+toekennen volgens een professioneel due-diligence-raamwerk. **Hybride aanpak:** automatisch wat
+meetbaar is uit CoinGecko, handmatig wat dat niet is.
+
+**Datalaag (`FundamentalsService` / `IFundamentalsService`):**
+- Haalt via CoinGecko `/coins/{id}` (met `developer_data` + `community_data`) de fundamentals op:
+  aanbod (circulating/total/max), FDV, 24u-volume, ATH/ATL (+ % en datum), market-cap rank,
+  categorieën, links (homepage/whitepaper/GitHub/Twitter/Reddit), GitHub-activiteit en community-cijfers.
+- Mapt naar de persistente entiteit `CoinFundamentals` (één rij per coin, upsert op `ApiId`).
+- `RefreshAllAsync` ververst de hele bibliotheek, rate-limited (~2,2s/call, demo-tier).
+
+**Auto-scoring (`FundamentalsScoreCalculator`, puur/testbaar):** zes subscores (0-100) met
+transparante drempels — Tokenomics (25%), Liquiditeit (20%), Waardering (15%), Community (15%),
+Development (15%), Projectvolledigheid (10%) → samengestelde **DataScore**.
+
+**Hybride totaalscore:** handmatige due-diligence (team, product-maturiteit, adoptie, revenue,
+unlocks — 0-10 elk) blendt met de DataScore tot de **TotalScore**; het DD-gewicht schaalt met het
+aantal ingevulde velden. Een **Confidence** (0-100) geeft aan hoeveel van het raamwerk is onderbouwd.
+**Verdict:** Exceptional (≥90) / Strong (≥80) / Promising (≥70) / Speculative (≥60) / High Risk (≥50) / Avoid.
+
+**Databron-grenzen (eerlijk):** team, maturiteit, adoptie (DAU/MAU), on-chain activiteit, revenue en
+unlock-schema's zijn met de gratis CoinGecko-API niet betrouwbaar te automatiseren en komen via
+handmatige DD. *Gepland (later):* DefiLlama TVL en token-unlocks.
+
+**UI (`FundamentalsView` + `FundamentalsViewModel`):** overzichtspagina met de bibliotheek-coins
+(via `ILibraryService.GetCoinsFromContext`), gesorteerd op score, met zoek-/filterbalk. Per coin een
+**Analyseer**-knop die `RefreshAsync` on-demand aanroept (handmatig, geen bulk) en een **Detail**-knop
+die `FundamentalsDetailDialog` opent: scorekop + verdict + betrouwbaarheid, de zes factor-subscores als
+balken, en alle ruwe cijfers (waardering/aanbod, extremen, community, development, project-links/whitepaper,
+beschrijving). De `FundamentalRow`-projectie levert kant-en-klare display-helpers en de score-kleur.
+
+**Caching & versheid:** opgehaalde fundamentals worden persistent bewaard met `UpdatedAt`; bij het openen
+wordt niets opnieuw afgeroepen (alleen op verzoek). Een instelbare **versheidsdrempel**
+(`Settings.FundamentalsFreshnessDays`, standaard 7) bepaalt na hoeveel dagen een coin als "verouderd" geldt;
+de knop **Verouderde** ververst alleen ontbrekende/verouderde coins (rate-limited), verse worden overgeslagen.
+
+**Favorieten:** tot 10 coins zijn als favoriet te markeren (`Settings.FundamentalsFavorites`, CSV van ApiId's).
+Favorieten staan bovenaan, zijn apart te filteren, en de knop **Favorieten** ververst in één keer alleen die set.
+
+> Handmatige DD-invoer (sliders) + SWOT/risico/waardering-rapport volgen in **Sprint C**.
+> Tabel wordt aangemaakt via `ApplyPlusSchemaAsync` (`CREATE TABLE IF NOT EXISTS`).
+
+---
+
 ## 5. Data-model en relaties
 
 ### 5.1 Entity-Relationship diagram (tekstueel)
@@ -969,6 +1015,34 @@ Snapshot van een trade-setup die de gebruiker actief volgt. Opgeslagen in SQLite
 | `PnlPct` | `(ClosePrice − Entry) / Entry × 100` (Long), gespiegeld voor Short | Null als niet gesloten |
 | `UnrealisedPnlPct` | `(CurrentPrice − Entry) / Entry × 100` (Long) | Null als status ≠ Open |
 | `EntryDistancePct` | `(CurrentPrice − Entry) / Entry × 100` (Long) | Positief = richting van winst; NaN als prijs onbekend |
+
+#### CoinFundamentals *(v1.34)*
+Fundamentele analyse per coin (één rij per coin, upsert op `ApiId`). Tabel aangemaakt via
+`ApplyPlusSchemaAsync`. Auto-velden komen uit CoinGecko; `Dd*`-velden zijn handmatige due-diligence.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Id` | int | PK |
+| `ApiId` / `Symbol` / `Name` | string | Coin-identificatie (`ApiId` uniek) |
+| `Categories` | string | CSV van sectoren/categorieën |
+| `GenesisDate` | DateTime? | Lanceerdatum (track record) |
+| `HomepageUrl` / `WhitepaperUrl` / `GithubUrl` / `TwitterHandle` / `SubredditUrl` | string | Links |
+| `Description` | string | Projectomschrijving (EN) |
+| `MarketCapRank` | long? | Market-cap rang |
+| `MarketCap` / `Fdv` / `TotalVolume` | double | Waardering & 24u-volume (USD) |
+| `Ath` / `AthChangePct` / `AthDate` | double / double / DateTime? | All-time high + afstand |
+| `Atl` / `AtlChangePct` / `AtlDate` | double / double / DateTime? | All-time low + herstel |
+| `CirculatingSupply` / `TotalSupply` / `MaxSupply` | double | Aanbod & verwatering |
+| `GithubStars` / `GithubForks` / `GithubSubscribers` / `CommitCount4Weeks` / `PullRequestsMerged` / `PullRequestContribs` | long | Development-activiteit |
+| `TwitterFollowers` / `RedditSubscribers` / `RedditActive48H` / `SentimentUpPct` | long / double | Community |
+| `ScoreTokenomics` / `ScoreLiquidity` / `ScoreValuation` / `ScoreCommunity` / `ScoreDevelopment` / `ScoreProject` | double | Auto-subscores (0–100) |
+| `DataScore` | double | Samengestelde auto-score (0–100) |
+| `DdTeam` / `DdProductMaturity` / `DdAdoption` / `DdRevenue` / `DdUnlocks` | int? | Handmatige DD (0–10, null = niet beoordeeld) |
+| `DdNotes` | string | DD-notities |
+| `TotalScore` | double | Volledige score (auto + DD) |
+| `Verdict` | string | Exceptional … Avoid |
+| `Confidence` | double | Onderbouwing van het raamwerk (0–100) |
+| `UpdatedAt` | DateTime | Laatste refresh (UTC) |
 
 #### PatternResult *(Models/ — geen DB-entiteit)*
 Één gedetecteerd patroon op een bepaald timeframe.
