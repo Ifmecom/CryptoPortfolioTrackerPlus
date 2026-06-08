@@ -322,6 +322,24 @@ public partial class Settings : ObservableObject
         set { _store.Set("BybitIsEu", value); OnPropertyChanged(nameof(BybitIsEu)); }
     }
 
+    // -----------------------------------------------------------------------
+    // Fundamentele analyse
+    // -----------------------------------------------------------------------
+
+    /// <summary>Aantal dagen dat opgehaalde fundamentals als "vers" gelden (1-90). Daarna "verouderd".</summary>
+    public int FundamentalsFreshnessDays
+    {
+        get => _store.Get("FundamentalsFreshnessDays", 7);
+        set { _store.Set("FundamentalsFreshnessDays", Math.Clamp(value, 1, 90)); OnPropertyChanged(nameof(FundamentalsFreshnessDays)); }
+    }
+
+    /// <summary>Gemarkeerde favoriete coins (CSV van CoinGecko-ApiId's, max 10).</summary>
+    public string FundamentalsFavorites
+    {
+        get => _store.Get("FundamentalsFavorites", string.Empty);
+        set { _store.Set("FundamentalsFavorites", value); OnPropertyChanged(nameof(FundamentalsFavorites)); }
+    }
+
     // New: expose flush so callers owning Settings can wait for persistence
     public Task FlushPreferenceStoreAsync(CancellationToken ct = default) =>
         _store.FlushAsync(ct);

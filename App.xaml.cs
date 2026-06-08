@@ -201,6 +201,7 @@ public partial class App : Application
         services.AddScoped<PatternTradingView>();
         services.AddScoped<SetupTrackerView>();
         services.AddScoped<ThreePctView>();
+        services.AddScoped<FundamentalsView>();
 
         services.AddScoped<AssetsViewModel>();
         services.AddScoped<AccountsViewModel>();
@@ -221,6 +222,7 @@ public partial class App : Application
         services.AddScoped<SetupTrackerViewModel>();
         services.AddScoped<TaxViewModel>();
         services.AddScoped<ThreePctViewModel>();
+        services.AddScoped<FundamentalsViewModel>();
 
         // Register the factory
         services.AddSingleton<IPortfolioContextFactory, PortfolioContextFactory>();
@@ -297,6 +299,9 @@ public partial class App : Application
         services.AddSingleton<IGlobalMarketDataService,  GlobalMarketDataService>();
         services.AddSingleton<ICorrelationService,       CorrelationService>();
         services.AddSingleton<IMacroEventService,        MacroEventService>();
+
+        // Fundamentele analyse
+        services.AddScoped<IFundamentalsService,          FundamentalsService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 

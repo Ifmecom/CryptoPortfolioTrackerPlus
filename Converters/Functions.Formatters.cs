@@ -58,4 +58,34 @@ public partial class Functions
         if (local.Year == now.Year)  return local.ToString("d MMM HH:mm");
         return local.ToString("d MMM yy HH:mm");
     }
+
+    /// <summary>Compact USD-bedrag: $1.2B / $345.6M / $12.3K / $123. "—" bij 0.</summary>
+    public static string FormatUsdCompact(double value)
+    {
+        if (value <= 0) return "—";
+        if (value >= 1_000_000_000_000) return $"${value / 1_000_000_000_000:0.##}T";
+        if (value >= 1_000_000_000)     return $"${value / 1_000_000_000:0.##}B";
+        if (value >= 1_000_000)         return $"${value / 1_000_000:0.##}M";
+        if (value >= 1_000)             return $"${value / 1_000:0.##}K";
+        return $"${value:0.##}";
+    }
+
+    /// <summary>Compact aantal (zonder $): 1.23B / 456.7M / 12.3K. "—" bij 0.</summary>
+    public static string FormatSupply(double value)
+    {
+        if (value <= 0) return "—";
+        if (value >= 1_000_000_000_000) return $"{value / 1_000_000_000_000:0.##}T";
+        if (value >= 1_000_000_000)     return $"{value / 1_000_000_000:0.##}B";
+        if (value >= 1_000_000)         return $"{value / 1_000_000:0.##}M";
+        if (value >= 1_000)             return $"{value / 1_000:0.##}K";
+        return $"{value:0.##}";
+    }
+
+    /// <summary>Percentage met expliciet teken: "+12.3%". "—" als waarde 0 is.</summary>
+    public static string FormatPercentSigned(double pct)
+        => pct == 0 ? "—" : $"{pct:+0.0;-0.0}%";
+
+    /// <summary>Ratio met één decimaal en suffix, bijv. "2.4×". "—" bij 0.</summary>
+    public static string FormatRatioX(double ratio)
+        => ratio <= 0 ? "—" : $"{ratio:0.0}×";
 }
