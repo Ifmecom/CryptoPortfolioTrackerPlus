@@ -22,7 +22,6 @@
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
                 <ColumnDefinition Width="Auto"/>
-                <ColumnDefinition Width="Auto"/>
             </Grid.ColumnDefinitions>
 
             <TextBlock Grid.Column="0"
@@ -30,25 +29,17 @@
                        Style="{ThemeResource TitleTextBlockStyle}"
                        VerticalAlignment="Center"/>
 
-            <!-- Trade-kind selector (Alle / Live / Paper) -->
-            <ComboBox Grid.Column="1"
-                      Margin="0,0,8,0"
-                      MinWidth="120"
-                      VerticalAlignment="Center"
-                      ToolTipService.ToolTip="Filter op trade-type"
-                      ItemsSource="{x:Bind _viewModel.TradeKindOptions}"
-                      SelectedItem="{x:Bind _viewModel.SelectedTradeKind, Mode=TwoWay}"/>
-
             <!-- Period selector -->
-            <ComboBox Grid.Column="2"
+            <ComboBox Grid.Column="1"
                       Margin="0,0,8,0"
                       MinWidth="180"
                       VerticalAlignment="Center"
+                      ToolTipService.ToolTip="Selecteer periode"
                       ItemsSource="{x:Bind _viewModel.PeriodOptions}"
                       SelectedItem="{x:Bind _viewModel.SelectedPeriod, Mode=TwoWay}"/>
 
             <!-- Refresh button -->
-            <Button Grid.Column="3"
+            <Button Grid.Column="2"
                     VerticalAlignment="Center"
                     Command="{x:Bind _viewModel.RefreshCommand}"
                     ToolTipService.ToolTip="Herlaad statistieken">
@@ -83,222 +74,655 @@
             </StackPanel>
         </Border>
 
-        <!-- ── Content ─────────────────────────────────────────────────── -->
-        <ScrollViewer Grid.Row="2" Padding="16,0,16,16">
-            <StackPanel Spacing="16">
+        <!-- ── Pivot: Trade Journal | Setup Strategie ──────────────────── -->
+        <Pivot Grid.Row="2" Margin="8,0,8,0">
 
-                <!-- Status bar -->
-                <TextBlock Text="{x:Bind _viewModel.StatusMessage, Mode=OneWay}"
-                           Style="{ThemeResource CaptionTextBlockStyle}"
-                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                           Margin="0,0,0,4"/>
+            <!-- ═══════════════════════════════════════════════════════════
+                 TAB 1 — Trade Journal (existing content)
+                 ═══════════════════════════════════════════════════════════ -->
+            <PivotItem Header="Trade Journal">
+                <ScrollViewer Padding="8,8,8,16">
+                    <StackPanel Spacing="16">
 
-                <!-- ── Summary cards ──────────────────────────────────── -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
+                        <!-- Trade-kind filter + status bar row -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                    <!-- Total P&L -->
-                    <Border Grid.Column="0" Margin="0,0,6,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Totale P&amp;L"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Text="{x:Bind _viewModel.TotalPnlDisplay, Mode=OneWay}"
-                                       FontSize="20" FontWeight="SemiBold"
-                                       Foreground="{x:Bind _viewModel.TotalPnlBrush, Mode=OneWay}"/>
-                        </StackPanel>
-                    </Border>
+                            <ComboBox Grid.Column="0"
+                                      MinWidth="120"
+                                      VerticalAlignment="Center"
+                                      ToolTipService.ToolTip="Filter op trade-type"
+                                      ItemsSource="{x:Bind _viewModel.TradeKindOptions}"
+                                      SelectedItem="{x:Bind _viewModel.SelectedTradeKind, Mode=TwoWay}"/>
 
-                    <!-- Win rate -->
-                    <Border Grid.Column="1" Margin="3,0,3,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Win rate"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Text="{x:Bind _viewModel.WinRateDisplay, Mode=OneWay}"
-                                       FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text="{x:Bind _viewModel.TradeCountDisplay, Mode=OneWay}"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Avg win / loss -->
-                    <Border Grid.Column="2" Margin="3,0,3,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Gem. winst / verlies"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Text="{x:Bind _viewModel.AvgWinDisplay, Mode=OneWay}"
-                                       FontSize="16" FontWeight="SemiBold"
-                                       Foreground="#3CB371"/>
-                            <TextBlock Text="{x:Bind _viewModel.AvgLossDisplay, Mode=OneWay}"
-                                       FontSize="16" FontWeight="SemiBold"
-                                       Foreground="#CD5C5C"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Open trades / volume -->
-                    <Border Grid.Column="3" Margin="6,0,0,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="16,12">
-                        <StackPanel Spacing="4">
-                            <TextBlock Text="Open posities"
-                                       Style="{ThemeResource CaptionTextBlockStyle}"
-                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
-                            <TextBlock Text="{x:Bind _viewModel.OpenTradesDisplay, Mode=OneWay}"
-                                       FontSize="20" FontWeight="SemiBold"/>
-                            <TextBlock Text="{x:Bind _viewModel.TotalVolumeDisplay, Mode=OneWay}"
+                            <TextBlock Grid.Column="1"
+                                       Margin="12,0,0,0"
+                                       Text="{x:Bind _viewModel.StatusMessage, Mode=OneWay}"
                                        Style="{ThemeResource CaptionTextBlockStyle}"
                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                       ToolTipService.ToolTip="Totaal verhandeld volume (gesloten trades)"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
+                                       VerticalAlignment="Center"/>
+                        </Grid>
 
-                <!-- ── Pie charts row ─────────────────────────────────── -->
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="*"/>
-                    </Grid.ColumnDefinitions>
-
-                    <!-- Win / Loss pie -->
-                    <Border Grid.Column="0" Margin="0,0,6,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Winst / Verlies"
-                                       Style="{ThemeResource SubtitleTextBlockStyle}"
-                                       HorizontalAlignment="Center"/>
-                            <lvc:PieChart
-                                Series="{x:Bind _viewModel.WinLossSeries, Mode=OneWay}"
-                                Height="200"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Long / Short pie -->
-                    <Border Grid.Column="1" Margin="3,0,3,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Long / Short"
-                                       Style="{ThemeResource SubtitleTextBlockStyle}"
-                                       HorizontalAlignment="Center"/>
-                            <lvc:PieChart
-                                Series="{x:Bind _viewModel.SideSeries, Mode=OneWay}"
-                                Height="200"/>
-                        </StackPanel>
-                    </Border>
-
-                    <!-- Paper / Live pie -->
-                    <Border Grid.Column="2" Margin="6,0,0,0"
-                            Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                            BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                            BorderThickness="1" CornerRadius="8" Padding="12">
-                        <StackPanel Spacing="8">
-                            <TextBlock Text="Paper / Live"
-                                       Style="{ThemeResource SubtitleTextBlockStyle}"
-                                       HorizontalAlignment="Center"/>
-                            <lvc:PieChart
-                                Series="{x:Bind _viewModel.KindSeries, Mode=OneWay}"
-                                Height="200"/>
-                        </StackPanel>
-                    </Border>
-                </Grid>
-
-                <!-- ── Best / worst symbols table ────────────────────── -->
-                <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
-                        BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
-                        BorderThickness="1" CornerRadius="8" Padding="16,12">
-                    <StackPanel Spacing="10">
-                        <TextBlock Text="Top symbols (gesloten trades)"
-                                   Style="{ThemeResource SubtitleTextBlockStyle}"/>
-
-                        <!-- Header row -->
+                        <!-- ── Summary cards ──────────────────────────────────── -->
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="80"/>
-                                <ColumnDefinition Width="140"/>
-                                <ColumnDefinition Width="100"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <TextBlock Grid.Column="0" Text="Symbol"        FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
-                            <TextBlock Grid.Column="1" Text="Trades"        FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right"/>
-                            <TextBlock Grid.Column="2" Text="Totale P&amp;L" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right"/>
-                            <TextBlock Grid.Column="3" Text="Win rate"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right"/>
+
+                            <!-- Total P&L -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Som van de gerealiseerde winst/verlies in USDT over alle gesloten trades in de geselecteerde periode en het gekozen trade-type.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Totale P&amp;L"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.TotalPnlDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"
+                                               Foreground="{x:Bind _viewModel.TotalPnlBrush, Mode=OneWay}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Win rate -->
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Percentage winstgevende trades van alle gesloten trades. De onderregel toont het aantal winst/verlies/totaal.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Win rate"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.WinRateDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{x:Bind _viewModel.TradeCountDisplay, Mode=OneWay}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Avg win / loss -->
+                            <Border Grid.Column="2" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Gemiddelde winst van winnende trades (groen) en gemiddeld verlies van verliezende trades (rood), in USDT.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Gem. winst / verlies"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.AvgWinDisplay, Mode=OneWay}"
+                                               FontSize="16" FontWeight="SemiBold"
+                                               Foreground="#3CB371"/>
+                                    <TextBlock Text="{x:Bind _viewModel.AvgLossDisplay, Mode=OneWay}"
+                                               FontSize="16" FontWeight="SemiBold"
+                                               Foreground="#CD5C5C"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Open trades / volume -->
+                            <Border Grid.Column="3" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Aantal nog openstaande (gevulde) posities. De onderregel toont het totaal verhandelde volume van gesloten trades.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Open posities"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.OpenTradesDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{x:Bind _viewModel.TotalVolumeDisplay, Mode=OneWay}"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               ToolTipService.ToolTip="Totaal verhandeld volume (gesloten trades)"/>
+                                </StackPanel>
+                            </Border>
                         </Grid>
 
-                        <MenuFlyoutSeparator/>
+                        <!-- ── Pie charts row ─────────────────────────────────── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
 
-                        <ListView ItemsSource="{x:Bind _viewModel.TopSymbols, Mode=OneWay}"
-                                  SelectionMode="None"
-                                  IsItemClickEnabled="False"
-                                  MinHeight="40">
-                            <ListView.ItemContainerStyle>
-                                <Style TargetType="ListViewItem">
-                                    <Setter Property="Padding" Value="0,4"/>
-                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
-                                    <Setter Property="MinHeight" Value="0"/>
-                                </Style>
-                            </ListView.ItemContainerStyle>
-                            <ListView.ItemTemplate>
-                                <DataTemplate x:DataType="vm:SymbolStatRow">
+                            <!-- Win / Loss pie -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="8"
+                                            ToolTipService.ToolTip="Aantal winstgevende vs. verlieslatende gesloten trades (en eventueel break-even). Telt trades, niet bedragen.">
+                                    <TextBlock Text="Winst / Verlies"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                                               HorizontalAlignment="Center"/>
+                                    <lvc:PieChart
+                                        Series="{x:Bind _viewModel.WinLossSeries, Mode=OneWay}"
+                                        Height="200"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Long / Short pie -->
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="8"
+                                            ToolTipService.ToolTip="Verdeling van de gesloten trades over Long (koop) en Short (verkoop).">
+                                    <TextBlock Text="Long / Short"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                                               HorizontalAlignment="Center"/>
+                                    <lvc:PieChart
+                                        Series="{x:Bind _viewModel.SideSeries, Mode=OneWay}"
+                                        Height="200"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Paper / Live pie -->
+                            <Border Grid.Column="2" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="8"
+                                            ToolTipService.ToolTip="Verhouding tussen oefentrades (paper) en echte trades (live) — over alle trades, niet alleen gesloten.">
+                                    <TextBlock Text="Paper / Live"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                                               HorizontalAlignment="Center"/>
+                                    <lvc:PieChart
+                                        Series="{x:Bind _viewModel.KindSeries, Mode=OneWay}"
+                                        Height="200"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── Best / worst symbols table ────────────────────── -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="16,12">
+                            <StackPanel Spacing="10">
+                                <TextBlock Text="Top symbols (gesloten trades)"
+                                           Style="{ThemeResource SubtitleTextBlockStyle}"/>
+
+                                <!-- Header row -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="80"/>
+                                        <ColumnDefinition Width="140"/>
+                                        <ColumnDefinition Width="100"/>
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock Grid.Column="0" Text="Symbol"        FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Het handelspaar. De lijst toont de 5 beste en 5 slechtste symbolen op totale P&amp;L."/>
+                                    <TextBlock Grid.Column="1" Text="Trades"        FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gesloten trades op dit symbool in de geselecteerde periode."/>
+                                    <TextBlock Grid.Column="2" Text="Totale P&amp;L" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Opgetelde winst/verlies in USDT over alle gesloten trades op dit symbool."/>
+                                    <TextBlock Grid.Column="3" Text="Win rate"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Percentage winstgevende trades op dit symbool."/>
+                                </Grid>
+
+                                <MenuFlyoutSeparator/>
+
+                                <ListView ItemsSource="{x:Bind _viewModel.TopSymbols, Mode=OneWay}"
+                                          SelectionMode="None"
+                                          IsItemClickEnabled="False"
+                                          MinHeight="40">
+                                    <ListView.ItemContainerStyle>
+                                        <Style TargetType="ListViewItem">
+                                            <Setter Property="Padding" Value="0,4"/>
+                                            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                            <Setter Property="MinHeight" Value="0"/>
+                                        </Style>
+                                    </ListView.ItemContainerStyle>
+                                    <ListView.ItemTemplate>
+                                        <DataTemplate x:DataType="vm:SymbolStatRow">
+                                            <Grid>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*"/>
+                                                    <ColumnDefinition Width="80"/>
+                                                    <ColumnDefinition Width="140"/>
+                                                    <ColumnDefinition Width="100"/>
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Grid.Column="0"
+                                                           Text="{x:Bind Symbol}"
+                                                           FontFamily="Consolas"
+                                                           FontSize="12"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Grid.Column="1"
+                                                           Text="{x:Bind Trades}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="12"/>
+                                                <TextBlock Grid.Column="2"
+                                                           Text="{x:Bind PnlDisplay}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           FontFamily="Consolas"
+                                                           FontSize="12"
+                                                           Foreground="{x:Bind PnlBrushCached}"/>
+                                                <TextBlock Grid.Column="3"
+                                                           Text="{x:Bind WinRateDisplay}"
+                                                           HorizontalAlignment="Right"
+                                                           VerticalAlignment="Center"
+                                                           FontSize="12"/>
+                                            </Grid>
+                                        </DataTemplate>
+                                    </ListView.ItemTemplate>
+                                </ListView>
+                            </StackPanel>
+                        </Border>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 TAB 2 — Setup Strategie
+                 ═══════════════════════════════════════════════════════════ -->
+            <PivotItem Header="Setup Strategie">
+                <ScrollViewer Padding="8,8,8,16">
+                    <StackPanel Spacing="16">
+
+                        <!-- Status bar -->
+                        <TextBlock Text="{x:Bind _viewModel.SetupStatusMessage, Mode=OneWay}"
+                                   Style="{ThemeResource CaptionTextBlockStyle}"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   Margin="0,0,0,4"/>
+
+                        <!-- ── Kernmetrics (rij 1) ──────────────────────────── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Win Rate TP1 -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Percentage setups dat TP1 heeft bereikt">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Win Rate TP1"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupWinRateTp1Display, Mode=OneWay}"
+                                               FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Win Rate TP2 -->
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Percentage gewonnen setups dat ook TP2 heeft bereikt">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Win Rate TP2"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupWinRateTp2Display, Mode=OneWay}"
+                                               FontSize="16" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Profit Factor -->
+                            <Border Grid.Column="2" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Totale winst% / totale verlies% — boven 1.5 is goed">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Profit Factor"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupProfitFactorDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Expectancy -->
+                            <Border Grid.Column="3" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Verwachte opbrengst per setup: (WR × gem.winst%) − (LR × gem.verlies%)">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Verwachte opbrengst"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupExpectancyDisplay, Mode=OneWay}"
+                                               FontSize="14" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── Kernmetrics (rij 2) ──────────────────────────── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Gem. P&L -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Gemiddeld procentueel resultaat over alle gesloten setups (winst én verlies samen). Positief betekent dat de strategie gemiddeld geld oplevert per setup.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Gem. P&amp;L per setup"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupAvgPnlDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Gem. houdtijd -->
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Gemiddelde tijd tussen het toevoegen van een setup en het sluiten ervan (TP of SL geraakt). Toont in uren tot 48u, daarna in dagen.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Gem. houdtijd"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupAvgHoldTimeDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Totaal setups -->
+                            <Border Grid.Column="2" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Totaal aantal gevolgde setups ooit aangemaakt (open, gesloten en verlopen samen).">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Setups totaal"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupTotalDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Actief -->
+                            <Border Grid.Column="3" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Aantal setups dat nog loopt: 'Watching' (wacht op entry) of 'Open' (entry geraakt, nog niet afgesloten).">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Actief (Watching / Open)"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SetupOpenDisplay, Mode=OneWay}"
+                                               FontSize="20" FontWeight="SemiBold"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── Grafieken rij 1: Won/Lost + Long/Short pie ──── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Won / Lost pie -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="8"
+                                            ToolTipService.ToolTip="Verhouding gewonnen vs. verloren setups (TP1 bereikt = gewonnen, SL geraakt = verloren). Alleen gesloten setups tellen mee.">
+                                    <TextBlock Text="Gewonnen / Verloren"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                                               HorizontalAlignment="Center"/>
+                                    <lvc:PieChart
+                                        Series="{x:Bind _viewModel.SetupWinLostSeries, Mode=OneWay}"
+                                        Height="190"
+                                        LegendPosition="Bottom"/>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Long / Short pie -->
+                            <Border Grid.Column="1" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="12">
+                                <StackPanel Spacing="8"
+                                            ToolTipService.ToolTip="Verdeling van de gesloten setups over Long- en Short-richtingen. Laat zien of je strategie vooral op stijging of daling inzet.">
+                                    <TextBlock Text="Long / Short"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"
+                                               HorizontalAlignment="Center"/>
+                                    <lvc:PieChart
+                                        Series="{x:Bind _viewModel.SetupLongShortSeries, Mode=OneWay}"
+                                        Height="190"
+                                        LegendPosition="Bottom"/>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                        <!-- ── Grafieken rij 2: Resultaat per score-klasse ── -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="16,12">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8"
+                                            ToolTipService.ToolTip="Gewonnen vs. verloren setups gegroepeerd per score-klasse. Idealiter winnen hogere scores vaker — zo zie je of je scoremodel werkt.">
+                                    <TextBlock Text="Resultaat per score-klasse"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="(hoger score = meer zekerheid op het moment van de setup)"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <lvc:CartesianChart
+                                    Series="{x:Bind _viewModel.SetupScoreSeries, Mode=OneWay}"
+                                    XAxes="{x:Bind _viewModel.SetupScoreXAxis, Mode=OneWay}"
+                                    Height="220"
+                                    LegendPosition="Bottom"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Grafieken rij 3: Equity-curve ─────────────── -->
+                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                BorderThickness="1" CornerRadius="8" Padding="16,12">
+                            <StackPanel Spacing="8">
+                                <StackPanel Orientation="Horizontal" Spacing="8"
+                                            ToolTipService.ToolTip="De opgetelde PnL% over je gesloten setups in chronologische volgorde. Een stijgende lijn betekent dat de strategie over tijd geld oplevert; een dalende lijn het tegenovergestelde.">
+                                    <TextBlock Text="Cumulatieve PnL %"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="(opeenvolgende gesloten setups, gesorteerd op sluitdatum)"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                               VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <lvc:CartesianChart
+                                    Series="{x:Bind _viewModel.SetupEquitySeries, Mode=OneWay}"
+                                    YAxes="{x:Bind _viewModel.SetupEquityYAxis, Mode=OneWay}"
+                                    Height="220"/>
+                            </StackPanel>
+                        </Border>
+
+                        <!-- ── Breakdown tabellen (3 kolommen) ─────────────── -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Per richting (Long / Short) -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Per richting"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
                                     <Grid>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*"/>
-                                            <ColumnDefinition Width="80"/>
-                                            <ColumnDefinition Width="140"/>
-                                            <ColumnDefinition Width="100"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="65"/>
+                                            <ColumnDefinition Width="65"/>
                                         </Grid.ColumnDefinitions>
-                                        <TextBlock Grid.Column="0"
-                                                   Text="{x:Bind Symbol}"
-                                                   FontFamily="Consolas"
-                                                   FontSize="12"
-                                                   VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1"
-                                                   Text="{x:Bind Trades}"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="12"/>
-                                        <TextBlock Grid.Column="2"
-                                                   Text="{x:Bind PnlDisplay}"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center"
-                                                   FontFamily="Consolas"
-                                                   FontSize="12"
-                                                   Foreground="{x:Bind PnlBrushCached}"/>
-                                        <TextBlock Grid.Column="3"
-                                                   Text="{x:Bind WinRateDisplay}"
-                                                   HorizontalAlignment="Right"
-                                                   VerticalAlignment="Center"
-                                                   FontSize="12"/>
+                                        <TextBlock Grid.Column="0" Text="Richting"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Long- of Short-setups, apart gegroepeerd."/>
+                                        <TextBlock Grid.Column="1" Text="W/L"        FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gewonnen versus verloren setups in deze groep (W = Won, L = Lost)."/>
+                                        <TextBlock Grid.Column="2" Text="Win%"       FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Win rate van deze groep: gewonnen / (gewonnen + verloren) × 100. Groen ≥ 55%, rood &lt; 45%."/>
+                                        <TextBlock Grid.Column="3" Text="Gem. PnL"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld procentueel resultaat per setup in deze groep (winst en verlies samen)."/>
                                     </Grid>
-                                </DataTemplate>
-                            </ListView.ItemTemplate>
-                        </ListView>
-                    </StackPanel>
-                </Border>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.SetupByDirection, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SetupBreakdownRow">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind Label}"         FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind CountDisplay}"  FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind WinRateDisplay}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind WinRateBrush}"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind AvgPnlDisplay}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgPnlBrush}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
 
-            </StackPanel>
-        </ScrollViewer>
+                            <!-- Per score bucket -->
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Per score-klasse"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="65"/>
+                                            <ColumnDefinition Width="65"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Score"     FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Score-klasse van de setup bij aanmaak (&lt; 50 / 50–64 / 65–79 / 80+)."/>
+                                        <TextBlock Grid.Column="1" Text="W/L"       FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gewonnen versus verloren setups in deze groep (W = Won, L = Lost)."/>
+                                        <TextBlock Grid.Column="2" Text="Win%"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Win rate van deze groep: gewonnen / (gewonnen + verloren) × 100. Groen ≥ 55%, rood &lt; 45%."/>
+                                        <TextBlock Grid.Column="3" Text="Gem. PnL"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld procentueel resultaat per setup in deze groep (winst en verlies samen)."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.SetupByScore, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SetupBreakdownRow">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind Label}"          FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind CountDisplay}"   FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind WinRateDisplay}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind WinRateBrush}"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind AvgPnlDisplay}"  FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgPnlBrush}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Per marktregime -->
+                            <Border Grid.Column="2" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Per marktregime (BTC)"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="65"/>
+                                            <ColumnDefinition Width="65"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Regime"    FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Het BTC-marktregime op het moment dat de setup werd aangemaakt (RiskOn / Neutral / RiskOff / Onbekend)."/>
+                                        <TextBlock Grid.Column="1" Text="W/L"       FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gewonnen versus verloren setups in deze groep (W = Won, L = Lost)."/>
+                                        <TextBlock Grid.Column="2" Text="Win%"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Win rate van deze groep: gewonnen / (gewonnen + verloren) × 100. Groen ≥ 55%, rood &lt; 45%."/>
+                                        <TextBlock Grid.Column="3" Text="Gem. PnL"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld procentueel resultaat per setup in deze groep (winst en verlies samen)."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.SetupByRegime, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:SetupBreakdownRow">
+                                                <Grid>
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                        <ColumnDefinition Width="65"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind Label}"          FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind CountDisplay}"   FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind WinRateDisplay}" FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind WinRateBrush}"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind AvgPnlDisplay}"  FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgPnlBrush}"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+                        </Grid>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+        </Pivot>
     </Grid>
 </Page>
