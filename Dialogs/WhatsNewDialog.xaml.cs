@@ -28,6 +28,75 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.33  —  3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
+
+        AddFeature("🎯", "Nieuw tabblad: 3% Trading",
+            "Gekalibreerd scoremodel met netto-doel van +3% na fees. Fase 1 meet per scoreklasse de " +
+            "werkelijke historische hitrate en expectancy; Fase 2 scoort je coins en koppelt ze aan die meting. " +
+            "Liquiditeit en funding/positionering fungeren als gatekeeper.");
+
+        AddFeature("🔗", "Regime, correlatie & detailvenster",
+            "Marktregime via BTC EMA50/200 + dominantie. Een gediversifieerde shortlist voorkomt vijf keer " +
+            "dezelfde BTC-weddenschap. Elke setup heeft een detailvenster met indicatoren, S/R, positionering, " +
+            "invalidatieniveau en aankomende macro-events (FOMC/CPI/NFP).");
+
+        AddFeature("🛡️", "Veiliger trade-advies",
+            "Trade Advies en Pattern Trading markeren nu ongeldige setups (bv. ATR=0 → SL op de instap) en " +
+            "waarschuwen bij krappe risk/reward (< 1,5:1). Trade Advies toont ook liquiditeit, funding en " +
+            "event-risico als markt-context.");
+
+        AddFeature("📝", "3% Trading — paper trades & forward-test",
+            "Activeer een setup uit de Live Scan als paper trade en volg ze in het nieuwe tabblad 'Paper Trades' " +
+            "met live win-rate en P&L. Vernieuwen vult pending orders en laat TP/SL triggeren op de actuele koers.");
+
+        AddVersionHeader("v1.32  —  Setup Tracker verbeterd · Instaptijden · TDD-testraamwerk");
+
+        AddFeature("⚠️", "Bevestiging bij handmatig sluiten vóór TP1",
+            "Als TP1 nog niet bereikt is bij het handmatig markeren als Gewonnen, " +
+            "verschijnt een dialoog met de resterende afstand tot TP1.");
+
+        AddFeature("📥", "Instap- en sluitingstijden op setupkaarten",
+            "Elke setupkaart toont wanneer de entry werd geraakt (📥) en wanneer TP1/SL viel (📤). " +
+            "Bestaande trades zijn teruggevuld met de AddedAt-datum.");
+
+        AddVersionHeader("v1.31  —  Patroonherkenning verbeterd · Trade Advies consistent met Pattern Trading");
+
+        AddFeature("📐", "Wedge-herkenning gecorrigeerd",
+            "Falling/Rising Wedge lijnen lopen nu geometrisch correct naar elkaar toe (≥30% convergentie). " +
+            "Swing-detectie filtert micro-swings <0,5% en keerpuntpatronen vereisen een voorafgaande trend van ≥15%.");
+
+        AddFeature("🔗", "Trade Advies = Pattern Trading score",
+            "Score en richting in Trade Advies worden nu live berekend met dezelfde engine als Pattern Trading. " +
+            "Dezelfde coin kan niet meer tegelijk Long én Short tonen.");
+
+        AddVersionHeader("v1.30  —  Setup Tracker · Papertrade vanuit patronen · S/R met TF-label");
+
+        AddFeature("📋", "Setup Tracker",
+            "Nieuw tabblad om gevolgde patroon-setups bij te houden. " +
+            "Win rate dashboard toont of >50% van de setups winstgevend sluit. " +
+            "Status wordt automatisch bijgewerkt zodra de koers TP1 of SL raakt.");
+
+        AddFeature("📝", "Neem papertrade vanuit Pattern Trading",
+            "Directe knop per coin om de papertrade-dialog te openen met entry, SL en TP vooringevuld.");
+
+        AddFeature("📊", "S/R-labels met timeframe",
+            "Lijnen in de grafiek tonen nu 'S-4H' of 'R-1D' zodat je meteen ziet hoe zwaar een niveau weegt.");
+
+        AddVersionHeader("v1.25  —  Pattern Trading: 15M timeframe · Watchlijst UX · Sorteren & Filteren");
+
+        AddFeature("⏱", "15-minuten timeframe",
+            "Vier timeframes: 1D, 4H, 1H én 15M. Biasbadges en patronen op alle vier in de coin-kaarten. " +
+            "'15M'-knop in de grafiek. TF-conflict-waarschuwing wanneer 1D en 4H tegengesteld zijn.");
+
+        AddFeature("👁", "Watchlijst vernieuwd",
+            "Eigen uitklapbaar paneel met alle watchlist-coins als chips (direct verwijderbaar). " +
+            "Zoekvak met voortgangsring en duidelijke foutmelding bij CoinGecko rate-limiting. " +
+            "Dubbele-uitvoering bij suggestie-klik is verholpen.");
+
+        AddFeature("📊", "Sorteren & filteren",
+            "Sorteer op score, 24u verandering of breakout-afstand. " +
+            "Filterknop per timeframe (1D/4H/1H/15M). Zoeken in geladen resultaten op naam of symbol.");
+
         AddVersionHeader("v1.10  —  Trade Advies redesign · Analyseer alles · Fallback databronnen");
 
         AddFeature("📊", "Trade Advies — Analyseer alles in één klik",

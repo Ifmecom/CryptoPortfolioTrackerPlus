@@ -27,6 +27,312 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.33 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.33", "3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
+
+        AddFeature("🎯", "Nieuw tabblad: 3% Trading",
+            "Een gekalibreerd scoremodel met een vast netto-doel van +3% na fees en slippage. " +
+            "Fase 1 (Kalibratie) draait een backtest over maximaal 1000 candles en meet per scoreklasse " +
+            "(0-40 / 41-60 / 61-80 / 81-100) de werkelijke hitrate en expectancy. Fase 2 (Live Scan) " +
+            "scoort al je coins en koppelt de score aan die gemeten hitrate — een 'kans' is dus een " +
+            "historisch gemeten waarschijnlijkheid, geen aanname.");
+
+        AddFeature("📊", "Zeven-factor model met gatekeepers",
+            "Trend, momentum, volume/OBV, volatiliteit en support/resistance bepalen de score. " +
+            "Liquiditeit (orderboek-spread & diepte) en positionering (funding rate, long/short-ratio via " +
+            "Binance Futures) fungeren als gatekeeper: setups met te dunne liquiditeit of extreme funding " +
+            "worden eruit gefilterd, hoe mooi de technische analyse ook is.");
+
+        AddFeature("🔗", "Marktregime + correlatie-diversificatie",
+            "Het regime wordt bepaald via BTC EMA50/200 (golden/death cross) plus BTC-dominantie. " +
+            "De live scan bouwt een gediversifieerde shortlist: onderling sterk gecorreleerde alts tellen " +
+            "als één trade, zodat je niet vijf keer dezelfde BTC-weddenschap aangaat. Elke setup heeft een " +
+            "detailvenster met indicatoren, S/R, positionering, invalidatieniveau en aankomende macro-events.");
+
+        AddFeature("🛡️", "Trade Advies & Pattern Trading: ongeldige setups gemarkeerd",
+            "SL/TP-niveaus worden nu bij het genereren gevalideerd. Een degenerate setup (bijvoorbeeld als de " +
+            "ATR tijdelijk 0 is, waardoor de stop-loss op de instapprijs zou vallen) wordt duidelijk als " +
+            "ongeldig gemarkeerd, en een krappe risk/reward (< 1,5:1) krijgt een waarschuwing.");
+
+        AddFeature("💧", "Markt-context in Trade Advies",
+            "Het advies toont nu ook liquiditeit (spread & orderboekdiepte), positionering (funding & " +
+            "long/short-ratio) en een waarschuwing voor macro-events (FOMC, CPI, NFP, PCE) binnen de horizon.");
+
+        AddFeature("🧪", "Robuustere kern + meer tests",
+            "De setup-niveau-berekeningen zijn ontdubbeld naar één gedeelde, geteste rekenkern, en de " +
+            "API-aanroepen delen één cache. Het testraamwerk telt nu 183 unit tests (was 40).");
+
+        AddFeature("📝", "3% Trading — paper trades activeren & forward-testen",
+            "Vanuit de Live Scan kun je een setup nu met één klik als paper trade activeren (zelfde dialoog " +
+            "als elders, met entry/SL/TP voorgevuld). Een nieuw tabblad 'Paper Trades' toont uitsluitend deze " +
+            "3%-trades met live win-rate en P&L. Druk op Vernieuwen om pending orders te vullen en TP/SL te laten " +
+            "triggeren op de actuele koers — zo test je met live data of de strategie echt werkt, zonder echt geld.");
+
+        // ── v1.32 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.32", "Setup Tracker verbeterd · Instap-/sluitingstijden · TDD-testraamwerk");
+
+        AddFeature("⚠️", "Bevestiging vereist als TP1 nog niet bereikt is",
+            "Als je een trade handmatig als Gewonnen markeert terwijl de koers TP1 nog niet heeft aangeraakt, " +
+            "verschijnt er een bevestigingsdialoog met de afstand tot TP1 in procenten. " +
+            "Dit voorkomt dat trades per ongeluk worden gesloten op de huidige koers in plaats van op het doelopunt.");
+
+        AddFeature("📥", "Instap- en sluitingstijden op Setup Tracker-kaarten",
+            "Elke setup toont nu wanneer de entry-prijs werd geraakt (📥) en wanneer TP1/SL werd bereikt (📤). " +
+            "De tijd wordt weergegeven als HH:mm voor vandaag, als datum+tijd voor oudere trades. " +
+            "Bestaande Won/Lost/Open trades zijn automatisch gevuld met de AddedAt-datum als benadering.");
+
+        AddFeature("🧪", "Unit test-raamwerk opgezet (TDD)",
+            "40 unit tests dekken de kernlogica af: Setup Tracker TP/SL-detectie (13 tests), " +
+            "model-berekeningen zoals PnlPct en RiskReward (8 tests), " +
+            "patroonherkenning-score (6 tests) en string-formatters (8 tests). " +
+            "Tests draaien met dotnet test en zijn altijd uitvoerbaar zonder VS-build.");
+
+        // ── v1.31 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.31", "Patroonherkenning verbeterd · Trade Advies consistent met Pattern Trading");
+
+        AddFeature("📐", "Falling/Rising Wedge — correcte geometrische convergentie",
+            "Wigpatronen worden nu herkend op basis van echte geometrische convergentie: " +
+            "de bandbreedte aan het einde moet ≥30% smaller zijn dan aan het begin. " +
+            "De ingetekende lijnen lopen zichtbaar naar elkaar toe — een falling wedge staat nu bovenaan breder en " +
+            "onderaan smal, zoals het hoort. Kanalen worden uitgesloten als de lijnen convergeren.");
+
+        AddFeature("📊", "Swing-detectie — significantiefilter van 0,5%",
+            "Kleine micro-swings die binnen 0,5% van hun buurstaven liggen worden niet meer als zwaaipunt geteld. " +
+            "Dit elimineert ruis en zorgt dat trendlijnen alleen op echte koerswendepunten zijn gebaseerd.");
+
+        AddFeature("🔍", "Keerpuntpatronen vereisen een voorafgaande trend",
+            "Hoofd-en-schouders, dubbele top/bodem en inverse varianten worden alleen herkend als er " +
+            "vooraf een duidelijke trend aanwezig is (≥15% koersbeweging over de laatste 50 dagbars). " +
+            "Dit voorkomt dat keerpuntpatronen worden gesignaleerd in een zijwaartse markt.");
+
+        AddFeature("⏳", "Verlopen patronen worden gefilterd",
+            "Patronen waarbij de huidige koers het sleutelniveau (neckline, top, bodem) al meer dan 8% heeft " +
+            "gepasseerd worden automatisch buiten beschouwing gelaten — de setup is al uitgespeeld.");
+
+        AddFeature("🔗", "Trade Advies en Pattern Trading altijd consistent",
+            "De score en richting in Trade Advies worden nu berekend met dezelfde live engine als Pattern Trading " +
+            "(op basis van vers opgehaalde OHLCV-data: EMA-cross, RSI, MACD, ADX, %B, Squeeze). " +
+            "Eerder gebruikte Trade Advies een verouderde DB-waarde van de Signal Engine, " +
+            "waardoor dezelfde coin tegelijkertijd Long en Short kon tonen. Dit is opgelost.");
+
+        // ── v1.30 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.30", "Setup Tracker · S/R met timeframe-label · Brede zoekbalk");
+
+        AddFeature("📋", "Setup Tracker — win rate monitoring",
+            "Nieuw tabblad 'Setup Tracker' in het hoofdmenu. Klik op 'Volg trade setup' bij een Pattern Trading coin " +
+            "om de setup te locken met entry, SL, TP1, TP2 en patronen. " +
+            "De tracker meet automatisch of de koers TP1 of de SL bereikt en werkt de status bij na elke analyse-run. " +
+            "Bovenin zie je je win rate — doel is >50% winstgevende closes. " +
+            "Filter op Watching / Gewonnen / Verloren / Verlopen en verwijder afgeronde setups handmatig.");
+
+        AddFeature("📝", "Neem papertrade vanuit Pattern Trading",
+            "Nieuwe knop 'Neem papertrade' op elke coin-kaart. De bestaande papertrade-dialog opent automatisch " +
+            "met entry, stop-loss, TP1 en TP2 alvast ingevuld vanuit de patroonanalyse. " +
+            "Pas aan waar nodig en bevestig om de trade te loggen in het Trade Journal.");
+
+        AddFeature("📊", "S/R-lijnen in chart met timeframe-label",
+            "Support- en resistancelijnen in de interactieve grafiek tonen nu het timeframe waarop ze zijn vastgesteld: " +
+            "bijv. 'S-4H' of 'R-1D'. Zo is in één oogopslag duidelijk hoe zwaar een niveau weegt.");
+
+        AddFeature("🔍", "Bredere zoekbalk in watchlijst-paneel",
+            "Het zoekvak voor het toevoegen van coins aan de watchlijst is flink verbreed " +
+            "zodat lange coin-namen niet worden afgekapt.");
+
+        AddFeature("🟡", "Setup Tracker — 'In Trade'-status en live koers",
+            "De Setup Tracker detecteert nu automatisch wanneer een trade is ingegaan: " +
+            "zodra de live koers de instapprijs bereikt (Long: koers ≤ entry; Short: koers ≥ entry) " +
+            "schakelt de status over van 'Watching' naar '🟡 In Trade'. " +
+            "De live koers verschijnt direct onder de coin-naam en ticker op elke kaart, " +
+            "samen met de procentuele afstand tot de instapprijs (+ = richting van winst). " +
+            "Bovenin de pagina staat een extra teller 'In Trade' naast Watching, Won en Lost. " +
+            "Filter snel op alle lopende trades via de '🟡 In Trade'-knop in de filterbalk.");
+
+        AddFeature("📊", "Setup Tracker — P&L en ongerealiseerde P&L",
+            "Elke kaart toont nu het P&L-resultaat, passend bij de status: " +
+            "Gewonnen/Verloren setups tonen het gerealiseerde rendement in % ten opzichte van de instapprijs. " +
+            "Lopende trades (In Trade) tonen de ongerealiseerde P&L % live op basis van de actuele koers. " +
+            "Beide waarden zijn groen bij winst en rood bij verlies.");
+
+        AddFeature("💬", "Tooltips doorvoeren in de hele app",
+            "Alle status-badges, filterknoppen, sorteeropties en actieknoppen in Setup Tracker, " +
+            "Pattern Trading, Trade Journal en Signalen hebben nu informatieve tooltips. " +
+            "Beweeg over een status-badge om een uitleg te zien van wat die status betekent.");
+
+        AddFeature("⚡", "Setup Tracker — automatische koersverversing",
+            "De Setup Tracker ververst de live koersen en statussen automatisch na elke " +
+            "koersupdatecyclus van de app — zonder dat je handmatig op 'Vernieuwen' hoeft te klikken. " +
+            "Een tijdstempel naast de Vernieuwen-knop toont wanneer de prijzen voor het laatst zijn bijgewerkt.");
+
+        AddFeature("📈", "Statistieken — Setup Strategie tab",
+            "Een nieuw tabblad 'Setup Strategie' in de Statistieken-pagina laat zien hoe goed je setupstrategie presteert. " +
+            "Kernmetrics: Win Rate TP1 (hoeveel setups TP1 bereiken), Win Rate TP2, Profit Factor en verwachte opbrengst per setup. " +
+            "Breakdowntabellen tonen de win rate per richting (Long/Short), per score-klasse en per marktregime (BTC). " +
+            "De periode-filter van het Trade Journal tabblad geldt ook voor de setup statistieken.");
+
+        AddFeature("🔗", "Setups gekoppeld aan paper trades",
+            "Wanneer je een paper trade opent voor een coin die al in de Setup Tracker staat, " +
+            "worden de order en de setup automatisch aan elkaar gekoppeld. " +
+            "Zo is direct terug te zien welke setup tot welke trade heeft geleid.");
+
+        AddFeature("🌍", "Marktregime vastgelegd bij aanmaken setup",
+            "Bij het toevoegen van een setup aan de tracker wordt het BTC-marktregime op dat moment opgeslagen " +
+            "(RiskOn / Neutral / RiskOff). De Setup Strategie-statistieken gebruiken dit om te laten zien " +
+            "in welk marktklimaat jouw setups het beste presteren.");
+
+        AddFeature("✅", "TP2 tracking in Setup Tracker",
+            "De Setup Tracker detecteert nu ook wanneer TP2 wordt bereikt. " +
+            "In de statistieken zie je hoeveel procent van de gewonnen setups ook TP2 heeft gehaald, " +
+            "zodat je kunt beoordelen of het lonen om een tweede doelkoers in te stellen.");
+
+        // ── v1.25 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.25", "Pattern Trading — Volledig vernieuwd en uitgebreid");
+
+        AddFeature("⏱", "15-minuten timeframe toegevoegd",
+            "De multi-timeframe architectuur is uitgebreid met een vierde timeframe: 15M. " +
+            "Elke coin wordt nu geanalyseerd op 1D, 4H, 1H én 15M. " +
+            "Op elke card staan vier biasbadges (kleurgecodeerd) en patronen worden ook op 15M gedetecteerd. " +
+            "In de interactieve grafiek staat een nieuwe '15M'-knop. " +
+            "Wanneer je op een 15M-patroonbadge klikt opent de grafiek direct in het 15M-timeframe.");
+
+        AddFeature("👁", "Watchlijst volledig vernieuwd",
+            "De watchlijst heeft een eigen uitklapbaar Expander-paneel gekregen bovenaan de pagina. " +
+            "Het paneel toont alle coins op je watchlijst als chips; elke chip heeft een ✕-knop om direct te verwijderen. " +
+            "Zoeken werkt met het zoekvak in het paneel — begin te typen en selecteer een coin uit de suggesties. " +
+            "Een voortgangsring geeft aan dat er gezocht wordt. " +
+            "Foutmeldingen (bijv. CoinGecko rate-limit) worden direct in de statusbalk getoond. " +
+            "De dubbele-uitvoering bij suggestie-klik is verholpen.");
+
+        AddFeature("🔗", "TF-conflict waarschuwing",
+            "Wanneer 1D en 4H een tegengestelde bias hebben (bijv. 1D Bullish maar 4H Bearish) " +
+            "verschijnt automatisch een oranje '⚠ TF-conflict 1D/4H' label op de coin-kaart. " +
+            "Dit waarschuwt voor tegengestelde signalen op verschillende timeframes.");
+
+        AddFeature("📊", "Sorteer- en filteropties",
+            "Drie sorteeropties: op score (standaard), op 24u verandering, of op afstand tot de dichtste weerstand. " +
+            "Tijdframe-filter: toon alleen coins met patronen op een specifiek TF (1D / 4H / 1H / 15M). " +
+            "In-lijst zoeken: zoek direct in de geladen resultaten op naam of ticker-symbol.");
+
+        AddFeature("✨", "UX-verbeteringen",
+            "Bull flag en bear flag tonen nu annotaties in de grafiek: pijlen voor pool-start/top en hlines voor breakout/breakdown. " +
+            "Typo 'Ascendng. Driehoek' hersteld naar 'Oplopende Driehoek'. " +
+            "Overflow-chip '+N' verschijnt wanneer een coin meer dan 6 sterke patronen heeft. " +
+            "Stalenessmelding toont hoe lang geleden de analyse is uitgevoerd (oranje na 1 uur). " +
+            "Leegstaatmelding wanneer geen coins aan het filter voldoen. " +
+            "Lijstweergave omgezet naar ListView voor UI-virtualisatie bij grote portfolio's.");
+
+        // ── v1.24 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.24", "Pattern Trading — Pattern Handboek venster");
+
+        AddFeature("📖", "Pattern Handboek inzien",
+            "De knop '📖 Handboek' in de filterrij opent een apart, niet-modaal venster met het volledige " +
+            "Pattern Handboek. Het handboek toont per patroon: de exacte detectiecriteria, drempelwaarden, " +
+            "bevestigingsregels en veelgemaakte detectiefouten (F1–F10). " +
+            "Het venster kan naast de pattern-lijst openblijven zodat je een patroon direct kunt opzoeken " +
+            "terwijl je de analyse bekijkt. " +
+            "De markdown wordt offline omgezet naar gestylede HTML — geen internetverbinding vereist.");
+
+        // ── v1.23 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.23", "Pattern Trading — Adam & Eve + Ascending/Descending Channel");
+
+        AddFeature("🌊", "Adam & Eve patroon",
+            "Een geavanceerde variant op de dubbele bodem waarbij één bodem scherp (V-vormig, 'Adam') is " +
+            "en de andere afgerond ('Eve'). De combinatie van beide bodemvormen wijst op volledige " +
+            "uitputting van verkopers en is statistisch sterker dan een klassieke dubbele bodem. " +
+            "Het patroon wordt gedetecteerd op 1D, 4H en 1H. " +
+            "In de grafiek worden de twee bodems gelabeld als 'A' en 'E' met een neklijn.");
+
+        AddFeature("📏", "Oplopend & dalend kanaal",
+            "Twee nieuwe kanaalpatronen: een oplopend kanaal (beide trendlijnen stijgen parallel — bullish) " +
+            "en een dalend kanaal (beide trendlijnen dalen parallel — bearish). " +
+            "Het kanaal is duidelijk onderscheiden van wiggen (te sterke convergentie) en driehoeken (vlakke zijde). " +
+            "Wanneer de prijs de kanaalbodem nadert krijgt het signaal een hogere sterkte (potentiële koopzone). " +
+            "Beide trendlijnen worden als annotaties ingetekend in de grafiek.");
+
+        // ── v1.22 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.22", "Patroondectie — handboek-gekalibreerde drempelwaarden");
+
+        AddFeature("📖", "Nauwkeurigere patroonherkenning",
+            "Alle patroondetectoren zijn opnieuw gekalibreerd aan de hand van PATTERN_HANDBOOK.md. " +
+            "Dubbele bodem/top: minimale scheiding verhoogd naar 8 bars, gelijkheidsmarge aangescherpt naar 3%, " +
+            "én een vereiste valleydiepte van 5% toegevoegd — valse signalen door ondiepe 'W-vormen' worden gefilterd. " +
+            "Bull/Bear flag: minimale polhoogte verhoogd naar 8% (was 5%); vlagrange aangescherpt naar 5% (was 6%). " +
+            "Driehoeken: hellingsdrempel verlaagd naar 0.0008 (was 0.001) voor preciezere 'vlak'-herkenning. " +
+            "H&S / Inv H&S: schouderssymmetrie aangescherpt naar 15% (was 20%), minimum breedte 12 bars, " +
+            "neklijn berekend als max van de twee afzonderlijke trogminima (niet langer globaal minimum). " +
+            "Wedge: convergentiefactor verhoogd naar 1.20 (was 1.15), minimum span 10 bars, bereikcheck 3–30%. " +
+            "Cup & Handle: flexibel cupvenster 30–65 bars (was vast 45), rimsymmetrie aangescherpt naar 6% (was 8%), " +
+            "handle-retrace gemaximeerd op 45% (was 50%).");
+
+        // ── v1.21 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.21", "Pattern Trading — Interactieve candlestick grafiek");
+
+        AddFeature("📈", "Interactieve candlestick grafiek per coin",
+            "Elke coin-kaart op de Pattern Trading pagina heeft nu een '📈 Grafiek'-knop. " +
+            "Een apart venster opent met een TradingView Lightweight Charts-grafiek (donker thema). " +
+            "Schakel tussen 1D, 4H en 1H via de knoppen bovenaan. " +
+            "Groene stippellijnen tonen support-niveaus, rode resistance-niveaus — " +
+            "beide berekend uit de patroonanalyse.");
+
+        // ── v1.20 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.20", "Pattern Trading — Watchlijst, Level-3 patronen");
+
+        AddFeature("👁", "Watchlijst — coins buiten je portfolio volgen",
+            "Voeg elke coin toe aan je watchlijst via de zoekbalk op de Pattern Trading pagina. " +
+            "Typ een naam of symbool (bijv. 'solana', 'pepe'), kies een resultaat en klik '+ Toevoegen'. " +
+            "Bij de volgende analyse worden watchlijst-coins meegenomen en gemarkeerd met een goud badge. " +
+            "Verwijder een coin via de 🗑-knop onderaan de kaart.");
+
+        AddFeature("🔍", "CoinGecko zoekfunctie",
+            "De zoekbalk gebruikt de gratis CoinGecko search-API om snel het juiste coin te vinden, " +
+            "gesorteerd op marktkapitalisatie-rang. Geen API-sleutel vereist.");
+
+        AddFeature("📐", "Level-3 patronen — klassieke grafiekpatronen",
+            "Vier nieuwe complexe patronen worden nu herkend op 1D, 4H en 1H (vereist 50+ bars): " +
+            "Head & Shoulders (bearish reversal), Inverse H&S (bullish), " +
+            "Rising Wedge (bearish), Falling Wedge (bullish) en Cup & Handle (bullish continuatie). " +
+            "Patronen tonen of ze bevestigd zijn (neklijn/wedge-grens doorbroken) of in formatie.");
+
+        AddFeature("🏷", "Portfolio- en watchlijst-badge per kaart",
+            "Elke coin-kaart toont nu een blauw 'Portfolio'-badge (als je een positie hebt) " +
+            "of een goud 'Watchlijst'-badge zodat je in één oogopslag ziet waar de coin vandaan komt.");
+
+        // ── v1.19 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.19", "Pattern Trading — geautomatiseerde patroonherkenning");
+
+        AddFeature("📐", "Pattern Trading — nieuwe analysepagina",
+            "Nieuwe pagina in het menu: Pattern Trading. Analyseert automatisch alle coins in je portfolio " +
+            "op technische patronen en geeft per coin een tradebaarheid-score van 0–100. " +
+            "Klik op 'Analyseer portfolio' om een volledige scan te starten.");
+
+        AddFeature("🔍", "Level-1 patronen — indicatorgebaseerd",
+            "RSI oversold/overbought, MACD bullish/bearish cross, EMA9/21-cross, Bollinger Squeeze, " +
+            "ADX trending-markt en prijs vs. EMA50 worden automatisch gedetecteerd op 1D, 4H en 1H.");
+
+        AddFeature("📊", "Level-2 patronen — OHLCV patroonherkenning",
+            "Opwaartse/neerwaartse trend (HH+HL / LH+LL), bull flag, bear flag, dubbele bodem, dubbele top, " +
+            "oplopende/dalende/symmetrische driehoek, consolidatie, support-bounce, resistance-rejection, " +
+            "breakout boven weerstand en breakdown onder steun worden herkend via swing-point analyse.");
+
+        AddFeature("⭐", "Tradebaarheid-score en setup-kaart",
+            "Elke coin krijgt een score 0–100 (Niet interessant / In de gaten houden / Mogelijke setup / Sterke setup) " +
+            "en een volledige setup-kaart met entry, stop-loss, TP1, TP2 en R/R-verhouding.");
+
+        AddFeature("⚡", "Filters: bijna breakout, bullish, bearish",
+            "Filter snel op hoogste score, coins die bijna een breakout geven, bullish-setups of bearish-risico's.");
+
+        AddFeature("📋", "Deel setup via klembord",
+            "Kopieer de volledige setup-samenvatting (patroon, entry/SL/TP, richting, disclaimer) " +
+            "naar het klembord voor delen via Discord, X of andere kanalen.");
+
+        // ── v1.18 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.18", "Fear & Greed Index op het dashboard");
+
+        AddFeature("😨", "Fear & Greed Index — marktsentiment in één getal",
+            "Het dashboard toont nu onderaan de Fear & Greed Index van de cryptomarkt (0 = Extreme Fear, " +
+            "100 = Extreme Greed). De waarde wordt automatisch opgehaald van de gratis alternative.me-API " +
+            "en wordt gekleurd weergegeven: rood bij angst, groen bij hebzucht. " +
+            "De index wordt elke uur ververd; de tijdstempel toont wanneer de laatste meting is opgeslagen.");
+
         // ── v1.17 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.17", "Lopende trades aanpassen");
 

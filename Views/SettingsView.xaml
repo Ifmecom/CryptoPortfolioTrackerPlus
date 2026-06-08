@@ -597,6 +597,39 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <ct:SettingsCard Header="Binance Spot Order Book (depth)"
+                                    Description="api.binance.com/api/v3/depth"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert de top-20 bids/asks voor de liquiditeitsfactor (F6) van de 3% Trading-tool: bid-ask spread en orderboekdiepte in USDT. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: 3% Trading (F6 liquiditeit) · Trade Advies markt-context · cache 60s"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Binance Futures API (funding / OI)"
+                                    Description="fapi.binance.com/fapi/v1"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert funding rate, open interest en long/short-ratio voor de positioneringsfactor (F7). Coins zonder futures-markt vallen terug op neutraal. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: 3% Trading (F7 positionering) · Trade Advies markt-context · cache 5 min"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="CoinGecko Global (BTC-dominantie)"
+                                    Description="api.coingecko.com/api/v3/global"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert BTC-dominantie en totale marktcap voor de marktregime-bepaling (samen met BTC EMA50/200)."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Marktregime (3% Trading · Signalen) · cache 5 min"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 
@@ -764,6 +797,31 @@
                                                    Text="Instellen: Instellingen → Telegram Notificaties"/>
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                                    Text="Richting: uitsluitend uitgaand — de app leest geen Telegram-berichten"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Fear & Greed Index ─────────────────────────── -->
+                        <ct:SettingsExpander Header="Fear &amp; Greed Index"
+                            Description="Marktbreed sentimentgetal (0 = Extreme Fear · 100 = Extreme Greed)."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE8BD;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+
+                                <ct:SettingsCard Header="alternative.me Fear &amp; Greed API"
+                                    Description="https://api.alternative.me/fng/"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                                    <StackPanel MaxWidth="360" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Gratis, geen API-sleutel vereist. De app haalt elke 60 minuten de actuele Fear &amp; Greed-waarde op en slaat de meting op in de lokale database."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Richting: uitsluitend binnenkomend (GET-verzoek)"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Frequentie: automatisch bij elke dashboard-verversing"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Opslag: tabel FearGreedReadings in SQLite"/>
                                     </StackPanel>
                                 </ct:SettingsCard>
 

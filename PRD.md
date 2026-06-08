@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.17
+## CryptoPortfolioTracker Plus — v1.33
 
 | | |
 |---|---|
-| **Versie** | 1.17 |
+| **Versie** | 1.32 |
 | **Datum** | Mei 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -37,7 +37,9 @@ CryptoPortfolioTracker Plus is een desktop-applicatie voor Windows waarmee een i
 
 - **Portfolio-tracking** — realtime koersen, assets per exchange, rendement
 - **Technische analyse** — 10+ indicatoren berekend vanuit live OHLCV-data of lokale cache
-- **Signaaalgeneratie** — gecombineerde TA + sentiment + marktregime-score per coin
+- **Signaalgeneratie** — gecombineerde TA + sentiment + marktregime-score per coin
+- **Pattern Trading** — automatische patroonherkenning (Level 1–3) op 1D/4H/1H/15M met TradabilityScore en setup-advies
+- **Setup Tracker** — win-rate monitoring van gevolgde trade-setups met automatische TP/SL-detectie
 - **Trade Journal** — paper trading én live trades, met P&L en R-multiple
 - **Trade Advies** — multi-timeframe analyse per coin met entry/SL/TP-berekening
 - **Statistieken** — geaggregeerde handelsprestaties over meerdere periodes
@@ -49,7 +51,7 @@ Eén persoon: de eigenaar van het portfolio. Er is geen multi-user functionalite
 
 ### 1.3 Niet in scope
 
-- Geautomatiseerd handelen (market orders via API) — gepland voor Sprint 2
+- Geautomatiseerd handelen (market orders via exchange-API)
 - Mobiele app of web-interface
 - Belastingaangifte exporteren naar officiële formulieren
 
@@ -75,9 +77,10 @@ Eén persoon: de eigenaar van het portfolio. Er is geen multi-user functionalite
 
 ```
 Views/          → XAML + code-behind (alleen UI-events, geen business-logica)
-ViewModels/     → erven van BaseViewModel (ObservableRecipient)
+ViewModels/     → erven van BaseViewModel (ObservableObject)
                    [ObservableProperty] voor databinding
                    [RelayCommand] voor commando's
+                   IMessenger via constructor-injectie voor berichten tussen lagen
 Models/         → pure data-klassen, EF-entiteiten
 Services/       → business-logica, altijd via interface (IXxxService)
 Infrastructure/ → DbContext, EntityConfigurations, Factories
@@ -93,7 +96,23 @@ Scoped = per navigatie-sessie; Singleton = app-lifetime.
 // Views & ViewModels: AddScoped
 // Settings, IndicatorService, GraphService: AddSingleton
 // DbContext: AddDbContext (dummy connection string — echte verbinding via PortfolioContextFactory)
+
+// Pattern Trading (v1.19):
+services.AddSingleton<IPatternDetectionService, PatternDetectionService>(); // pure berekening, geen state
+services.AddScoped<IPatternTradingService, PatternTradingService>();         // afhankelijk van PortfolioService
+
+// Setup Tracker (v1.30):
+services.AddScoped<IWatchedSetupService, WatchedSetupService>(); // CRUD + auto-status + stats
+services.AddScoped<SetupTrackerViewModel>();
+services.AddScoped<SetupTrackerView>();
 ```
+
+**Pattern Trading services:**
+
+| Service | Scope | Omschrijving |
+|---------|-------|-------------|
+| `IPatternDetectionService` | Singleton | Pure berekening: Level 1 + Level 2 patroondetectie, TradabilityScore berekening. Geen I/O, geen state. |
+| `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen. |
 
 ### 2.4 Database-toegang
 
@@ -140,6 +159,9 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 | Bronnen | `SourcesView` | Sentimentbronnen (Reddit, RSS, etc.) |
 | CoinLibrary | `CoinLibraryView` | Bibliotheek van alle gevolgde coins |
 | Prijsniveaus | `PriceLevelsView` | Heatmap + prijsniveaus per coin |
+| Pattern Trading | `PatternTradingView` | Automatische patroonherkenning voor portfolio-coins |
+| Setup Tracker | `SetupTrackerView` | Win-rate monitoring van gevolgde trade-setups |
+| 3% Trading | `ThreePctView` | Gekalibreerd 7-factor scoremodel met +3% netto-doel (kalibratie + live scan) |
 
 ### 3.2 Footer-items
 
@@ -262,6 +284,15 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 - Bij Long/Short-signaal: knop "Paper Trade" opent de `PaperTradeDialog` met exchange-stijl interface
 - Pre-fills: entry (limit), SL/TP/TP2 als absolute USDT-prijzen, richting (Long/Short)
 - Direct opgeslagen in Trade Journal
+
+**Validatie van het advies *(v1.33)*:** de gegenereerde SL/TP-niveaus worden bij generatie
+gecontroleerd via `TradeSetupValidator.CheckAdvice`. Een degenerate setup (bv. ATR=0 → SL = entry)
+wordt als **ongeldig** gemarkeerd (rode InfoBar); een krappe R/R (< 1,5:1) geeft een waarschuwing.
+Dezelfde validatie draait in Pattern Trading.
+
+**Markt-context *(v1.33)*:** bij een Binance-signaal toont het advies ook liquiditeit
+(orderboek-spread & diepte via `OrderBookService`), positionering (funding & long/short via
+`BinanceFuturesDataService`) en event-risico's (FOMC/CPI/NFP/PCE via `MacroEventService`).
 
 **Zie §6.5 voor de gedetailleerde berekeningen.**
 
@@ -443,7 +474,16 @@ Bij "Aangepast" verschijnen twee `DatePicker`-controls voor start- en einddatum.
 
 **Toptabel:** top-5 beste + top-5 slechtste symbolen (gededupliceerd), gesorteerd op totaal P&L.
 
-**Zie §6.2 voor alle statistiek-berekeningen.**
+**Pivot-structuur *(v1.31)*:** de pagina is opgedeeld in twee tabbladen via een WinUI 3 `Pivot`:
+
+| Tabblad | Inhoud |
+|---------|--------|
+| Trade Journal | Bestaande kaarten, taartdiagrammen, toptabel; plus Trade-type (Live/Paper) filter |
+| Setup Strategie | Win Rate TP1/TP2, Profit Factor, Expectancy, gem. P&L%, gem. houdtijd, breakdowntabellen per richting/score/marktregime |
+
+De periodefilter (bovenaan de pagina) geldt voor beide tabbladen.
+
+**Zie §6.2 voor trade-statistieken en §6.9 voor setup-strategie-statistieken.**
 
 ---
 
@@ -509,13 +549,114 @@ Box 3-calculator (zie §10).
 
 ---
 
-### 4.13 What's New
+### 4.13 Pattern Trading
+
+**Doel:** Automatische technische patroonherkenning voor alle portfolio-coins. Scant op Level 1 (indicator-gebaseerd), Level 2 (koerstructuur) en Level 3 (klassieke grafiekpatronen) op **1D, 4H, 1H en 15M** en genereert een handelsscore + concreet setup-advies.
+
+**Werkwijze:**
+1. Gebruiker klikt **Analyseer** → app analyseert alle portfolio-coins met holdings concurrent (max 3 tegelijk)
+2. Per coin: OHLCV ophalen (Binance → KuCoin → Gate.io → MEXC), indicatoren berekenen, patronen detecteren
+3. Resultaten sorteren op TradabilityScore (hoog → laag) en weergeven als kaarten
+
+**Filters:**
+| Filter | Omschrijving |
+|--------|-------------|
+| Alle | Alle geanalyseerde coins |
+| Hoog gescoord | TradabilityScore ≥ 60 |
+| Bijna Breakout | `IsNearBreakout = true` |
+| Bullish | PrimaryDirection = "Long" |
+| Bearish | PrimaryDirection = "Short" |
+
+**Coin-kaart per resultaat:**
+- Logo · naam · symbool · TF-bias badges (1D/4H: Bullish/Bearish/Neutraal) · RSI-badges
+- Actuele prijs · 24u-wijziging (groen/rood) · TradabilityScore (0–100) met kleurcodering
+- Patroon-badges (max 6, Strength ≥ 55, bullish voor bearish, groen/rood/oranje)
+- ⚡ Bijna Breakout indicator (indien van toepassing)
+- Setup-kaart (alleen als Score ≥ 40): Entry · Stop · TP1 · TP2 · R/R · Confidence · Entry-notitie
+- Redeneer-bullets (max 4, uit de analyse)
+- Databron-indicator + analysetijdstip
+- **📋 Kopieer-knop** → Dutch-language setup-tekst naar klembord
+
+**Analyse-voortgang:**
+- `ProgressBar` toont 0–100%
+- `StatusText` met fase-informatie (`"Analyseren… 42%"`)
+- Annuleerbaar via ingebouwde CancellationToken
+- Tijdstempel "Laatste analyse: HH:mm"
+
+**ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
+**View:** `PatternTradingView` (`Views/`)
+
+**Zie §6.7 voor de TradabilityScore-berekening.**
+
+---
+
+### 4.14 Setup Tracker
+
+**Doel:** Win-rate monitoring van gevolgde trade-setups. Elke setup is een snapshot van een patroonanalyse-advies dat de gebruiker actief wil volgen. De tracker detecteert automatisch of entry, TP1 of stop-loss worden geraakt.
+
+**Werkwijze:**
+1. Gebruiker klikt **"Volg trade setup"** op een Pattern Trading coin-kaart → `WatchedSetup` wordt aangemaakt
+2. Bij elke `RefreshAsync` haalt de ViewModel live koersen op via `BuildPriceMapAsync()`
+3. `AutoUpdateStatusesAsync()` evalueert alle Watching + Open setups:
+   - Entry geraakt (Long: koers ≤ entry; Short: koers ≥ entry) → status `Open`
+   - TP1 geraakt (Long: koers ≥ TP1; Short: koers ≤ TP1) → status `Won`
+   - SL geraakt (Long: koers ≤ SL; Short: koers ≥ SL) → status `Lost`
+   - Geen trigger → status ongewijzigd
+4. `CurrentPrice` wordt ingesteld op de setup (runtime `[NotMapped]`) vóór toevoeging aan `ObservableCollection`
+
+**Statussen (`WatchedSetupStatus` enum):**
+
+| Waarde | Label (UI) | Betekenis |
+|--------|-----------|-----------|
+| 0 Watching | 🔵 Watching | Setup gevolgd, entry nog niet geraakt |
+| 4 Open | 🟡 In Trade | Entry geraakt, trade actief |
+| 1 Won | 🟢 Gewonnen | TP1 geraakt |
+| 2 Lost | 🔴 Verloren | Stop-loss geraakt |
+| 3 Expired | ⚫ Verlopen | Handmatig verlopen verklaard |
+
+**Stats-balk (bovenin pagina):** Totaal · In Trade · Watching · Won · Lost · Win Rate %
+
+**Filteropties:** Alle · 🔵 Watching · 🟡 In Trade · 🟢 Won · 🔴 Lost · ⏹ Verlopen
+
+**Card-indeling (4 kolommen + logo):**
+
+| Kolom | Inhoud |
+|-------|--------|
+| 0 — Logo | Coin-logo (36 × 36 px) |
+| 1 — Coin | Naam · ticker · richting-badge · bias-badges (1D/4H) · patroon-samenvatting · huidige live koers + %-afstand van entry |
+| 2 — Levels | Entry · SL (rood) · TP1 (groen) · R/R |
+| 3 — Status | Score-badge · status-badge (met tooltip) · P&L % (Won/Lost) of Unreal. P&L % (Open) · leeftijd |
+| 4 — Acties | Knoppen (zie hieronder) |
+
+**Acties per card (zichtbaar voor Watching / Open setups):**
+- **✅ Gewonnen** — sluit handmatig als Won op de huidige live koers
+- **❌ Verloren** — sluit handmatig als Lost op de huidige live koers
+- **⏹ Verlopen** — zet status op `Expired` (patroon geïnvalideerd)
+- **🗑 Verwijder** — verwijdert setup permanent uit DB (altijd zichtbaar)
+
+**Databron live koersen:** `BuildPriceMapAsync()` bevraagt eerst `GetCoinsFromContext()` (DB-query, altijd beschikbaar), aangevuld met in-memory `ListCoins`. Dit garandeert dat koersen ook zichtbaar zijn als de Library-pagina nooit geladen is in de huidige sessie.
+
+**Auto-refresh:** de ViewModel ontvangt `UpdatePricesMessage` via `IMessenger` na elke koersupdatecyclus — prijzen en statussen worden dan automatisch ververst zonder gebruikersinteractie.
+
+**ViewModel:** `SetupTrackerViewModel` (`ViewModels/`) erft van `BaseViewModel`  
+**View:** `SetupTrackerView` (`Views/`)  
+**Service-interface:** `IWatchedSetupService` (`Services/`)
+
+**Marktregime vastleggen *(v1.31)*:** bij aanmaken van een setup zoekt `PatternTradingViewModel.WatchSetup` naar BTC in `_allResults` en slaat `Coin.MarketRegime.ToString()` op als `MarketRegimeAtCreation`.
+
+**Setup ↔ Order koppeling *(v1.31)*:** bij het openen van een paper trade in `PatternTradingView` wordt de actieve setup voor die coin+richting opgezocht via `IWatchedSetupService.GetActiveSetupForCoinAsync`. Het `WatchedSetupId` wordt meegegeven in het `OrderRequest`, zodat `TradeService` het op de `ExchangeOrder` opslaat. Na plaatsing roept de view `LinkOrderAsync` aan om ook `WatchedSetup.LinkedOrderId` bij te werken.
+
+**Zie §6.8 voor de Setup Tracker-berekeningen.**
+
+---
+
+### 4.15 What's New
 
 Versiehistorie van de app. Bij eerste opstart na een update toont een dialog een samenvatting.
 
 ---
 
-### 4.14 Help
+### 4.16 Help
 
 **Doel:** On-page gebruikshandleiding — vervangt de externe PDF.
 
@@ -553,6 +694,54 @@ Versiehistorie van de app. Bij eerste opstart na een update toont een dialog een
 
 ---
 
+### 4.17 3% Trading *(v1.33)*
+
+**Doel:** Een gekalibreerd scoremodel met een vast netto-doel van **+3% na fees en slippage**.
+Een "kans" is hier een historisch gemeten waarschijnlijkheid (uit een backtest), niet een aanname.
+
+**Structuur:** `ThreePctView` + `ThreePctViewModel`. Twee Pivot-tabs.
+
+**Fase 1 — Kalibratie (`ThreePctBacktestService`):**
+- Haalt tot 1000 candles op (Binance klines) voor het opgegeven symbool/timeframe.
+- Scoort elke historische bar met het 5-factor model en simuleert per signaal of eerst de
+  netto-TP (+3%) of de structurele SL (1,5×ATR) wordt geraakt binnen de horizon (max. 15 bars).
+- Groepeert op scoreklasse (`0-40` / `41-60` / `61-80` / `81-100`) en berekent per klasse:
+  aantal trades, netto-hitrate, gemiddelde R en expectancy. Een klasse met < 30 trades is
+  "onbetrouwbaar" (overfitting-waarschuwing).
+- Resultaat wordt opgeslagen als JSON in `AppDataPath\3pct_calibration.json`.
+
+**Fase 2 — Live Scan:**
+- Scoort alle portfolio-coins, koppelt de score aan de gemeten hitrate/expectancy uit Fase 1.
+- **7-factor model** (`ThreePctScoringService`): Trend (25%), Momentum (15%), Volume/OBV (15%),
+  Volatiliteit (10%), Support/Resistance (15%) — plus **F6 Liquiditeit** en **F7 Positionering**
+  als *gatekeepers*: setups onder de drempel (F6 < 4 of F7 < 3) worden gefilterd. De 5-factor
+  score blijft ongewijzigd zodat de kalibratie geldig blijft.
+- **Correlatie-diversificatie** (`CorrelationService`): bouwt een shortlist van max. 5 setups
+  met onderlinge correlatie < 0,80, zodat sterk gecorreleerde alts als één trade tellen.
+- **Detailvenster** (`SetupDetailDialog`): indicatoren, S/R, BTC-correlatie, positionering,
+  liquiditeit, concreet invalidatieniveau en aankomende macro-events.
+
+**Fase 3 — Paper Trades (forward-test):**
+- Vanuit de Live Scan opent een **Paper**-knop de bestaande `PaperTradeDialog` (entry/SL/TP voorgevuld
+  vanuit de rij). Na bevestiging plaatst `ITradeService.PlacePaperAsync` een paper-order die met de
+  Notes-tag `[3%]` wordt gemarkeerd.
+- Het tabblad **Paper Trades** toont uitsluitend deze `[3%]`-getagde orders (herbruikt `TradeJournalRow`),
+  met samenvatting: aantal trades/open, win rate over gesloten trades, en totale P&L (gerealiseerd +
+  ongerealiseerd).
+- **Vernieuwen** draait `AutoFillPendingAsync` + `AutoCloseTriggeredAsync` op de actuele koersen — dezelfde
+  engine als het Trade Journal — zodat pending limit-orders vullen en TP/SL triggeren. Zo kan de strategie
+  met live data worden gevalideerd zonder echt kapitaal. Per rij is er een Sluit/Annuleer-actie.
+- De trades verschijnen ook in het normale Trade Journal (het zijn gewone paper-orders).
+
+**Marktregime:** `MarketRegimeService.GetRegimeContextAsync` bepaalt het regime via BTC EMA50/200
+(golden/death cross) + BTC-dominantie. Ook gebruikt door `SignalEngine`.
+
+**Externe data:** `OrderBookService` (Binance `/depth`), `BinanceFuturesDataService`
+(`fapi.binance.com` funding/OI/long-short), `GlobalMarketDataService` (CoinGecko `/global`),
+`MacroEventService` (FOMC/CPI/NFP/PCE-kalender). Alle netwerk-calls delen `TtlCache<T>`.
+
+---
+
 ## 5. Data-model en relaties
 
 ### 5.1 Entity-Relationship diagram (tekstueel)
@@ -575,6 +764,8 @@ SignalRule (N) >── Narrative (1) [optioneel]
 
 BronSource (standalone)
 ExchangeAccount (standalone)
+FearGreedReading (standalone)
+WatchedSetup (standalone — geen FK naar Coin; coin hoeft niet in portfolio te zijn)
 ```
 
 ### 5.2 Entiteiten gedetailleerd
@@ -669,6 +860,7 @@ Handelsorder (paper of live).
 | `ClosePrice` | double | Sluitingsprijs |
 | `ClosedAt` | DateTime? | Sluittijdstip |
 | `Notes` | string | Gebruikersnotities |
+| `WatchedSetupId` | int? | Koppeling met `WatchedSetup.Id` — setup waaruit dit order is voortgekomen *(v1.31)* |
 | `Signal` | Signal? | Navigatie-eigenschap |
 
 #### Signal
@@ -729,6 +921,114 @@ Versleutelde API-sleutels per exchange.
 | `PublicKeyPem` | string | PEM public key (niet gevoelig) |
 | `IsActive` | bool | Actieve account |
 | `Permissions` | string | Exchange-permissies |
+
+#### FearGreedReading
+Tijdreeks van Fear & Greed Index-snapshots (marktbreed sentiment).
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Id` | int | PK |
+| `Value` | int | 0–100 (0 = Extreme Fear, 100 = Extreme Greed) |
+| `Classification` | string | "Extreme Fear" / "Fear" / "Neutral" / "Greed" / "Extreme Greed" |
+| `Timestamp` | DateTime | UTC tijdstip van meting |
+
+#### WatchedSetup *(v1.30)*
+Snapshot van een trade-setup die de gebruiker actief volgt. Opgeslagen in SQLite; status wordt automatisch bijgewerkt door `AutoUpdateStatusesAsync`.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Id` | int | PK |
+| `CoinApiId` | string | CoinGecko API-id (bijv. "sui") — geen FK, coin hoeft niet in portfolio te zijn |
+| `CoinName` | string | Naam (bijv. "Sui") |
+| `CoinSymbol` | string | Ticker (bijv. "SUI") |
+| `ImageUri` | string | Pad lokaal coin-logo |
+| `Direction` | string | "Long" / "Short" |
+| `EntryPrice` | double | Geplande instapprijs |
+| `StopLoss` | double | Stop-loss niveau |
+| `Target1` | double | Take-profit 1 |
+| `Target2` | double | Take-profit 2 (optioneel) |
+| `Score` | int | TradabilityScore op moment van aanmaken (0–100) |
+| `PatternSummary` | string | Compacte patroonbeschrijving (bijv. "Bull Flag 1D · Bijna Breakout 4H") |
+| `Bias1D` | string | Dagelijkse bias ("Bullish" / "Bearish" / "Neutraal") |
+| `Bias4H` | string | 4H bias |
+| `AddedAt` | DateTime | UTC tijdstip aanmaken |
+| `Status` | WatchedSetupStatus | Watching(0) / Won(1) / Lost(2) / Expired(3) / Open(4) |
+| `ClosePrice` | double? | Prijs waarbij status bepaald is (TP1/SL-hit of handmatig) |
+| `ClosedAt` | DateTime? | UTC tijdstip sluiten |
+| `MarketRegimeAtCreation` | string? | BTC marktregime op moment van aanmaken ("RiskOn" / "Neutral" / "RiskOff") *(v1.31)* |
+| `Tp2Hit` | bool | True als TP2 automatisch is geraakt *(v1.31)* |
+| `LinkedOrderId` | int? | FK naar `ExchangeOrder.Id` — het paper/live-order dat uit deze setup is voortgekomen *(v1.31)* |
+| `EntryAt` | DateTime? | UTC tijdstip waarop de entryprijs werd geraakt (instapcandle) *(v1.32)* |
+| `[NotMapped] CurrentPrice` | double | Live marktprijs — wordt ingesteld door ViewModel, niet opgeslagen |
+
+**Computed properties (niet opgeslagen):**
+
+| Property | Formule | Opmerking |
+|----------|---------|-----------|
+| `RiskReward` | `|TP1 − Entry| / |Entry − SL|` | 0 als niveaus ontbreken |
+| `PnlPct` | `(ClosePrice − Entry) / Entry × 100` (Long), gespiegeld voor Short | Null als niet gesloten |
+| `UnrealisedPnlPct` | `(CurrentPrice − Entry) / Entry × 100` (Long) | Null als status ≠ Open |
+| `EntryDistancePct` | `(CurrentPrice − Entry) / Entry × 100` (Long) | Positief = richting van winst; NaN als prijs onbekend |
+
+#### PatternResult *(Models/ — geen DB-entiteit)*
+Één gedetecteerd patroon op een bepaald timeframe.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Type` | PatternType | Enum: welk patroon |
+| `Category` | PatternCategory | Bullish / Bearish / Neutral / Warning |
+| `Timeframe` | string | "1D" / "4H" / "1H" |
+| `IsConfirmed` | bool | True = candle gesloten boven/onder niveau |
+| `Strength` | int | 0–100 |
+| `Description` | string | Eén-zin uitleg |
+| `KeyLevel` | double? | Relevant koersniveau (weerstand/steun) |
+| `DistancePct` | double? | % afstand van huidig koers tot KeyLevel |
+| `[Computed] DisplayName` | string | Nederlandse naam (bijv. "Dubbele Bodem") |
+
+#### PatternCoinAnalysis *(Models/ — geen DB-entiteit)*
+Volledige analyse van één coin; resultaat van `IPatternTradingService`.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Coin` | Coin | Portfolio-coin referentie |
+| `HasHolding` | bool | True als asset met qty > 0 |
+| `TradabilityScore` | int | 0–100 gecombineerde handelsscore |
+| `PrimaryDirection` | string | "Long" / "Short" / "Neutraal" |
+| `Patterns` | List\<PatternResult\> | Alle gedetecteerde patronen (1D + 4H + 1H) |
+| `Setup` | TradeSetupAdvice? | Entry/SL/TP-setup (null als Score < 40) |
+| `SupportLevels` | List\<double\> | Gedetecteerde steunniveaus |
+| `ResistanceLevels` | List\<double\> | Gedetecteerde weerstandsniveaus |
+| `IsNearBreakout` | bool | True als koers binnen 3% van weerstand (Long) of steun (Short) |
+| `DailyBias` | string | "Bullish" / "Bearish" / "Neutraal" (1D) |
+| `H4Bias` | string | "Bullish" / "Bearish" / "Neutraal" (4H) |
+| `DailyRsi` | double | RSI-waarde op dagbasis |
+| `H4Rsi` | double | RSI-waarde op 4H-basis |
+| `HasData` | bool | False als OHLCV-ophalen volledig mislukte |
+| `DataSource` | string | "Binance" / "KuCoin" / "Gate.io" / "MEXC" |
+| `AnalyzedAt` | DateTime | Tijdstip analyse |
+| `ShareText` | string | Klembord-tekst (Dutch, met disclaimer + hashtags) |
+| `[Computed] KeyPatterns` | IEnumerable | Patronen met Strength ≥ 60 |
+| `[Computed] ScoreLabel` | string | "Sterke setup" / "Mogelijke setup" / "In de gaten houden" / "Niet interessant" |
+
+#### PatternCoinRow *(ViewModels/ — display model)*
+Display-wrapper over `PatternCoinAnalysis` met XAML-vriendelijke properties voor `x:Bind`.
+
+- Computed string properties: `PriceDisplay`, `Change24h`, `MarketCap`, `ScoreText`, `ScoreLabel`, `DailyRsi`, `H4Rsi`, `EntryDisplay`, `StopDisplay`, `Target1Display`, `Target2Display`, `RRDisplay`, `ConfidenceText`, `EntryNote`, `BreakoutIndicator`
+- Computed `SolidColorBrush` properties: `Change24hBrush`, `ScoreBrush`, `DirectionBrush`, `DailyBiasBrush`, `H4BiasBrush`
+- Computed `Visibility` properties: `HasDataVis`, `HasSetupVis`, `ShowNoDataVis`
+- `PatternBadges` : IReadOnlyList\<PatternBadge\> — max 6, Strength ≥ 55, bullish voor bearish
+- `ReasoningBullets` : IReadOnlyList\<string\> — max 4 bullets uit Setup.Reasoning
+
+#### PatternBadge *(ViewModels/ — display model)*
+Chip-badge voor één gedetecteerd patroon.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Label` | string | DisplayName van het patroon |
+| `Timeframe` | string | "1D" / "4H" / "1H" |
+| `Background` | SolidColorBrush | Groen (Bullish) / Rood (Bearish) / Oranje (Warning) / Grijs (Neutraal) |
+| `ToolTip` | string | PatternResult.Description |
+| `Confirmed` | bool | PatternResult.IsConfirmed |
 
 ---
 
@@ -1069,6 +1369,211 @@ Multiplier: zie §6.4.4
 
 ---
 
+### 6.7 Pattern Trading — TradabilityScore berekening
+
+De TradabilityScore (0–100) wordt berekend door `PatternDetectionService.CalculateTradabilityScore()` op basis van gedetecteerde patronen.
+
+#### 6.7.1 Puntenschema (bullish / bearish)
+
+Per gedetecteerd patroon worden punten opgeteld in een bull- of bear-emmer:
+
+| Patroon | Bull-punten | Bear-punten |
+|---------|-------------|-------------|
+| RSI Oversold | +8 | — |
+| RSI Overbought | — | +8 |
+| MACD Bullish Cross | +10 | — |
+| MACD Bearish Cross | — | +10 |
+| EMA Bullish Cross | +10 | — |
+| EMA Bearish Cross | — | +10 |
+| Prijs boven EMA50 | +5 | — |
+| Prijs onder EMA50 | — | +5 |
+| Bollinger Squeeze | +3 | +3 |
+| Trending Market (ADX ≥ 25) | +3 | +3 |
+| Volume Spike | +6 | +6 |
+| Uptrend | +8 | — |
+| Downtrend | — | +8 |
+| Bull Flag | +9 | — |
+| Bear Flag | — | +9 |
+| Double Bottom | +10 | — |
+| Double Top | — | +10 |
+| Ascending Triangle | +7 | — |
+| Descending Triangle | — | +7 |
+| Symmetrical Triangle | +4 | +4 |
+| Support Bounce | +7 | — |
+| Resistance Rejection | — | +7 |
+| Breakout Above Resistance | +10 | — |
+| Breakdown Below Support | — | +10 |
+| Potential Breakout | +5 | — |
+| Consolidation | +2 | +2 |
+
+*Dubbele detectie over meerdere timeframes telt cumulatief mee.*
+
+#### 6.7.2 Score normalisatie
+
+```
+maxMogelijk = 91   // empirisch vastgesteld; kan overschreden worden
+rawScore    = max(bullPoints, bearPoints)
+score       = min(100, round(rawScore / maxMogelijk × 100))
+```
+
+#### 6.7.3 Richtingsbepaling
+
+```
+diff = bullPoints − bearPoints
+direction = diff > +5 ? "Long"
+          : diff < −5 ? "Short"
+          :             "Neutraal"
+```
+
+#### 6.7.4 Score-labels
+
+| Score | Label |
+|-------|-------|
+| ≥ 80 | Sterke setup |
+| ≥ 60 | Mogelijke setup |
+| ≥ 40 | In de gaten houden |
+| < 40 | Niet interessant |
+
+#### 6.7.5 Setup-advies berekening (als Score ≥ 40 en richting ≠ Neutraal)
+
+```
+Long:
+  entry    = (koers > EMA21 × 1.04) ? EMA21 : koers     // pullback of marktprijs
+  stopLoss = entry − (1.5 × ATR_1D)
+  tp1      = entry + (2.0 × ATR_1D)
+  tp2      = min(entry + 3.5 × ATR_1D, dichtstbijzijnde resistance ≤ 20% boven entry)
+
+Short:
+  entry    = (koers < EMA21 × 0.96) ? EMA21 : koers
+  stopLoss = entry + (1.5 × ATR_1D)
+  tp1      = entry − (2.0 × ATR_1D)
+  tp2      = max(entry − 3.5 × ATR_1D, dichtstbijzijnde support ≤ 20% onder entry)
+
+R/R_1 = |entry − tp1| / |entry − stopLoss|
+
+Confidence:
+  "Hoog"   → score ≥ 80 AND ADX ≥ 25
+  "Middel" → score ≥ 60
+  "Laag"   → anders
+```
+
+#### 6.7.6 Pattern-detectie methodes
+
+**Level 1 — Indicator-gebaseerd** (uit reeds berekende `TimeframeAnalysis`):
+- RSI oversold (< 30) / overbought (> 70)
+- MACD cross boven/onder signaallijn
+- EMA9/EMA21 cross (bullish/bearish, via EmaCrossState string)
+- Prijs boven/onder EMA50
+- Bollinger Squeeze (Bollinger volledig binnen Keltner)
+- Trending Market (ADX ≥ 25)
+
+**Level 2 — OHLCV swing-point analyse** (op ruwe bar-data):
+- Volume Spike: laatste volume > 1.8× gemiddelde van 20 vorige bars
+- Uptrend / Downtrend: 3+ opeenvolgende HH+HL of LH+LL swing-punten
+- Double Bottom / Top: twee lows/highs binnen 2.5%, confirmed als recovery > 4%
+- Bull Flag / Bear Flag: pole > 5%, flagrange < 6%, retrace < 50% van pool
+- Ascending / Descending / Symmetrical Triangle: lineaire regressie-helling op swinghighs en swinglows
+- Consolidation: koersbereik < 8% over laatste 15 bars
+- Support Bounce / Resistance Rejection: koers stuitert op steun/weerstand
+- Breakout / Breakdown: confirmed (0.5–4% voorbij niveau) of potentieel (−3% tot +0.5%)
+
+**Swing point detectie:**
+```
+lookback = 3
+isPivotHigh[i] = high[i] > max(high[i−3..i−1]) AND high[i] > max(high[i+1..i+3])
+isPivotLow[i]  = low[i]  < min(low[i−3..i−1])  AND low[i]  < min(low[i+1..i+3])
+```
+
+---
+
+### 6.8 Setup Tracker berekeningen *(v1.31)*
+
+#### 6.8.1 Auto-status evaluatie (`AutoUpdateStatusesAsync`)
+
+Wordt aangeroepen bij elke `RefreshAsync` in `SetupTrackerViewModel`. Evalueert alle setups met status `Watching` of `Open`.
+
+```
+Voor elke setup:
+  isLong = (Direction == "Long")
+
+  hitTP2 = Target2 > 0 AND (isLong ? price >= Target2 : price <= Target2)
+  hitTP1 = Target1 > 0 AND (isLong ? price >= Target1 : price <= Target1)
+  hitSL  = StopLoss > 0 AND (isLong ? price <= StopLoss : price >= StopLoss)
+  hitEntry = isLong ? price <= EntryPrice : price >= EntryPrice
+
+  if hitTP2 AND NOT Tp2Hit  → Status = Won, ClosePrice = price, ClosedAt = now, Tp2Hit = true
+  else if hitTP1            → Status = Won, ClosePrice = price, ClosedAt = now
+  else if hitSL             → Status = Lost, ClosePrice = price, ClosedAt = now
+  else if hitEntry AND Status == Watching → Status = Open
+```
+
+*TP2 controle gaat vóór TP1: als de koers TP2 bereikt, impliceert dat TP1 ook is gepasseerd. `Tp2Hit = true` wordt bewaard voor statistieken.*
+
+#### 6.8.2 Win Rate berekening
+
+```
+gesloten = setups met Status == Won OR Status == Lost
+WinRatePct = gesloten.Count(s => s.Status == Won) / gesloten.Count × 100
+
+(doel: > 50%)
+```
+
+#### 6.8.3 P&L % (gesloten setup)
+
+```csharp
+// Long
+PnlPct = (ClosePrice - EntryPrice) / EntryPrice * 100
+
+// Short
+PnlPct = (EntryPrice - ClosePrice) / EntryPrice * 100
+```
+
+#### 6.8.4 Ongerealiseerde P&L % (Open setup)
+
+```csharp
+// Long
+UnrealisedPnlPct = (CurrentPrice - EntryPrice) / EntryPrice * 100
+
+// Short
+UnrealisedPnlPct = (EntryPrice - CurrentPrice) / EntryPrice * 100
+
+// Null als Status ≠ Open of CurrentPrice ≤ 0
+```
+
+#### 6.8.5 Entry-afstand % (Watching setup)
+
+```csharp
+// Long  (positief = koers boven entry = in richting van winst)
+EntryDistancePct = (CurrentPrice - EntryPrice) / EntryPrice * 100
+
+// Short (positief = koers onder entry = in richting van winst)
+EntryDistancePct = (EntryPrice - CurrentPrice) / EntryPrice * 100
+
+// double.NaN als CurrentPrice ≤ 0
+```
+
+### 6.9 Setup Strategie statistieken *(v1.31)*
+
+Berekend in `StatisticsViewModel.LoadSetupStatsAsync()` op basis van gesloten `WatchedSetup`-records.
+
+| Metriek | Formule |
+|---------|---------|
+| **Win Rate TP1** | `Won / (Won + Lost) × 100` |
+| **Win Rate TP2** | `Tp2Hit / Won × 100` (percentage gewonnen setups dat ook TP2 haalde) |
+| **Profit Factor** | `Σ winst-PnlPct / |Σ verlies-PnlPct|` — groter dan 1 is winstgevend |
+| **Expectancy** | `(WinRate × gem.winst%) − (LossRate × gem.|verlies|%)` |
+| **Gem. P&L** | `Σ PnlPct / gesloten.Count` |
+| **Gem. houdtijd** | `Avg(ClosedAt − AddedAt)` in uren of dagen |
+
+**Breakdown-tabellen** worden gegenereerd via `BuildBreakdown()` op drie dimensies:
+- Per richting: "Long" / "Short"
+- Per score-klasse: `< 50` / `50–64` / `65–79` / `80+`
+- Per marktregime: "RiskOn" / "Neutral" / "RiskOff" / "Onbekend"
+
+De periodefilter van het Trade Journal-tabblad (SelectedPeriod) geldt ook voor de setup statistieken.
+
+---
+
 ## 7. Externe integraties
 
 ### 7.1 CoinGecko API
@@ -1123,7 +1628,17 @@ Multiplier: zie §6.4.4
 | **Gebruik** | Balans-verificatie en (toekomstig) live orders |
 | **Regio** | EU-endpoint instelbaar via `Settings.BybitIsEu` |
 
-### 7.7 Reddit JSON API
+### 7.7 alternative.me Fear & Greed API
+
+| | |
+|---|---|
+| **Endpoint** | `https://api.alternative.me/fng/?limit=1` |
+| **Authenticatie** | Geen (gratis, geen API-sleutel) |
+| **Gebruik** | Huidige Fear & Greed Index (0–100) ophalen voor dashboard-widget |
+| **Frequentie** | Bij elke dashboard-verversing; cache van 60 minuten (geen herhaalverzoek als lezing niet ouder dan 60 min) |
+| **Opslag** | `FearGreedReadings`-tabel (SQLite) · service `IFearGreedService` |
+
+### 7.8 Reddit JSON API
 
 | | |
 |---|---|
@@ -1132,7 +1647,7 @@ Multiplier: zie §6.4.4
 | **Actieve subreddits** | r/CryptoCurrency · r/Altstreetbets · r/Bitcoin · r/ethereum · r/CryptoMarkets |
 | **Gebruik** | Sentimentcollectie via NLP |
 
-### 7.8 RSS-nieuwsfeeds
+### 7.9 RSS-nieuwsfeeds
 
 | Bron | Feed URL |
 |------|----------|
@@ -1142,7 +1657,7 @@ Multiplier: zie §6.4.4
 | The Block | `https://www.theblock.co/rss.xml` |
 | CryptoSlate | `https://cryptoslate.com/feed/` |
 
-### 7.9 CryptoPanic API
+### 7.10 CryptoPanic API
 
 | | |
 |---|---|
@@ -1151,7 +1666,7 @@ Multiplier: zie §6.4.4
 | **Gebruik** | 50 meest recente nieuwsartikelen met bullish/bearish labels |
 | **Verrijking** | Valutacodes worden toegevoegd aan de tekst voor coin-matching |
 
-### 7.10 Telegram Bot API
+### 7.11 Telegram Bot API
 
 | | |
 |---|---|
@@ -1159,6 +1674,32 @@ Multiplier: zie §6.4.4
 | **Configuratie** | Bot Token + Chat ID in Instellingen |
 | **Gebruik** | Push-notificaties bij signalen boven drempelwaarde |
 | **Richting** | Uitsluitend uitgaand (de app leest geen Telegram-berichten) |
+
+### 7.12 Binance Spot Order Book *(v1.33)*
+
+| | |
+|---|---|
+| **Endpoint** | `https://api.binance.com/api/v3/depth?symbol={SYMBOL}USDT&limit=20` |
+| **Authenticatie** | Geen (publiek) |
+| **Gebruik** | Liquiditeitsfactor (F6): bid-ask spread + orderboekdiepte in USDT |
+| **Service** | `OrderBookService` · `TtlCache` 60s |
+
+### 7.13 Binance Futures API *(v1.33)*
+
+| | |
+|---|---|
+| **Endpoint** | `https://fapi.binance.com/fapi/v1/fundingRate`, `/fapi/v1/openInterest`, `/futures/data/globalLongShortAccountRatio` |
+| **Authenticatie** | Geen (publiek) |
+| **Gebruik** | Positioneringsfactor (F7): funding rate, open interest, long/short-ratio |
+| **Service** | `BinanceFuturesDataService` · `TtlCache` 5 min · spot-only coins → `IsAvailable = false` |
+
+### 7.14 CoinGecko Global *(v1.33)*
+
+| | |
+|---|---|
+| **Endpoint** | `https://api.coingecko.com/api/v3/global` |
+| **Gebruik** | BTC-dominantie voor het marktregime |
+| **Service** | `GlobalMarketDataService` · cache 5 min |
 
 ---
 
@@ -1467,6 +2008,8 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | **Geen multi-portfolio UI** | Switchen gaat via verborgen menu-item; niet zichtbaar in primaire UX |
 | **Tarieven belasting handmatig** | `NetherlandsTaxCalculator` tarieven moeten jaarlijks handmatig bijgewerkt worden in `GetRates()` |
 | **Box 3 vereenvoudigd** | De schuldenaftrek gebruikt proportionele vereenvoudiging; de exacte Belastingdienst-methode voor schuld-fictief-rendement is niet geïmplementeerd |
+| **MarketChart-JSON zonder volume** | De lokale `MarketChart_{id}.json` bevat alleen `[timestamp, prijs]` — geen OHLC en geen volume. `IndicatorService.LoadQuotesAsync` zet daarom `Volume = 0`. Volume-indicatoren (OBV/MFI/VWAP) mogen hier niet op draaien; de Signalen-score gebruikt bewust geen volume. Voor echte volume gebruiken Trade Advies, Pattern Trading en 3% Trading klines via `IBinanceDataService` |
+| **Geen kalibratie van Signalen/Pattern-scores** *(v1.33)* | Alleen de 3%-tool en Setup Strategie kalibreren score → historische hitrate, omdat alleen `WatchedSetup`/backtests forward-uitkomsten vastleggen. De `SignalEngine`-CombinedScore en de Pattern-`TradabilityScore` hebben geen opgeslagen uitkomsthistorie en worden daarom (nog) niet naar een gemeten kans vertaald — dat vereist een aparte signal-outcome-tracker |
 
 ---
 
@@ -1489,6 +2032,9 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | `PriceLevelType` | TakeProfit · Stop · Buy · Ema |
 | `PriceLevelStatus` | NotWithinRange · WithinRange · CloseToPrice · TaggedPrice *(+ combinaties)* |
 | `AppFontSize` | Small · Normal · Large |
+| `PatternType` | RsiOversold · RsiOverbought · MacdBullishCross · MacdBearishCross · EmaBullishCross · EmaBearishCross · BollingerSqueeze · PriceAboveEma50 · PriceBelowEma50 · TrendingMarket · VolumeSpike · Uptrend · Downtrend · BullFlag · BearFlag · DoubleBottom · DoubleTop · AscendingTriangle · DescendingTriangle · SymmetricalTriangle · SupportBounce · ResistanceRejection · BreakoutAboveResistance · BreakdownBelowSupport · PotentialBreakout · Consolidation · HeadAndShoulders · InverseHeadAndShoulders · RisingWedge · FallingWedge · CupAndHandle |
+| `PatternCategory` | Bullish · Bearish · Neutral · Warning |
+| `PatternFilter` | All · HighestScore · NearBreakout · BullishOnly · BearishOnly |
 
 ---
 
@@ -1513,8 +2059,20 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.15 | TP-sluitpercentage per niveau: snelknoppen 25/50/75/100 % + slider; opgeslagen als `Tp1ClosePct` / `Tp2ClosePct` |
 | v1.16 | Auto-close bij TP/SL bereikt: `AutoCloseTriggeredAsync` elke refresh; SL prioriteit boven TP; TP2 vóór TP1 |
 | v1.17 | EditTradeDialog: SL/TP aanpassen vanuit Trade Journal · preset-knoppen BE/½R/+1R · veiligheidscheck huidige koers · UX: standaard Open-filter · actieve tab indicator · unrealised P&L leeg voor gesloten orders |
+| v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
+| v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
+| v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
+| v1.33 | **3% Trading-tool** (`ThreePctView`): gekalibreerd 7-factor scoremodel met +3% netto-doel · Fase 1 backtest/kalibratie (`ThreePctBacktestService`, JSON-opslag) · Fase 2 live scan met F6 liquiditeit + F7 positionering als gatekeepers · `CorrelationService` (gediversifieerde shortlist) · `MacroEventService` (FOMC/CPI/NFP/PCE) · `SetupDetailDialog`. **Cross-tool:** `TradeSetupValidator.CheckAdvice` markeert ongeldige/krappe setups in Trade Advies & Pattern Trading · `MarketRegimeService.GetRegimeContextAsync` (EMA50/200 + dominantie) ook in `SignalEngine` · markt-context (liquiditeit/funding/events) in Trade Advies · gedeelde `TtlCache<T>` · geëxtraheerde `TradeLevelCalculator` · nieuwe databronnen (Binance depth/futures, CoinGecko global). Tests: 40 → 183 |
+| v1.31 | Setup Strategie statistieken: nieuw 'Setup Strategie'-tabblad in `StatisticsView` (Pivot) met Win Rate TP1/TP2, Profit Factor, Expectancy, gem. P&L%, gem. houdtijd, breakdowntabellen per richting/score/marktregime · `SetupBreakdownRow` + `LoadSetupStatsAsync` in `StatisticsViewModel` · TP2-detectie in `AutoUpdateStatusesAsync` (`Tp2Hit` flag) · BTC-marktregime vastgelegd bij aanmaken setup (`MarketRegimeAtCreation`) · bidirectionele Setup↔Order koppeling (`WatchedSetup.LinkedOrderId` + `ExchangeOrder.WatchedSetupId`) · `IWatchedSetupService.GetActiveSetupForCoinAsync` + `LinkOrderAsync` + `GetClosedAsync` · migratie `AddStrategyStatisticsFields` |
+| v1.30 | Setup Tracker: `WatchedSetup`-entiteit · `IWatchedSetupService` (CRUD + auto-status + stats) · `SetupTrackerViewModel` + `SetupTrackerView` · automatische entry/TP1/SL-detectie · Open-status bij entry-hit · live koers per kaart (DB-fallback via `GetCoinsFromContext`) · P&L % + Unreal. P&L % per kaart · handmatige Won/Lost/Verlopen knoppen · `ExistsAsync` duplicaatcheck · SL=0 validatie bij aanmaken · auto-refresh via `UpdatePricesMessage` (IMessenger) · prijstijdstempel in UI · tooltips doorvoeren in alle views |
+| v1.25 | 15M timeframe: `M15Bars`, `M15Bias`, `M15Rsi` aan `PatternCoinAnalysis` + `PatternCoinRow`; `FetchFourTimeframesAsync` (15m interval); Level 1+2 detectie op 15M; `Btn15M` in `CoinChartWindow`; bias-badge in card-header. Watchlijst UX: `Expander`-paneel met `WatchlistItems` ObservableCollection; `RemoveWatchlistItemCommand`; `LoadWatchlistItemsAsync` bij ViewLoading; User-Agent header + 429-afhandeling in `WatchlistService`. TF-conflict: `HasTfConflict` / `TfConflictText` in `PatternCoinRow`. Sort: `SortMode` (Score/Change24h/Breakout) + `SetSortModeCommand`. TF-filter: `TfFilter` + `SetTfFilterCommand`. In-lijst zoeken: `ListSearchText` + `HandleListSearch`. Overflow-chip: `OverflowCount`/`OverflowVis`. Staleness: `StalenessText`/`StalenessColor` (oranje na 1u). Leeg-state border. Bull/Bear flag chart-annotaties (markers + hlines). Typo fix: Oplopende Driehoek. `ItemsControl` → `ListView` voor virtualisatie. `Functions.EmptyCollectionToVisible` toegevoegd. |
+| v1.24 | `PatternHandbookWindow` — niet-modaal venster met WebView2 · inline C# markdown→HTML converter (h1–h4, tabellen, lijsten, blockquotes, bold, code) · `📖 Handboek`-knop in filterrij · `PATTERN_HANDBOOK.md` via .csproj PreserveNewest naar output gekopieerd · fallback naar projectroot als debug-run |
+| v1.23 | Nieuwe patronen: Adam & Eve (scherpe + ronde bodem, bullish reversal · IsAdam/IsEveBottom helpers) · AscendingChannel + DescendingChannel (parallelle trendlijnen, grafiek-annotaties · wedge-exclusie via ×1.20 convergentiecheck) · `PatternType` enum + `DisplayName` uitgebreid |
+| v1.22 | `PatternDetectionService` handboek-kalibratie: Double Bottom/Top min. scheiding 8 bars, gelijkheidsmarge 3%, diepte 5%; Bull/Bear flag pole 8%, vlagrange 5%; Triangle slopeTol 0.0008; H&S schouders 15%, breedte 12 bars, neklijn max(T1,T2); Inv H&S neklijn min(P1,P2); Wedge convergentie 1.20, span 10 bars, bereik 3–30%; Cup & Handle flexibel 30–65 bars, rim 6%, retrace 45% · `PATTERN_HANDBOOK.md` toegevoegd als authoritatieve spec |
+| v1.21 | `CoinChartWindow` — interactieve candlestick grafiek via WebView2 + TradingView Lightweight Charts · 1D/4H/1H timeframe-switcher · support/resistance-lijnen · '📈 Grafiek'-knop per kaart · bars opgeslagen in `PatternCoinAnalysis` |
+| v1.20 | Watchlijst (WatchlistCoins SQLite tabel · `IWatchlistService`) · CoinGecko zoekfunctie · Level-3 patronen (H&S, Inv. H&S, Rising/Falling Wedge, Cup & Handle) · Portfolio/Watchlijst badges per kaart |
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.17 (mei 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.33 (juni 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*
