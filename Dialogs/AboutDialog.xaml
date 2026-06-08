@@ -75,17 +75,25 @@
                     <Run FontSize="14" l:Uids.Uid="AboutDialog_Donation_Sub" />
                 </Paragraph>
             </RichTextBlock>
+            <!-- ETH -->
             <StackPanel Orientation="Horizontal" Margin="40,0,0,0">
-                <Image Source="{Binding BtcImage}" Width="20"  Height="20" Margin="0,0,10,0"/>
-                <TextBlock Text="{Binding BtcAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod"/>
+                <Image Source="{Binding EthImage}" Width="20" Height="20" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding EthAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod"/>
             </StackPanel>
+            <!-- USDc (ERC-20) -->
             <StackPanel Orientation="Horizontal" Margin="40,5,0,0">
-                <Image Source="{Binding EthImage}" Width="20"  Height="20" Margin="0,0,10,0"/>
-                <TextBlock Text="{Binding EthAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod" />
+                <Image Source="{Binding UsdcImage}" Width="20" Height="20" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding UsdcAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod"/>
             </StackPanel>
-             <StackPanel Orientation="Horizontal" Margin="40,5,0,0">
-                <Image Source="{Binding UsdcImage}" Width="20"  Height="20" Margin="0,0,10,0"/>
-                <TextBlock Text="{Binding UsdcBscAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod" />
+            <!-- USDT (ERC-20) -->
+            <StackPanel Orientation="Horizontal" Margin="40,5,0,0">
+                <Image Source="{Binding UsdcImage}" Width="20" Height="20" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding UsdtAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod"/>
+            </StackPanel>
+            <!-- BTC -->
+            <StackPanel Orientation="Horizontal" Margin="40,5,0,0">
+                <Image Source="{Binding BtcImage}" Width="20" Height="20" Margin="0,0,10,0"/>
+                <TextBlock Text="{Binding BtcAddress}" FontSize="14" SelectionHighlightColor="Green" IsTextSelectionEnabled="True" Foreground="Goldenrod"/>
             </StackPanel>
 
             <RichTextBlock Name="Support1" Margin="15,10,15,10" IsTextSelectionEnabled="False"  >
@@ -99,10 +107,7 @@
             <RichTextBlock Name="Support2" SelectionHighlightColor="Green" Margin="15,0,15,10" IsTextSelectionEnabled="True">
                 <Paragraph TextAlignment="Left" Margin="0,0,0,10" >
                     <Run l:Uids.Uid="AboutDialog_Contact_Sub2a" FontSize="14" />
-                    <Run Text="mk_osft@hotmail.com" FontStyle="Italic" Foreground="Goldenrod" />
-                    <Run l:Uids.Uid="AboutDialog_Contact_Sub2b" />
-                    <Run Text="MarcelK" FontStyle="Italic" Foreground="Goldenrod"/> 
-                    <Run Text=")."  />
+                    <Run Text="info@dareconcepts.nl" FontStyle="Italic" Foreground="Goldenrod" />
                 </Paragraph>
 
             </RichTextBlock>
