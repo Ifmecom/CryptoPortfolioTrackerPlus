@@ -1,10 +1,16 @@
 {
   "profiles": {
     "CryptoFolioTrackerPlus (Package)": {
-      "commandName": "MsixPackage"
+      "commandName": "MsixPackage",
+      "environmentVariables": {
+        "_NO_DEBUG_HEAP": "1"
+      }
     },
     "CryptoFolioTrackerPlus (Unpackaged)": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "environmentVariables": {
+        "_NO_DEBUG_HEAP": "1"
+      }
     }
   }
 }
