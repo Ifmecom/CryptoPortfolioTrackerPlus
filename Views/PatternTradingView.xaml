@@ -1,0 +1,704 @@
+<Page
+    x:Class="CryptoPortfolioTracker.Views.PatternTradingView"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:viewmodels="using:CryptoPortfolioTracker.ViewModels"
+    xmlns:models="using:CryptoPortfolioTracker.Models"
+    xmlns:converters="using:CryptoPortfolioTracker.Converters"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Loaded="View_Loaded"
+    Unloaded="View_Unloaded"
+    mc:Ignorable="d">
+
+    <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+        <Grid x:Name="PageGrid" CornerRadius="8,8,0,0"
+              Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
+              Margin="0,0,5,0" VerticalAlignment="Stretch">
+
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <controls:HomePageHeaderImage Grid.Row="0" Grid.RowSpan="6"
+                                          Height="260" VerticalAlignment="Top" Opacity="0.08"/>
+
+            <!-- ═══════════════════════════════════════════ Row 0 — Header -->
+            <RelativePanel Grid.Row="0" Margin="10,0,10,0">
+
+                <TextBlock x:Name="txtPageTitle"
+                           Text="Pattern Trading"
+                           Foreground="DarkGoldenrod"
+                           Style="{StaticResource TitleTextBlockStyle}"
+                           VerticalAlignment="Top"/>
+
+                <TextBlock x:Name="txtSubTitle"
+                           Text="Geautomatiseerde patroonherkenning — 1D · 4H · 1H · 15M"
+                           Foreground="DarkGoldenrod"
+                           Style="{StaticResource SubSampleHeaderTextStyle}"
+                           RelativePanel.Below="txtPageTitle"/>
+
+                <!-- Disclaimer -->
+                <Border x:Name="disclaimerBorder"
+                        RelativePanel.AlignRightWithPanel="True"
+                        RelativePanel.AlignVerticalCenterWith="txtPageTitle"
+                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                        CornerRadius="6" Padding="10,4" MaxWidth="420">
+                    <TextBlock
+                        Text="⚠️  Geen financieel advies. Patronen zijn indicatief. De gebruiker blijft te allen tijde zelf verantwoordelijk voor zijn of haar handelsbeslissingen."
+                        FontSize="11" TextWrapping="Wrap"
+                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                </Border>
+            </RelativePanel>
+
+            <!-- ══════════════════════════════════════════ Row 1 — Analyse controls -->
+            <Grid Grid.Row="1" Margin="10,6,10,4">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Analyse button -->
+                <Button Grid.Column="0"
+                        Content="🔍  Analyseer portfolio + watchlijst"
+                        Command="{x:Bind _viewModel.AnalyzePortfolioCommand}"
+                        IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsAnalyzing), Mode=OneWay}"
+                        Style="{StaticResource AccentButtonStyle}"
+                        Padding="14,6" FontSize="13" FontWeight="SemiBold"/>
+
+                <!-- Progress + status -->
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center" Spacing="2">
+                    <ProgressBar Value="{x:Bind _viewModel.ProgressValue, Mode=OneWay}"
+                                 Maximum="100" MinWidth="200" MaxWidth="400"
+                                 Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsAnalyzing), Mode=OneWay}"/>
+                    <TextBlock Text="{x:Bind _viewModel.StatusText, Mode=OneWay}"
+                               FontSize="12"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    <TextBlock Text="{x:Bind _viewModel.LastRunText, Mode=OneWay}"
+                               FontSize="11"
+                               Foreground="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+                </StackPanel>
+
+                <!-- Handbook button -->
+                <Button Grid.Column="2"
+                        Content="📖  Handboek"
+                        Click="ShowHandbook_Click"
+                        Padding="10,6" FontSize="12"
+                        ToolTipService.ToolTip="Open het Pattern Handboek — uitleg per patroon met drempelwaarden en criteria"/>
+            </Grid>
+
+            <!-- ══════════════════════════════════════════ Row 2 — Watchlijst Expander -->
+            <Expander Grid.Row="2" Margin="10,2,10,4"
+                      HorizontalAlignment="Stretch"
+                      IsExpanded="{x:Bind _viewModel.WatchlistExpanded, Mode=TwoWay}">
+                <Expander.Header>
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock Grid.Column="0"
+                                   Text="👁  Watchlijst"
+                                   FontSize="13" FontWeight="SemiBold"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="1"
+                                   Text="{x:Bind _viewModel.WatchlistCountText, Mode=OneWay}"
+                                   FontSize="11" Margin="10,0,0,0"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                   VerticalAlignment="Center"/>
+                        <TextBlock Grid.Column="2"
+                                   Text="Coins toevoegen en beheren →"
+                                   FontSize="11"
+                                   Foreground="DarkGoldenrod"
+                                   VerticalAlignment="Center"/>
+                    </Grid>
+                </Expander.Header>
+
+                <!-- Expanded watchlist content -->
+                <StackPanel Spacing="10" Margin="4,6,4,4">
+
+                    <!-- Search box -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <AutoSuggestBox Grid.Column="0"
+                                        x:Name="SearchBox"
+                                        PlaceholderText="Zoek coin om toe te voegen (bijv. solana, pepe, sui…)"
+                                        FontSize="12"
+                                        ItemsSource="{x:Bind _viewModel.SearchResults, Mode=OneWay}"
+                                        TextChanged="SearchBox_TextChanged"
+                                        QuerySubmitted="SearchBox_QuerySubmitted"
+                                        SuggestionChosen="SearchBox_SuggestionChosen"
+                                        QueryIcon="Find">
+                            <AutoSuggestBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:WatchlistSearchResult">
+                                    <Grid ColumnSpacing="8" Padding="2,3">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0"
+                                                   Text="{x:Bind Name}"
+                                                   FontSize="12" FontWeight="SemiBold"
+                                                   TextTrimming="CharacterEllipsis"
+                                                   VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind Symbol}"
+                                                   FontSize="11" VerticalAlignment="Center"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        <TextBlock Grid.Column="2"
+                                                   Text="+ Toevoegen"
+                                                   FontSize="10" VerticalAlignment="Center"
+                                                   Foreground="DarkGoldenrod"/>
+                                    </Grid>
+                                </DataTemplate>
+                            </AutoSuggestBox.ItemTemplate>
+                        </AutoSuggestBox>
+
+                        <!-- Search busy indicator -->
+                        <ProgressRing Grid.Column="1"
+                                      Width="16" Height="16" Margin="8,0,0,0"
+                                      IsActive="{x:Bind _viewModel.IsSearching, Mode=OneWay}"
+                                      Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsSearching), Mode=OneWay}"/>
+
+                        <TextBlock Grid.Column="2"
+                                   FontSize="11" Margin="10,0,0,0" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                   Text="Kies een coin uit de suggesties → na 'Analyseer' verschijnt het in de lijst."/>
+                    </Grid>
+
+                    <!-- Current watchlist items -->
+                    <ItemsControl ItemsSource="{x:Bind _viewModel.WatchlistItems, Mode=OneWay}">
+                        <ItemsControl.ItemsPanel>
+                            <ItemsPanelTemplate>
+                                <ItemsWrapGrid Orientation="Horizontal" MaximumRowsOrColumns="50"/>
+                            </ItemsPanelTemplate>
+                        </ItemsControl.ItemsPanel>
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:DataType="models:WatchlistItem">
+                                <Border Margin="0,0,6,4" CornerRadius="4" Padding="6,3"
+                                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Text="{x:Bind Name}"
+                                                   FontSize="12" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{x:Bind Symbol}"
+                                                   FontSize="10" VerticalAlignment="Center"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        <Button Content="✕"
+                                                Tag="{x:Bind}"
+                                                Click="RemoveWatchlistItem_Click"
+                                                Padding="4,1" FontSize="10"
+                                                Background="Transparent"
+                                                Foreground="#FFCD5C5C"
+                                                BorderThickness="0"
+                                                ToolTipService.ToolTip="Verwijderen uit watchlijst"/>
+                                    </StackPanel>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+
+                    <!-- Empty watchlist hint -->
+                    <TextBlock
+                        Text="Je watchlijst is leeg — zoek hierboven naar coins om toe te voegen."
+                        FontSize="11"
+                        Foreground="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                        Visibility="{x:Bind converters:Functions.EmptyCollectionToVisible(_viewModel.WatchlistItems), Mode=OneWay}"/>
+
+                </StackPanel>
+            </Expander>
+
+            <!-- ═══════════════════════════════════════════ Row 3 — Filter + Sort row -->
+            <Grid Grid.Row="3" Margin="10,0,10,4" RowSpacing="4">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <!-- Row 3a: category filters + handbook -->
+                <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+
+                    <ToggleButton Content="Alle"
+                                  IsChecked="{x:Bind _viewModel.FilterAll, Mode=OneWay}"
+                                  Click="FilterAll_Click"
+                                  Padding="10,4" FontSize="12"
+                                  ToolTipService.ToolTip="Toon alle geanalyseerde coins"/>
+                    <ToggleButton Content="Hoogste score"
+                                  IsChecked="{x:Bind _viewModel.FilterHighest, Mode=OneWay}"
+                                  Click="FilterHighest_Click"
+                                  Padding="10,4" FontSize="12"
+                                  ToolTipService.ToolTip="Toon alleen coins met de hoogste patroon-score (top resultaten)"/>
+                    <ToggleButton Content="⚡ Bijna Breakout"
+                                  IsChecked="{x:Bind _viewModel.FilterBreakout, Mode=OneWay}"
+                                  Click="FilterBreakout_Click"
+                                  Padding="10,4" FontSize="12"
+                                  ToolTipService.ToolTip="Toon coins die dicht bij een uitbraak zitten — prijs staat vlak bij weerstand of steun"/>
+                    <ToggleButton Content="🟢 Bullish"
+                                  IsChecked="{x:Bind _viewModel.FilterBullish, Mode=OneWay}"
+                                  Click="FilterBullish_Click"
+                                  Padding="10,4" FontSize="12"
+                                  ToolTipService.ToolTip="Toon alleen bullish setups — verwachte koersstijging"/>
+                    <ToggleButton Content="🔴 Bearish"
+                                  IsChecked="{x:Bind _viewModel.FilterBearish, Mode=OneWay}"
+                                  Click="FilterBearish_Click"
+                                  Padding="10,4" FontSize="12"
+                                  ToolTipService.ToolTip="Toon alleen bearish setups — verwachte koersdaling"/>
+
+                    <!-- Separator -->
+                    <Border Width="1" Height="18" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                            Margin="4,0" VerticalAlignment="Center"/>
+
+                    <!-- Sort buttons -->
+                    <TextBlock Text="Sorteren:" FontSize="11" VerticalAlignment="Center"
+                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                    <ToggleButton Content="Score"
+                                  IsChecked="{x:Bind _viewModel.SortByScore, Mode=OneWay}"
+                                  Click="SortScore_Click"
+                                  Padding="8,4" FontSize="11"
+                                  ToolTipService.ToolTip="Sorteer op patroon-score (hoogste bovenaan)"/>
+                    <ToggleButton Content="24h %"
+                                  IsChecked="{x:Bind _viewModel.SortByChange, Mode=OneWay}"
+                                  Click="SortChange_Click"
+                                  Padding="8,4" FontSize="11"
+                                  ToolTipService.ToolTip="Sorteer op koerswijziging in de afgelopen 24 uur"/>
+                    <ToggleButton Content="Breakout-afstand"
+                                  IsChecked="{x:Bind _viewModel.SortByBreakout, Mode=OneWay}"
+                                  Click="SortBreakout_Click"
+                                  Padding="8,4" FontSize="11"
+                                  ToolTipService.ToolTip="Sorteer op afstand tot de dichtstbijzijnde uitbraak — kleinste afstand bovenaan"/>
+
+                </StackPanel>
+
+                <!-- Row 3b: TF filter + in-list search -->
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- TF filter chips -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="4" VerticalAlignment="Center">
+                        <TextBlock Text="Timeframe:" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <ToggleButton Content="Alle TF"  IsChecked="{x:Bind _viewModel.TfAll,  Mode=OneWay}" Click="TfAll_Click"  Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon patronen op alle timeframes"/>
+                        <ToggleButton Content="1D"       IsChecked="{x:Bind _viewModel.Tf1D,   Mode=OneWay}" Click="Tf1D_Click"   Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen dagelijkse (1D) patronen — sterkste signalen, langere looptijd"/>
+                        <ToggleButton Content="4H"       IsChecked="{x:Bind _viewModel.Tf4H,   Mode=OneWay}" Click="Tf4H_Click"   Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 4-uurs (4H) patronen — middelmatige looptijd"/>
+                        <ToggleButton Content="1H"       IsChecked="{x:Bind _viewModel.Tf1H,   Mode=OneWay}" Click="Tf1H_Click"   Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 1-uurs (1H) patronen — korte looptijd, meer ruis"/>
+                        <ToggleButton Content="15M"      IsChecked="{x:Bind _viewModel.Tf15M,  Mode=OneWay}" Click="Tf15M_Click"  Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 15-minuten (15M) patronen — zeer korte looptijd, scalping"/>
+                    </StackPanel>
+
+                    <!-- In-list search -->
+                    <TextBox Grid.Column="1"
+                             x:Name="ListSearchBox"
+                             PlaceholderText="🔎  Zoek in geladen resultaten (naam of symbol)…"
+                             FontSize="11"
+                             MaxWidth="320"
+                             HorizontalAlignment="Right"
+                             TextChanged="ListSearch_TextChanged"/>
+                </Grid>
+            </Grid>
+
+            <!-- ════════════════════════════════════════════ Row 4 — Empty state -->
+            <Border Grid.Row="4"
+                    Margin="10,4,10,4"
+                    CornerRadius="6" Padding="16,10"
+                    Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                    Visibility="{x:Bind converters:Functions.EmptyCollectionToVisible(_viewModel.DisplayItems), Mode=OneWay}">
+                <TextBlock
+                    Text="Geen coins gevonden voor dit filter. Wijzig het filter of klik op 'Analyseer' om het portfolio te scannen."
+                    FontSize="12" TextWrapping="Wrap"
+                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+            </Border>
+
+            <!-- ════════════════════════════════════════════ Row 5 — Coin list -->
+            <ListView Grid.Row="5"
+                      ItemsSource="{x:Bind _viewModel.DisplayItems, Mode=OneWay}"
+                      Margin="10,0,10,10"
+                      SelectionMode="None"
+                      IsItemClickEnabled="False">
+                <ListView.ItemContainerStyle>
+                    <Style TargetType="ListViewItem">
+                        <Setter Property="Padding"                    Value="0"/>
+                        <Setter Property="Margin"                     Value="0,0,0,6"/>
+                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                        <Setter Property="Background"                 Value="Transparent"/>
+                        <Setter Property="Template">
+                            <Setter.Value>
+                                <ControlTemplate TargetType="ListViewItem">
+                                    <ContentPresenter HorizontalAlignment="Stretch"/>
+                                </ControlTemplate>
+                            </Setter.Value>
+                        </Setter>
+                    </Style>
+                </ListView.ItemContainerStyle>
+                <ListView.ItemTemplate>
+                    <DataTemplate x:DataType="viewmodels:PatternCoinRow">
+
+                        <!-- ── Coin card ── -->
+                        <Border CornerRadius="8"
+                                Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                                Padding="12,10">
+                            <Grid RowSpacing="6">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                    <RowDefinition Height="Auto"/>
+                                </Grid.RowDefinitions>
+
+                                <!-- ── Card header row ── -->
+                                <Grid Grid.Row="0" ColumnSpacing="10">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="36"/>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+
+                                    <!-- Logo -->
+                                    <Image Grid.Column="0"
+                                           Source="{x:Bind Image}"
+                                           Width="30" Height="30"
+                                           VerticalAlignment="Center"
+                                           HorizontalAlignment="Center"/>
+
+                                    <!-- Name + symbol + TF biases -->
+                                    <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Text="{x:Bind Name}"
+                                                       FontSize="14" FontWeight="SemiBold"
+                                                       TextTrimming="CharacterEllipsis"/>
+                                            <TextBlock Text="{x:Bind Symbol}"
+                                                       FontSize="11"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- Market cap rank badge -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}"
+                                                    Visibility="{x:Bind RankVis}"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="{x:Bind RankDisplay}"
+                                                           FontSize="9"
+                                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                           FontWeight="SemiBold"/>
+                                            </Border>
+                                            <!-- Portfolio badge -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="#FF3A7BD5"
+                                                    Visibility="{x:Bind HoldingBadgeVis}"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="Portfolio" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <!-- Watchlist badge -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="#FF8B6914"
+                                                    Visibility="{x:Bind WatchlistBadgeVis}"
+                                                    VerticalAlignment="Center">
+                                                <TextBlock Text="👁 Watchlijst" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                        </StackPanel>
+
+                                        <!-- Timeframe bias chips (1D / 4H / 1H / 15M) -->
+                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                            <!-- 1D -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="{x:Bind DailyBiasBrush}"
+                                                    Visibility="{x:Bind HasDataVis}">
+                                                <TextBlock Text="{x:Bind DailyBias}" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <TextBlock Text="1D" FontSize="9"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- 4H -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="{x:Bind H4BiasBrush}"
+                                                    Margin="3,0,0,0"
+                                                    Visibility="{x:Bind HasDataVis}">
+                                                <TextBlock Text="{x:Bind H4Bias}" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <TextBlock Text="4H" FontSize="9"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- 1H -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="{x:Bind H1BiasBrush}"
+                                                    Margin="3,0,0,0"
+                                                    Visibility="{x:Bind HasDataVis}">
+                                                <TextBlock Text="{x:Bind H1Bias}" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <TextBlock Text="1H" FontSize="9"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- 15M -->
+                                            <Border CornerRadius="3" Padding="4,1"
+                                                    Background="{x:Bind M15BiasBrush}"
+                                                    Margin="3,0,0,0"
+                                                    Visibility="{x:Bind HasDataVis}">
+                                                <TextBlock Text="{x:Bind M15Bias}" FontSize="9" Foreground="White" FontWeight="SemiBold"/>
+                                            </Border>
+                                            <TextBlock Text="15M" FontSize="9"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                            <!-- TF conflict warning -->
+                                            <TextBlock Text="{x:Bind TfConflictText}"
+                                                       FontSize="9" FontWeight="SemiBold"
+                                                       Foreground="#FFE67E22"
+                                                       Margin="5,0,0,0"
+                                                       VerticalAlignment="Center"
+                                                       Visibility="{x:Bind TfConflictVis}"/>
+                                            <!-- RSI values -->
+                                            <TextBlock Text="{x:Bind DailyRsi}"
+                                                       FontSize="9" Margin="6,0,0,0"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                       VerticalAlignment="Center"/>
+                                        </StackPanel>
+                                    </StackPanel>
+
+                                    <!-- Price + 24h change -->
+                                    <StackPanel Grid.Column="2" VerticalAlignment="Center"
+                                                HorizontalAlignment="Right" Spacing="2">
+                                        <TextBlock Text="{x:Bind PriceDisplay}"
+                                                   FontSize="13" FontWeight="SemiBold"
+                                                   HorizontalAlignment="Right"/>
+                                        <TextBlock Text="{x:Bind Change24h}"
+                                                   FontSize="11"
+                                                   Foreground="{x:Bind Change24hBrush}"
+                                                   HorizontalAlignment="Right"/>
+                                    </StackPanel>
+
+                                    <!-- Score badge -->
+                                    <Border Grid.Column="3"
+                                            CornerRadius="6" Padding="8,4"
+                                            Background="{x:Bind ScoreBrush}"
+                                            VerticalAlignment="Center"
+                                            HorizontalAlignment="Center"
+                                            MinWidth="80">
+                                        <StackPanel HorizontalAlignment="Center" Spacing="1">
+                                            <TextBlock Text="{x:Bind ScoreText}"
+                                                       FontSize="18" FontWeight="Bold"
+                                                       Foreground="White"
+                                                       HorizontalAlignment="Center"/>
+                                            <TextBlock Text="{x:Bind ScoreLabel}"
+                                                       FontSize="9" Foreground="White"
+                                                       HorizontalAlignment="Center"
+                                                       TextWrapping="Wrap" MaxWidth="90"/>
+                                        </StackPanel>
+                                    </Border>
+
+                                    <!-- Near-breakout + staleness -->
+                                    <StackPanel Grid.Column="4" VerticalAlignment="Center" Spacing="2">
+                                        <TextBlock Text="{x:Bind BreakoutIndicator}"
+                                                   FontSize="11" FontWeight="SemiBold"
+                                                   Foreground="DarkGoldenrod"/>
+                                        <TextBlock Text="{x:Bind StalenessText}"
+                                                   FontSize="9"
+                                                   Foreground="{x:Bind StalenessColor}"/>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- ── Pattern badges row ── -->
+                                <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="4">
+                                    <ItemsControl ItemsSource="{x:Bind PatternBadges}">
+                                        <ItemsControl.ItemsPanel>
+                                            <ItemsPanelTemplate>
+                                                <StackPanel Orientation="Horizontal" Spacing="4"/>
+                                            </ItemsPanelTemplate>
+                                        </ItemsControl.ItemsPanel>
+                                        <ItemsControl.ItemTemplate>
+                                            <DataTemplate x:DataType="viewmodels:PatternBadge">
+                                                <Button Tag="{x:Bind}"
+                                                        Click="PatternBadge_Click"
+                                                        Padding="0" BorderThickness="0"
+                                                        Background="Transparent"
+                                                        ToolTipService.ToolTip="{x:Bind ToolTip}">
+                                                    <Border CornerRadius="4" Padding="6,2"
+                                                            Background="{x:Bind Background}">
+                                                        <StackPanel Orientation="Horizontal" Spacing="3">
+                                                            <TextBlock Text="{x:Bind Timeframe}"
+                                                                       FontSize="9" Foreground="White"
+                                                                       Opacity="0.8" VerticalAlignment="Center"/>
+                                                            <TextBlock Text="{x:Bind Label}"
+                                                                       FontSize="10" Foreground="White"
+                                                                       FontWeight="SemiBold"/>
+                                                        </StackPanel>
+                                                    </Border>
+                                                </Button>
+                                            </DataTemplate>
+                                        </ItemsControl.ItemTemplate>
+                                    </ItemsControl>
+                                    <!-- Overflow chip -->
+                                    <Border CornerRadius="4" Padding="6,2"
+                                            Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}"
+                                            Visibility="{x:Bind OverflowVis}">
+                                        <TextBlock Text="{x:Bind OverflowText}"
+                                                   FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    </Border>
+                                </StackPanel>
+
+                                <!-- ── Setup detail (score >= 40) ── -->
+                                <Border Grid.Row="2"
+                                        Background="{ThemeResource SystemControlBackgroundChromeBlackLowBrush}"
+                                        CornerRadius="6" Padding="10,8"
+                                        Visibility="{x:Bind HasSetupVis}">
+                                    <Grid ColumnSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="Auto"/>
+                                        </Grid.ColumnDefinitions>
+
+                                        <StackPanel Grid.Column="0" Spacing="4">
+                                            <!-- Direction + confidence + R/R -->
+                                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                                <Border CornerRadius="4" Padding="6,2"
+                                                        Background="{x:Bind DirectionBrush}">
+                                                    <TextBlock Text="{x:Bind Direction}"
+                                                               FontSize="11" FontWeight="Bold"
+                                                               Foreground="White"/>
+                                                </Border>
+                                                <TextBlock Text="{x:Bind ConfidenceText}"
+                                                           FontSize="11"
+                                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                           VerticalAlignment="Center"/>
+                                                <TextBlock Text="{x:Bind RRDisplay}"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="DarkGoldenrod"
+                                                           VerticalAlignment="Center"/>
+                                            </StackPanel>
+
+                                            <!-- Price levels grid -->
+                                            <Grid ColumnSpacing="20" RowSpacing="2">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                    <ColumnDefinition Width="Auto"/>
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto"/>
+                                                    <RowDefinition Height="Auto"/>
+                                                </Grid.RowDefinitions>
+
+                                                <TextBlock Grid.Column="0" Grid.Row="0" Text="Entry"
+                                                           FontSize="10" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock Grid.Column="1" Grid.Row="0" Text="Stop"
+                                                           FontSize="10" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock Grid.Column="2" Grid.Row="0" Text="TP1"
+                                                           FontSize="10" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                <TextBlock Grid.Column="3" Grid.Row="0" Text="TP2"
+                                                           FontSize="10" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                                <TextBlock Grid.Column="0" Grid.Row="1"
+                                                           Text="{x:Bind EntryDisplay}"
+                                                           FontSize="12" FontWeight="SemiBold"/>
+                                                <TextBlock Grid.Column="1" Grid.Row="1"
+                                                           Text="{x:Bind StopDisplay}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#FFCD5C5C"/>
+                                                <TextBlock Grid.Column="2" Grid.Row="1"
+                                                           Text="{x:Bind Target1Display}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#FF60C050"/>
+                                                <TextBlock Grid.Column="3" Grid.Row="1"
+                                                           Text="{x:Bind Target2Display}"
+                                                           FontSize="12" FontWeight="SemiBold"
+                                                           Foreground="#FF27A040"/>
+                                            </Grid>
+
+                                            <!-- Entry note -->
+                                            <TextBlock Text="{x:Bind EntryNote}"
+                                                       FontSize="11" TextWrapping="Wrap" MaxWidth="500"
+                                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+
+                                            <!-- Reasoning bullets -->
+                                            <ItemsControl ItemsSource="{x:Bind ReasoningBullets}">
+                                                <ItemsControl.ItemTemplate>
+                                                    <DataTemplate x:DataType="x:String">
+                                                        <TextBlock Text="{x:Bind}"
+                                                                   FontSize="11" TextWrapping="Wrap"
+                                                                   MaxWidth="520" Margin="0,1"
+                                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                                    </DataTemplate>
+                                                </ItemsControl.ItemTemplate>
+                                            </ItemsControl>
+                                        </StackPanel>
+
+                                        <!-- Data source (bottom right) -->
+                                        <TextBlock Grid.Column="1"
+                                                   Text="{x:Bind DataSource}"
+                                                   FontSize="10" VerticalAlignment="Bottom"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- No-data fallback -->
+                                <Border Grid.Row="2"
+                                        Background="{ThemeResource SystemControlBackgroundChromeBlackLowBrush}"
+                                        CornerRadius="6" Padding="10,6"
+                                        Visibility="{x:Bind ShowNoDataVis}">
+                                    <TextBlock
+                                        Text="Geen marktdata beschikbaar via Binance, KuCoin, Gate.io of MEXC."
+                                        FontSize="11"
+                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                </Border>
+
+                                <!-- ── Action row ── -->
+                                <StackPanel Grid.Row="3" Orientation="Horizontal" Spacing="8">
+                                    <Button Content="📋 Kopieer setup"
+                                            Tag="{x:Bind}"
+                                            Click="CopyShare_Click"
+                                            Padding="8,3" FontSize="11"
+                                            Visibility="{x:Bind HasSetupVis}"
+                                            ToolTipService.ToolTip="Kopieer de setup-details (entry, SL, TP, score) naar het klembord"/>
+                                    <Button Content="📈 Grafiek"
+                                            Tag="{x:Bind}"
+                                            Click="ShowChart_Click"
+                                            Padding="8,3" FontSize="11"
+                                            Visibility="{x:Bind HasDataVis}"
+                                            ToolTipService.ToolTip="Toon de koersgrafiek met patroon-markers voor deze coin"/>
+                                    <Button Content="👁 Volg trade setup"
+                                            Tag="{x:Bind}"
+                                            Click="WatchSetup_Click"
+                                            Padding="8,3" FontSize="11"
+                                            Visibility="{x:Bind HasSetupVis}"
+                                            ToolTipService.ToolTip="Voeg toe aan Setup Tracker om de win rate bij te houden"/>
+                                    <Button Content="📝 Neem papertrade"
+                                            Tag="{x:Bind}"
+                                            Click="TakePaperTrade_Click"
+                                            Padding="8,3" FontSize="11"
+                                            Visibility="{x:Bind HasSetupVis}"
+                                            ToolTipService.ToolTip="Open papertrade dialog met vooringevulde setup"/>
+                                    <Button Content="🗑 Verwijder uit watchlijst"
+                                            Tag="{x:Bind}"
+                                            Click="RemoveWatchlist_Click"
+                                            Padding="8,3" FontSize="11"
+                                            Foreground="#FFCD5C5C"
+                                            Visibility="{x:Bind WatchlistBadgeVis}"
+                                            ToolTipService.ToolTip="Verwijder deze coin uit de persoonlijke watchlijst"/>
+                                </StackPanel>
+
+                            </Grid>
+                        </Border>
+
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+            </ListView>
+
+        </Grid>
+    </Grid>
+
+</Page>

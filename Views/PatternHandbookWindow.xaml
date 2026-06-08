@@ -1,0 +1,10 @@
+<Window
+    x:Class="CryptoPortfolioTracker.Views.PatternHandbookWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="📖 Pattern Handboek">
+
+    <!-- Full-window WebView2 — markdown rendered as styled HTML, no CDN required -->
+    <WebView2 x:Name="HandbookView" Loaded="HandbookView_Loaded"/>
+
+</Window>

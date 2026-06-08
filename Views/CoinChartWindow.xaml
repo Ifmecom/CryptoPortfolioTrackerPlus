@@ -1,0 +1,56 @@
+<Window
+    x:Class="CryptoPortfolioTracker.Views.CoinChartWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Grafiek">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- ── Timeframe toolbar ── -->
+        <StackPanel Grid.Row="0"
+                    Orientation="Horizontal"
+                    Spacing="6"
+                    Padding="10,6"
+                    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+            <ToggleButton x:Name="Btn1D"
+                          Content="1D"
+                          IsChecked="True"
+                          Click="Btn1D_Click"
+                          Padding="14,4" FontSize="12" FontWeight="SemiBold"/>
+
+            <ToggleButton x:Name="Btn4H"
+                          Content="4H"
+                          IsChecked="False"
+                          Click="Btn4H_Click"
+                          Padding="14,4" FontSize="12" FontWeight="SemiBold"/>
+
+            <ToggleButton x:Name="Btn1H"
+                          Content="1H"
+                          IsChecked="False"
+                          Click="Btn1H_Click"
+                          Padding="14,4" FontSize="12" FontWeight="SemiBold"/>
+
+            <ToggleButton x:Name="Btn15M"
+                          Content="15M"
+                          IsChecked="False"
+                          Click="Btn15M_Click"
+                          Padding="14,4" FontSize="12" FontWeight="SemiBold"/>
+
+            <TextBlock x:Name="BarCountLabel"
+                       FontSize="11"
+                       VerticalAlignment="Center"
+                       Margin="12,0,0,0"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+        </StackPanel>
+
+        <!-- ── WebView2 candlestick chart ── -->
+        <WebView2 Grid.Row="1"
+                  x:Name="ChartView"
+                  Loaded="ChartView_Loaded"/>
+    </Grid>
+</Window>
