@@ -198,6 +198,9 @@ public partial class App : Application
         services.AddScoped<HelpView>();
         services.AddScoped<TradeAnalysisView>();
         services.AddScoped<StatisticsView>();
+        services.AddScoped<PatternTradingView>();
+        services.AddScoped<SetupTrackerView>();
+        services.AddScoped<ThreePctView>();
 
         services.AddScoped<AssetsViewModel>();
         services.AddScoped<AccountsViewModel>();
@@ -214,7 +217,10 @@ public partial class App : Application
         services.AddScoped<SourcesViewModel>();
         services.AddScoped<TradeAnalysisViewModel>();
         services.AddScoped<StatisticsViewModel>();
+        services.AddScoped<PatternTradingViewModel>();
+        services.AddScoped<SetupTrackerViewModel>();
         services.AddScoped<TaxViewModel>();
+        services.AddScoped<ThreePctViewModel>();
 
         // Register the factory
         services.AddSingleton<IPortfolioContextFactory, PortfolioContextFactory>();
@@ -257,6 +263,7 @@ public partial class App : Application
         services.AddScoped<PortfolioService>();
         services.AddSingleton<IMessenger, WeakReferenceMessenger>();
         services.AddSingleton<ISentimentService, SentimentService>();
+        services.AddScoped<IFearGreedService, FearGreedService>();
 
         // Sprint 1.4 — Signal engine + paper trading
         services.AddScoped<IMarketRegimeService, MarketRegimeService>();
@@ -275,6 +282,21 @@ public partial class App : Application
         services.AddScoped<ITradeAnalysisService, TradeAnalysisService>();
 
         services.AddScoped<IExchangeAccountService, ExchangeAccountService>();
+
+        // Pattern Trading (Phase 1 + 2)
+        services.AddSingleton<IPatternDetectionService, PatternDetectionService>();
+        services.AddScoped<IPatternTradingService, PatternTradingService>();
+        services.AddScoped<IWatchlistService, WatchlistService>();
+        services.AddScoped<IWatchedSetupService, WatchedSetupService>();
+
+        // Sprint A + B — 3% Trading
+        services.AddSingleton<IThreePctScoringService,   ThreePctScoringService>();
+        services.AddScoped<IThreePctBacktestService,     ThreePctBacktestService>();
+        services.AddSingleton<IOrderBookService,         OrderBookService>();
+        services.AddSingleton<IBinanceFuturesDataService, BinanceFuturesDataService>();
+        services.AddSingleton<IGlobalMarketDataService,  GlobalMarketDataService>();
+        services.AddSingleton<ICorrelationService,       CorrelationService>();
+        services.AddSingleton<IMacroEventService,        MacroEventService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 

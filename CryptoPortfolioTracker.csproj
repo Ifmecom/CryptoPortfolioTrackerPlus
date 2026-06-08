@@ -214,6 +214,9 @@
     <Content Update="Assets\Wallet_Plus.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <Content Include="PATTERN_HANDBOOK.md">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <Page Update="Dialogs\WhatsNewDialog.xaml">

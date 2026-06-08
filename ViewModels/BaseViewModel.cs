@@ -11,7 +11,12 @@ namespace CryptoPortfolioTracker.ViewModels;
 public partial class BaseViewModel : ObservableObject
 {
     private protected ILogger Logger { get; set; }
-    
+
+    /// <summary>
+    /// True while the page is performing its initial (or explicit) data load.
+    /// Bind a ProgressBar/ProgressRing IsActive/Visibility to this property.
+    /// </summary>
+    [ObservableProperty] protected bool isLoading;
 
     [ObservableProperty] private double? fontLevel1;
     [ObservableProperty] private double? fontLevel2;

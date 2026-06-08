@@ -9,7 +9,6 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Infrastructure.Response.Coins;
 using LanguageExt;
-using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using MarketRegimeEnum = CryptoPortfolioTracker.Enums.MarketRegime;
 
 namespace CryptoPortfolioTracker.Models;

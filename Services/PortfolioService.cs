@@ -215,11 +215,15 @@ namespace CryptoPortfolioTracker.Services
             return true;
         }
 
+        /// <summary>Full file-system path to the currently active SQLite database.</summary>
+        public string ActivePortfolioPath { get; private set; } = string.Empty;
+
         public async Task<Either<Error,bool>> Connect(Portfolio portfolio)
         {
             try
             {
                 var relativePath = Path.GetRelativePath(AppConstants.AppDataPath, Path.Combine(AppConstants.PortfoliosPath, portfolio.Signature, AppConstants.DbName));
+                ActivePortfolioPath = Path.Combine(AppConstants.PortfoliosPath, portfolio.Signature, AppConstants.DbName);
                 Context = _contextFactory.Create($"Data Source=|DataDirectory|{relativePath}");
                 UpdateContext = _updateContextFactory.Create($"Data Source=|DataDirectory|{relativePath}");
                 
@@ -408,6 +412,18 @@ namespace CryptoPortfolioTracker.Services
                 await TryAddColumnAsync(db,         "ExchangeOrders", "Tp1ClosePct",  "REAL",    "100");
                 await TryAddColumnAsync(db,         "ExchangeOrders", "Tp2ClosePct",  "REAL",    "100");
 
+                // WatchedSetups — instapcandle timestamp (v1.31)
+                await TryAddNullableColumnAsync(db, "WatchedSetups", "EntryAt", "TEXT");
+
+                // Backfill EntryAt voor bestaande Won/Lost/Open setups die geen EntryAt hebben.
+                // Beste benadering: gebruik AddedAt (aanmaaktijdstip setup) als instaptijdstip.
+                // Status: Won=1, Lost=2, Open=4  |  Watching=0 en Expired=3 NIET backfillen.
+                await db.ExecuteSqlRawAsync(@"
+                    UPDATE WatchedSetups
+                    SET    EntryAt = AddedAt
+                    WHERE  EntryAt IS NULL
+                    AND    Status  IN (1, 2, 4)");
+
                 await db.ExecuteSqlRawAsync(@"
                     CREATE TABLE IF NOT EXISTS SentimentReadings (
                         Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
@@ -471,6 +487,57 @@ namespace CryptoPortfolioTracker.Services
                         FilledAt TEXT,
                         FOREIGN KEY (SignalId) REFERENCES Signals(Id) ON DELETE SET NULL
                     )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS FearGreedReadings (
+                        Id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Value INTEGER NOT NULL DEFAULT 0,
+                        Classification TEXT NOT NULL DEFAULT '' CHECK(length(Classification) <= 50),
+                        Timestamp TEXT NOT NULL
+                    )");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_FearGreedReadings_Timestamp
+                    ON FearGreedReadings(Timestamp)");
+
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS WatchlistCoins (
+                        Id       INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        ApiId    TEXT    NOT NULL UNIQUE,
+                        Name     TEXT    NOT NULL DEFAULT '',
+                        Symbol   TEXT    NOT NULL DEFAULT '',
+                        ImageUri TEXT    NOT NULL DEFAULT '',
+                        AddedAt  TEXT    NOT NULL
+                    )");
+
+                // Setup Tracker table (v1.30)
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS WatchedSetups (
+                        Id             INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        CoinApiId      TEXT    NOT NULL DEFAULT '',
+                        CoinName       TEXT    NOT NULL DEFAULT '',
+                        CoinSymbol     TEXT    NOT NULL DEFAULT '',
+                        ImageUri       TEXT    NOT NULL DEFAULT '',
+                        Direction      TEXT    NOT NULL DEFAULT '',
+                        EntryPrice     REAL    NOT NULL DEFAULT 0,
+                        StopLoss       REAL    NOT NULL DEFAULT 0,
+                        Target1        REAL    NOT NULL DEFAULT 0,
+                        Target2        REAL    NOT NULL DEFAULT 0,
+                        Score          INTEGER NOT NULL DEFAULT 0,
+                        PatternSummary TEXT    NOT NULL DEFAULT '',
+                        Bias1D         TEXT    NOT NULL DEFAULT '',
+                        Bias4H         TEXT    NOT NULL DEFAULT '',
+                        AddedAt        TEXT    NOT NULL,
+                        Status         INTEGER NOT NULL DEFAULT 0,
+                        ClosePrice     REAL,
+                        ClosedAt       TEXT
+                    )");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_WatchedSetups_Status
+                    ON WatchedSetups(Status)");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_WatchedSetups_CoinApiId
+                    ON WatchedSetups(CoinApiId)");
 
                 Logger?.Information("PLUS schema applied successfully");
             }
