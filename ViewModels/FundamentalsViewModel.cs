@@ -458,7 +458,8 @@ public partial class FundamentalRow : ObservableObject
         : $"Totaalscore {Data!.TotalScore:0}/100 ({Data.Verdict})\n" +
           $"Data-score {Data.DataScore:0} · betrouwbaarheid {Data.Confidence:0}%\n" +
           $"Tokenomics {Data.ScoreTokenomics:0} · Liquiditeit {Data.ScoreLiquidity:0} · Waardering {Data.ScoreValuation:0}\n" +
-          $"Community {Data.ScoreCommunity:0} · Development {Data.ScoreDevelopment:0} · Project {Data.ScoreProject:0}";
+          $"Community {Data.ScoreCommunity:0} · Development {Data.ScoreDevelopment:0} · Project {Data.ScoreProject:0}" +
+          (Data.Tvl > 0 ? $"\nOn-chain (TVL) {Data.ScoreOnChain:0}" : "");
 
     /// <summary>True als de data ouder is dan <see cref="FreshnessDays"/> dagen.</summary>
     public bool IsStale => HasData && Data!.UpdatedAt > DateTime.MinValue

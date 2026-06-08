@@ -71,6 +71,8 @@ public class CoinFundamentals
     public double ScoreCommunity   { get; set; }
     public double ScoreDevelopment { get; set; }
     public double ScoreProject     { get; set; }
+    /// <summary>On-chain factor (0-100) uit TVL; alleen meegewogen wanneer Tvl &gt; 0.</summary>
+    public double ScoreOnChain     { get; set; }
 
     /// <summary>Samengestelde auto-score (0-100) over de meetbare categorieën.</summary>
     public double DataScore { get; set; }

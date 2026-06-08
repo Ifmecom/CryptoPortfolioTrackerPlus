@@ -114,7 +114,10 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
         ContentPanel.Children.Add(ScoreBar("Development (GitHub)", _f.ScoreDevelopment,
             "Recente commits (4 wkn), sterren en gemergede PR's. 0 bij coins zonder gekoppelde publieke repo. Weegt 15%."));
         ContentPanel.Children.Add(ScoreBar("Projectvolledigheid", _f.ScoreProject,
-            "Aanwezigheid van homepage, whitepaper, repo, sector en track record (leeftijd). Weegt 10%."));
+            "Aanwezigheid van homepage, whitepaper, repo, sector en track record (leeftijd). Weegt 9% (of 10% zonder TVL)."));
+        if (_f.Tvl > 0)
+            ContentPanel.Children.Add(ScoreBar("On-chain (TVL)", _f.ScoreOnChain,
+                "Omvang van de Total Value Locked + market-cap/TVL-efficiëntie (DefiLlama). Weegt 12%; alleen voor DeFi-coins met TVL. Bij niet-DeFi-coins vervalt deze factor en tellen de overige zwaarder."));
 
         // ── Waardering & aanbod ──────────────────────────────────────────────────
         ContentPanel.Children.Add(Header("💰 Waardering & aanbod"));

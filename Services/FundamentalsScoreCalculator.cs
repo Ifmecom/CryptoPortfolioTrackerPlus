@@ -15,13 +15,16 @@ namespace CryptoPortfolioTracker.Services;
 /// </summary>
 public static class FundamentalsScoreCalculator
 {
-    // Gewichten van de auto-subscores binnen de data-score (scommeren tot 1.0)
-    public const double WTokenomics  = 0.25;
-    public const double WLiquidity   = 0.20;
-    public const double WValuation   = 0.15;
-    public const double WCommunity   = 0.15;
-    public const double WDevelopment = 0.15;
-    public const double WProject     = 0.10;
+    // Gewichten van de auto-subscores binnen de data-score.
+    // De zes kern-factoren gelden altijd; On-Chain (TVL) telt alleen mee voor DeFi-coins
+    // met TVL en wordt anders weggelaten waarna de overige gewichten worden gehernormaliseerd.
+    public const double WTokenomics  = 0.22;
+    public const double WLiquidity   = 0.18;
+    public const double WValuation   = 0.13;
+    public const double WCommunity   = 0.13;
+    public const double WDevelopment = 0.13;
+    public const double WProject     = 0.09;
+    public const double WOnChain     = 0.12;
 
     // Aandeel van de auto-data-score in de volledige score wanneer alle 5 DD-velden
     // zijn ingevuld. (DD telt dan voor 1 - DataWeightWhenFullyAssessed.)
@@ -143,16 +146,54 @@ public static class FundamentalsScoreCalculator
         return Clamp(s);
     }
 
+    /// <summary>
+    /// On-chain factor uit TVL (DefiLlama): omvang van de vergrendelde waarde + market-cap/TVL-efficiëntie.
+    /// Alleen zinvol voor DeFi-protocollen (tvl &gt; 0); de caller bepaalt of de factor meeweegt.
+    /// </summary>
+    public static double OnChain(double tvl, double marketCap)
+    {
+        if (tvl <= 0) return 0;
+
+        double magnitude = LogScore(tvl, 30_000_000_000); // ~$30B → 100
+
+        double ratioScore;
+        if (marketCap <= 0) ratioScore = 50;
+        else
+        {
+            double r = marketCap / tvl;                    // lager = waardering beter gedekt door TVL
+            if (r <= 1)       ratioScore = 100;
+            else if (r <= 3)  ratioScore = Lerp(r, 1, 3, 100, 70);
+            else if (r <= 10) ratioScore = Lerp(r, 3, 10, 70, 40);
+            else              ratioScore = Lerp(r, 10, 30, 40, 15);
+        }
+        return Clamp(0.5 * magnitude + 0.5 * ratioScore);
+    }
+
     // ── Compositie ──────────────────────────────────────────────────────────────
 
-    /// <summary>Samengestelde auto-data-score uit de zes subscores.</summary>
-    public static double DataScore(CoinFundamentals f) => Clamp(
-          WTokenomics  * f.ScoreTokenomics
-        + WLiquidity   * f.ScoreLiquidity
-        + WValuation   * f.ScoreValuation
-        + WCommunity   * f.ScoreCommunity
-        + WDevelopment * f.ScoreDevelopment
-        + WProject     * f.ScoreProject);
+    /// <summary>
+    /// Samengestelde auto-data-score. On-Chain weegt alleen mee wanneer er TVL is (DeFi-coin);
+    /// anders worden de overige gewichten gehernormaliseerd zodat niet-DeFi-coins niet onterecht
+    /// worden afgestraft.
+    /// </summary>
+    public static double DataScore(CoinFundamentals f)
+    {
+        double sum =
+              WTokenomics  * f.ScoreTokenomics
+            + WLiquidity   * f.ScoreLiquidity
+            + WValuation   * f.ScoreValuation
+            + WCommunity   * f.ScoreCommunity
+            + WDevelopment * f.ScoreDevelopment
+            + WProject     * f.ScoreProject;
+        double totalWeight = WTokenomics + WLiquidity + WValuation + WCommunity + WDevelopment + WProject;
+
+        if (f.Tvl > 0)
+        {
+            sum += WOnChain * f.ScoreOnChain;
+            totalWeight += WOnChain;
+        }
+        return totalWeight > 0 ? Clamp(sum / totalWeight) : 0;
+    }
 
     /// <summary>
     /// Volledige score: blend van de auto-data-score met de gemiddelde handmatige
@@ -210,6 +251,7 @@ public static class FundamentalsScoreCalculator
             hasCategory:   !string.IsNullOrWhiteSpace(f.Categories),
             genesis:       f.GenesisDate,
             now:           now);
+        f.ScoreOnChain     = OnChain(f.Tvl, f.MarketCap);
 
         f.DataScore   = DataScore(f);
         f.TotalScore  = TotalScore(f.DataScore, f);

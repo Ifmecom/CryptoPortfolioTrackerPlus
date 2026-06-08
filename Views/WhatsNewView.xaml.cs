@@ -72,6 +72,11 @@ public sealed partial class WhatsNewView : Page
             "Coins zonder DeFi-protocol (zoals BTC) hebben simpelweg geen TVL. Let op: token-unlock-schema's zitten achter " +
             "de betaalde DefiLlama-API en zijn daarom niet opgenomen — unlock-risico beoordeel je via de DD-slider.");
 
+        AddFeature("⚖️", "TVL telt nu mee in de Fundamental Score",
+            "De On-Chain-factor (TVL-omvang + market-cap/TVL-efficiëntie) weegt nu 12% mee in de score van DeFi-coins. " +
+            "Voor niet-DeFi-coins (zonder TVL) vervalt de factor en worden de overige factoren gehernormaliseerd, zodat " +
+            "ze niet oneerlijk worden afgestraft. De factor-balken in het detailvenster tonen de On-Chain-score wanneer van toepassing.");
+
         // ── v1.33 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.33", "3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
 

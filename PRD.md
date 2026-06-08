@@ -758,9 +758,11 @@ meetbaar is uit CoinGecko, handmatig wat dat niet is.
 - Mapt naar de persistente entiteit `CoinFundamentals` (één rij per coin, upsert op `ApiId`).
 - `RefreshAllAsync` ververst de hele bibliotheek, rate-limited (~2,2s/call, demo-tier).
 
-**Auto-scoring (`FundamentalsScoreCalculator`, puur/testbaar):** zes subscores (0-100) met
-transparante drempels — Tokenomics (25%), Liquiditeit (20%), Waardering (15%), Community (15%),
-Development (15%), Projectvolledigheid (10%) → samengestelde **DataScore**.
+**Auto-scoring (`FundamentalsScoreCalculator`, puur/testbaar):** subscores (0-100) met transparante
+drempels — Tokenomics (22%), Liquiditeit (18%), Waardering (13%), Community (13%), Development (13%),
+Projectvolledigheid (9%) en **On-Chain/TVL (12%)** → samengestelde **DataScore**. De On-Chain-factor
+(TVL-omvang + market-cap/TVL-efficiëntie) telt **alleen mee voor DeFi-coins met TVL**; voor niet-DeFi-coins
+vervalt hij en worden de overige gewichten gehernormaliseerd, zodat ze niet onterecht worden afgestraft.
 
 **Hybride totaalscore:** handmatige due-diligence (team, product-maturiteit, adoptie, revenue,
 unlocks — 0-10 elk) blendt met de DataScore tot de **TotalScore**; het DD-gewicht schaalt met het
@@ -1054,7 +1056,7 @@ Fundamentele analyse per coin (één rij per coin, upsert op `ApiId`). Tabel aan
 | `Tvl` / `TvlCategory` | double / string | On-chain Total Value Locked + categorie (DefiLlama); 0/leeg voor niet-DeFi-coins |
 | `GithubStars` / `GithubForks` / `GithubSubscribers` / `CommitCount4Weeks` / `PullRequestsMerged` / `PullRequestContribs` | long | Development-activiteit |
 | `TwitterFollowers` / `RedditSubscribers` / `RedditActive48H` / `SentimentUpPct` | long / double | Community |
-| `ScoreTokenomics` / `ScoreLiquidity` / `ScoreValuation` / `ScoreCommunity` / `ScoreDevelopment` / `ScoreProject` | double | Auto-subscores (0–100) |
+| `ScoreTokenomics` / `ScoreLiquidity` / `ScoreValuation` / `ScoreCommunity` / `ScoreDevelopment` / `ScoreProject` / `ScoreOnChain` | double | Auto-subscores (0–100); `ScoreOnChain` (TVL) weegt alleen mee bij DeFi-coins |
 | `DataScore` | double | Samengestelde auto-score (0–100) |
 | `DdTeam` / `DdProductMaturity` / `DdAdoption` / `DdRevenue` / `DdUnlocks` | int? | Handmatige DD (0–10, null = niet beoordeeld) |
 | `DdNotes` | string | DD-notities |
