@@ -259,8 +259,11 @@
                                                 <TextBlock Name="txtMarketCap"
                                                     Text="{x:Bind converters:Functions.FormatValueToString(MarketCap,'$ {0:0.# }'), Mode=OneWay}" 
                                                     TextWrapping="Wrap" />
-                                                <TextBlock Name="txtRank" Text="{Binding Rank}" TextWrapping="Wrap" RelativePanel.AlignRightWithPanel="True" RelativePanel.Below="txtMarketCap" 
-                                                           FontSize="{Binding DataContext.DataContext.FontLevel1, ElementName=proxy}"/>
+                                                <TextBlock Name="txtRank"
+                                                    Text="{x:Bind converters:Functions.FormatRank(Rank), Mode=OneWay}"
+                                                    Visibility="{x:Bind converters:Functions.LongToRankVisible(Rank), Mode=OneWay}"
+                                                    TextWrapping="Wrap" RelativePanel.AlignRightWithPanel="True" RelativePanel.Below="txtMarketCap"
+                                                    FontSize="{Binding DataContext.DataContext.FontLevel1, ElementName=proxy}"/>
                                             </RelativePanel>
                                         </Border>
                                     </Grid>

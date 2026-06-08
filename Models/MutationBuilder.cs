@@ -11,7 +11,6 @@ public class MutationBuilder
 
     }
 
-    private int _id;
     private TransactionKind _type;
     private double _qty;
     private double _price;
@@ -59,7 +58,6 @@ public class MutationBuilder
     {
         return new Mutation
         {
-            Id = _id,
             Type = _type,
             Qty = _qty,
             Price = _price,

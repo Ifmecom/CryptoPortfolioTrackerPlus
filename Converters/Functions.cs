@@ -9,6 +9,7 @@ using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Models;
 using Microsoft.UI.Xaml.Controls;
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
@@ -20,13 +21,21 @@ using WinUI3Localizer;
 
 namespace CryptoPortfolioTracker.Converters;
 
-public class Functions
+public partial class Functions
 {
     private static readonly Settings? _settings = App.Container.GetService<Settings>();
 
     public static Visibility TrueToVisible(bool value)
     {
         return value ? Visibility.Visible : Visibility.Collapsed;
+    }
+
+    /// <summary>Returns Visible when the collection is empty (or null), Collapsed otherwise.</summary>
+    public static Visibility EmptyCollectionToVisible(ICollection collection)
+    {
+        return (collection is null || collection.Count == 0)
+            ? Visibility.Visible
+            : Visibility.Collapsed;
     }
     public static Visibility TrueToVisible(bool? value)
     {
@@ -655,6 +664,102 @@ public class Functions
                 }
         }
     }
+
+    // ── Setup Tracker helpers ─────────────────────────────────────────────────
+
+    public static SolidColorBrush SetupStatusToBrush(WatchedSetupStatus status) => status switch
+    {
+        WatchedSetupStatus.Won     => new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50)),
+        WatchedSetupStatus.Lost    => new SolidColorBrush(Color.FromArgb(0xFF, 0xEF, 0x53, 0x50)),
+        WatchedSetupStatus.Expired => new SolidColorBrush(Color.FromArgb(0xFF, 0x80, 0x80, 0x80)),
+        WatchedSetupStatus.Open    => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x98, 0x00)), // orange = in trade
+        _                          => new SolidColorBrush(Color.FromArgb(0xFF, 0x60, 0xA5, 0xFA)), // Watching = blue
+    };
+
+    public static string SetupStatusToText(WatchedSetupStatus status) => status switch
+    {
+        WatchedSetupStatus.Won     => "✅ Gewonnen",
+        WatchedSetupStatus.Lost    => "❌ Verloren",
+        WatchedSetupStatus.Expired => "⏹ Verlopen",
+        WatchedSetupStatus.Open    => "🟡 In Trade",
+        _                          => "👁 Watching",
+    };
+
+    public static string SetupStatusToTooltip(WatchedSetupStatus status) => status switch
+    {
+        WatchedSetupStatus.Watching => "Wacht op entry — de prijs heeft de entry zone nog niet bereikt. De setup wordt automatisch op 'In Trade' gezet zodra de entry prijs wordt geraakt.",
+        WatchedSetupStatus.Open    => "In Trade — entry is bereikt en de trade is actief. De setup sluit automatisch op 'Gewonnen' (TP1 geraakt) of 'Verloren' (stop-loss geraakt).",
+        WatchedSetupStatus.Won     => "Gewonnen — TP1 is geraakt. De setup heeft uitgespeeld zoals verwacht.",
+        WatchedSetupStatus.Lost    => "Verloren — stop-loss is geraakt. De setup heeft niet uitgespeeld.",
+        WatchedSetupStatus.Expired => "Verlopen — handmatig gesloten. De setup was niet meer geldig (bijv. patroon geïnvalideerd).",
+        _                          => string.Empty,
+    };
+
+    /// <summary>
+    /// Expire button visible for Watching and Open setups (still actionable).
+    /// Hidden once a trade is closed (Won/Lost/Expired).
+    /// </summary>
+    public static Visibility IsWatchingToVisible(WatchedSetupStatus status)
+        => status == WatchedSetupStatus.Watching || status == WatchedSetupStatus.Open
+            ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>
+    /// Formats the entry distance percentage with a sign prefix.
+    /// Returns empty string when the value is NaN (CurrentPrice unknown).
+    /// </summary>
+    public static string FormatEntryDistance(double entryDistancePct)
+    {
+        if (double.IsNaN(entryDistancePct)) return string.Empty;
+        return entryDistancePct >= 0
+            ? $"+{entryDistancePct:F1}%"
+            : $"{entryDistancePct:F1}%";
+    }
+
+    /// <summary>Collapsed when CurrentPrice is not yet known.</summary>
+    public static Visibility CurrentPriceToVisible(double currentPrice)
+        => currentPrice > 0 ? Visibility.Visible : Visibility.Collapsed;
+
+    // FormatCryptoPrice, FormatRR, FormatPnlPct, FormatAge, FormatCandleTime
+    // → verplaatst naar Functions.Formatters.cs (testbaar zonder WinUI)
+
+    public static SolidColorBrush PnlToBrush(double? pnlPct)
+    {
+        if (!pnlPct.HasValue) return new SolidColorBrush(Colors.Transparent);
+        return pnlPct.Value >= 0
+            ? new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50))
+            : new SolidColorBrush(Color.FromArgb(0xFF, 0xEF, 0x53, 0x50));
+    }
+
+    /// <summary>Visible when a P&amp;L value (realised or unrealised) is present.</summary>
+    public static Visibility PnlToVisible(double? pnlPct)
+        => pnlPct.HasValue ? Visibility.Visible : Visibility.Collapsed;
+
+    /// <summary>Visible when a nullable DateTime has a value.</summary>
+    public static Visibility NullableDateTimeToVisible(DateTime? dt)
+        => dt.HasValue ? Visibility.Visible : Visibility.Collapsed;
+
+    public static SolidColorBrush DirectionToBrush(string direction)
+        => direction == "Short"
+            ? new SolidColorBrush(Color.FromArgb(0xFF, 0xEF, 0x53, 0x50))
+            : new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50));
+
+    public static SolidColorBrush ScoreToBrush(int score) => score switch
+    {
+        >= 80 => new SolidColorBrush(Color.FromArgb(0xFF, 0x4C, 0xAF, 0x50)),
+        >= 60 => new SolidColorBrush(Color.FromArgb(0xFF, 0xB8, 0x86, 0x0B)),
+        >= 40 => new SolidColorBrush(Color.FromArgb(0xFF, 0xFF, 0x98, 0x00)),
+        _     => new SolidColorBrush(Color.FromArgb(0xFF, 0x80, 0x80, 0x80)),
+    };
+
+    // ── Market cap rank helpers ───────────────────────────────────────────────
+
+    /// <summary>Formats a CoinGecko market-cap rank as "#1", "#2", etc.
+    /// Returns an empty string when rank is 0 or unknown.</summary>
+    public static string FormatRank(long rank) => rank > 0 ? $"#{rank}" : "";
+
+    /// <summary>Visible when the coin has a known market-cap rank (> 0).</summary>
+    public static Visibility LongToRankVisible(long rank)
+        => rank > 0 ? Visibility.Visible : Visibility.Collapsed;
 }
 
 

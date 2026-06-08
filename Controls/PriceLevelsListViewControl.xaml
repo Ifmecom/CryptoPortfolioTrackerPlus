@@ -215,6 +215,12 @@
                                             <RelativePanel>
                                                 <TextBlock Name="txtName" Text="{Binding Name}" FontWeight="Bold" FontSize="{Binding DataContext.DataContext.FontLevel1, ElementName=proxy}" TextWrapping="Wrap" />
                                                 <TextBlock Name="txtSymbol" Text="{Binding Symbol}" TextWrapping="Wrap" RelativePanel.Below="txtName" FontSize="{Binding DataContext.DataContext.FontLevel3, ElementName=proxy}"/>
+                                                <TextBlock Name="txtRank"
+                                                    Text="{x:Bind converters:Functions.FormatRank(Rank), Mode=OneWay}"
+                                                    Visibility="{x:Bind converters:Functions.LongToRankVisible(Rank), Mode=OneWay}"
+                                                    TextWrapping="Wrap" RelativePanel.Below="txtSymbol"
+                                                    FontSize="{Binding DataContext.DataContext.FontLevel3, ElementName=proxy}"
+                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                                                 <!--<TextBlock Name="txtNote" Text="{Binding Note}" TextWrapping="Wrap" RelativePanel.Below="txtName" RelativePanel.RightOf="txtSymbol" FontSize="{Binding DataContext.DataContext.FontLevel3, ElementName=proxy}" Margin="5,0,0,0"/>-->
                                             </RelativePanel>
                                         </Border>

@@ -67,7 +67,8 @@
                     <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8" Spacing="8">
 
                         <Button Command="{x:Bind _viewModel.RefreshAnalysisCommand}"
-                                IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsRefreshing), Mode=OneWay}">
+                                IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsRefreshing), Mode=OneWay}"
+                                ToolTipService.ToolTip="Herbereken technische indicatoren (RSI, MACD, Bollinger, ATR…) voor alle assets in de bibliotheek">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE72C;" FontSize="14"/>
                                 <TextBlock Text="Refresh Analysis"/>
@@ -76,7 +77,8 @@
 
                         <Button Command="{x:Bind _viewModel.EvaluateSignalsCommand}"
                                 IsEnabled="{x:Bind converters:Functions.InvertBool(_viewModel.IsEvaluating), Mode=OneWay}"
-                                Style="{StaticResource AccentButtonStyle}">
+                                Style="{StaticResource AccentButtonStyle}"
+                                ToolTipService.ToolTip="Voer de volledige signaalengine uit — combineert TA-indicatoren, sentiment en marktregime tot een eindscore en richting per coin">
                             <StackPanel Orientation="Horizontal" Spacing="6">
                                 <FontIcon Glyph="&#xE9D9;" FontSize="14"/>
                                 <TextBlock Text="Evaluate Signals"/>

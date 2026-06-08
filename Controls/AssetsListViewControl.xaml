@@ -270,6 +270,14 @@
                                         <RelativePanel >
                                             <!--TextBlock x:Name="proxy" helpers:AncestorSource.AncestorType="ListView" Visibility="Collapsed" /-->
                                             <TextBlock Name="txtName" Text="{Binding Coin.Name}" FontWeight="Bold"  FontSize="{Binding DataContext.DataContext.FontLevel1, ElementName=proxy}" />
+                                            <TextBlock Name="txtRank"
+                                                Text="{x:Bind converters:Functions.FormatRank(Coin.Rank), Mode=OneWay}"
+                                                Visibility="{x:Bind converters:Functions.LongToRankVisible(Coin.Rank), Mode=OneWay}"
+                                                RelativePanel.RightOf="txtName"
+                                                RelativePanel.AlignVerticalCenterWith="txtName"
+                                                FontSize="9"
+                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                Margin="4,0,0,0"/>
                                             <TextBlock Name="txtNote" Text="{Binding Coin.Note}" TextWrapping="Wrap" RelativePanel.Below="txtName" FontSize="{Binding DataContext.DataContext.FontLevel3, ElementName=proxy}" Margin="0,0,0,0"/>
                                         </RelativePanel>
                                     </Border>

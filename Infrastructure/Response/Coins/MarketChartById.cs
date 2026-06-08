@@ -7,7 +7,6 @@ using System.Text.Json;
 using System.Linq;
 using System.Collections.Generic;
 using CryptoPortfolioTracker.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using System.Diagnostics;
 using LanguageExt.Common;
 using LanguageExt;

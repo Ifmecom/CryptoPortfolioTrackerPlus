@@ -90,13 +90,33 @@ public sealed partial class NarrativesViewModel : BaseViewModel, INotifyProperty
     /// this to prevent to have it called from the ViewModels constructor
     /// </summary>
     /// <returns></returns>
+    private bool _isDataLoaded;
+
     public async Task ViewLoading()
     {
-        CurrentPortfolio = _assetService.GetPortfolio();
-        PortfolioName = CurrentPortfolio.Name;
+        if (!_isDataLoaded)
+            await LoadViewDataAsync();
+    }
 
-        IsPrivacyMode =AppSettings.AreValuesMasked;
-        await _narrativeService.PopulateNarrativesList(currentSortingOrderNarr, currentSortFuncNarr);
+    private async Task LoadViewDataAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            CurrentPortfolio = _assetService.GetPortfolio();
+            PortfolioName    = CurrentPortfolio.Name;
+            IsPrivacyMode    = AppSettings.AreValuesMasked;
+            await _narrativeService.PopulateNarrativesList(currentSortingOrderNarr, currentSortFuncNarr);
+            _isDataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "NarrativesViewModel.LoadViewDataAsync failed");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     public void Terminate()
@@ -104,6 +124,7 @@ public sealed partial class NarrativesViewModel : BaseViewModel, INotifyProperty
         _narrativeService.ClearNarrativesList();
         selectedNarrative = null;
         IsExtendedView = false;
+        _isDataLoaded  = false;   // bij unload resetten zodat volgend bezoek opnieuw laadt
     }
 
 

@@ -10,12 +10,10 @@ namespace CryptoPortfolioTracker.Models
 { 
     public class PriceLevelBuilder
     {
-        private int _id;
         private PriceLevelType _type;
         private double _value;
         private string _note = string.Empty;
         private PriceLevelStatus _status;
-        private double _distanceToValuePerc;
         private Coin _coin;
 
         private PriceLevelBuilder()

@@ -106,6 +106,7 @@ public sealed partial class AssetsViewModel : BaseViewModel
 
         messenger.Register<PortfolioConnectionChangedMessage>(this, async (r, m) =>
         {
+            _isDataLoaded = false;   // portfolio gewisseld — forceer herlaad bij volgende navigatie
             await LoadViewData();
         });
         //messenger.Register<PreferencesChangedMessage>(this, async (r, m) =>
@@ -145,9 +146,15 @@ public sealed partial class AssetsViewModel : BaseViewModel
     }
 
     
+    // Sla herlaad over als data al geladen is (skip bij terugnavigatie).
+    // IsLoading dient ook als re-entrancy guard: als InitializeView() (fire-and-forget
+    // uit de constructor) al bezig is, slaat ViewLoading de LoadViewData-aanroep over.
+    private bool _isDataLoaded;
+
     public async Task ViewLoading()
     {
-        await LoadViewData();
+        if (!_isDataLoaded && !IsLoading)
+            await LoadViewData();
     }
 
     //private async Task RefreshViewAfterChangeOfPreferences()
@@ -171,15 +178,26 @@ public sealed partial class AssetsViewModel : BaseViewModel
 
     private async Task LoadViewData()
     {
-        CurrentPortfolio = _assetService.GetPortfolio();
-        PortfolioName = CurrentPortfolio.Name;
+        IsLoading = true;
+        try
+        {
+            CurrentPortfolio = _assetService.GetPortfolio();
+            PortfolioName = CurrentPortfolio.Name;
 
-        await _assetService.PopulateAssetTotalsList(currentSortingOrder, currentSortFunc);
+            await _assetService.PopulateAssetTotalsList(currentSortingOrder, currentSortFunc);
 
-        //below setting(s) might have been changed while was moved away from the associated view
-
-        //Numberformat might have changed!? So update below numbers to enforce immediate reflection of numberformat change
-        await GetPortfolioTotals();
+            // Numberformat might have changed!? So update below numbers to enforce immediate reflection of numberformat change
+            await GetPortfolioTotals();
+            _isDataLoaded = true;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "AssetsViewModel.LoadViewData failed");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 
     private async Task GetPortfolioTotals()

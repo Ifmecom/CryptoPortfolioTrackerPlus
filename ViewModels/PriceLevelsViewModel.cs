@@ -61,13 +61,26 @@ public partial class PriceLevelsViewModel : BaseViewModel
     public async Task ViewLoading()
     {
         CurrentPortfolio = _priceLevelService.GetPortfolio();
-        PortfolioName = CurrentPortfolio.Name;
+        PortfolioName    = CurrentPortfolio.Name;
+
         // Skip the full coin+indicator load on re-navigation; the UpdatePricesMessage
         // messenger keeps the list fresh while the app is running.
         if (!_priceLevelService.ListCoinsHasAny())
         {
-            await _priceLevelService.PopulateCoinsList(initialSortingOrder, initialSortFunc);
-            CoinsCount = _priceLevelService.ListCoins.Count;
+            IsLoading = true;
+            try
+            {
+                await _priceLevelService.PopulateCoinsList(initialSortingOrder, initialSortFunc);
+                CoinsCount = _priceLevelService.ListCoins.Count;
+            }
+            catch (Exception ex)
+            {
+                Logger.Error(ex, "PriceLevelsViewModel.ViewLoading failed");
+            }
+            finally
+            {
+                IsLoading = false;
+            }
         }
     }
 

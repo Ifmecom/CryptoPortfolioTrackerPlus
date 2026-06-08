@@ -25,6 +25,12 @@
         </Style>
     </Page.Resources>
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" >
+
+        <!-- Laad-indicator: dunne balk bovenaan, zichtbaar tijdens eerste laad -->
+        <ProgressBar VerticalAlignment="Top" IsIndeterminate="True"
+                     Visibility="{x:Bind _viewModel.IsLoading, Mode=OneWay}"
+                     Canvas.ZIndex="10"/>
+
         <Grid x:Name="HeaderGrid" CornerRadius="8,8,0,0" Background="{ThemeResource ApplicationPageBackgroundThemeBrush}" Margin="0,0,5,10" VerticalAlignment="Stretch" >
             <Grid.RowDefinitions>
                 <RowDefinition Height="100"/>

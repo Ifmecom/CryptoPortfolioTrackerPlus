@@ -309,11 +309,12 @@ public partial class SignalsViewModel : BaseViewModel
         // Re-apply current sort (default is by Rank when SortColumn=="Rank")
         ApplySortToRows();
 
+        var ts = DateTime.Now.ToString("HH:mm:ss");
         StatusMessage = Rows.Count == 0
             ? "No assets found."
             : Rows.All(r => !r.HasSignal)
-                ? "No signal data yet — press Evaluate Signals to run the engine."
-                : $"Showing analysis for {Rows.Count} assets.";
+                ? $"No signal data yet — press Evaluate Signals to run the engine.  ({ts})"
+                : $"Showing analysis for {Rows.Count} assets.  ({ts})";
         _isDataLoaded = true;
     }
 

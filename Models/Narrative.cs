@@ -3,7 +3,6 @@ using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using CommunityToolkit.Mvvm.ComponentModel;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace CryptoPortfolioTracker.Models;
 
