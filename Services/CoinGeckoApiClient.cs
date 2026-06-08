@@ -33,10 +33,20 @@ public class CoinGeckoApiClient
         return await request.GetJsonAsync<List<CoinList>>(ct);
     }
 
-    /// <summary>GET /coins/{id} — volledige coin-details inclusief market_data.</summary>
+    /// <summary>
+    /// GET /coins/{id} — volledige coin-details inclusief market_data, links,
+    /// developer_data en community_data (alle fundamentals).
+    /// </summary>
     public async Task<CoinFullDataById> GetCoinDetailsAsync(string coinId, CancellationToken ct = default)
     {
-        var request = BuildRequest("coins", coinId);
+        var request = BuildRequest("coins", coinId)
+            .SetQueryParam("localization", "false")
+            .SetQueryParam("tickers", "false")
+            .SetQueryParam("market_data", "true")
+            .SetQueryParam("community_data", "true")
+            .SetQueryParam("developer_data", "true")
+            .SetQueryParam("sparkline", "false");
+
         return await request.GetJsonAsync<CoinFullDataById>(ct);
     }
 

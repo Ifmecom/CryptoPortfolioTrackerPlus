@@ -45,6 +45,7 @@ namespace CryptoPortfolioTracker.Infrastructure
         public DbSet<BronSource> BronSources { get; set; }
         public DbSet<FearGreedReading> FearGreedReadings { get; set; }
         public DbSet<WatchedSetup>    WatchedSetups     { get; set; }
+        public DbSet<CoinFundamentals> CoinFundamentals { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -66,6 +67,7 @@ namespace CryptoPortfolioTracker.Infrastructure
             builder.ApplyConfiguration(new BronSourceEntityTypeConfiguration());
             builder.ApplyConfiguration(new FearGreedReadingEntityTypeConfiguration());
             builder.ApplyConfiguration(new WatchedSetupEntityTypeConfiguration());
+            builder.ApplyConfiguration(new CoinFundamentalsEntityTypeConfiguration());
 
         }
 

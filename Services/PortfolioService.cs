@@ -539,6 +539,66 @@ namespace CryptoPortfolioTracker.Services
                     CREATE INDEX IF NOT EXISTS IX_WatchedSetups_CoinApiId
                     ON WatchedSetups(CoinApiId)");
 
+                // Fundamentele analyse per coin (v1.32)
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS CoinFundamentals (
+                        Id                  INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        ApiId               TEXT    NOT NULL UNIQUE,
+                        Symbol              TEXT    NOT NULL DEFAULT '',
+                        Name                TEXT    NOT NULL DEFAULT '',
+                        Categories          TEXT    NOT NULL DEFAULT '',
+                        GenesisDate         TEXT,
+                        HomepageUrl         TEXT    NOT NULL DEFAULT '',
+                        WhitepaperUrl       TEXT    NOT NULL DEFAULT '',
+                        GithubUrl           TEXT    NOT NULL DEFAULT '',
+                        TwitterHandle       TEXT    NOT NULL DEFAULT '',
+                        SubredditUrl        TEXT    NOT NULL DEFAULT '',
+                        Description         TEXT    NOT NULL DEFAULT '',
+                        MarketCapRank       INTEGER,
+                        MarketCap           REAL    NOT NULL DEFAULT 0,
+                        Fdv                 REAL    NOT NULL DEFAULT 0,
+                        TotalVolume         REAL    NOT NULL DEFAULT 0,
+                        Ath                 REAL    NOT NULL DEFAULT 0,
+                        AthChangePct        REAL    NOT NULL DEFAULT 0,
+                        AthDate             TEXT,
+                        Atl                 REAL    NOT NULL DEFAULT 0,
+                        AtlChangePct        REAL    NOT NULL DEFAULT 0,
+                        AtlDate             TEXT,
+                        CirculatingSupply   REAL    NOT NULL DEFAULT 0,
+                        TotalSupply         REAL    NOT NULL DEFAULT 0,
+                        MaxSupply           REAL    NOT NULL DEFAULT 0,
+                        GithubStars         INTEGER NOT NULL DEFAULT 0,
+                        GithubForks         INTEGER NOT NULL DEFAULT 0,
+                        GithubSubscribers   INTEGER NOT NULL DEFAULT 0,
+                        CommitCount4Weeks   INTEGER NOT NULL DEFAULT 0,
+                        PullRequestsMerged  INTEGER NOT NULL DEFAULT 0,
+                        PullRequestContribs INTEGER NOT NULL DEFAULT 0,
+                        TwitterFollowers    INTEGER NOT NULL DEFAULT 0,
+                        RedditSubscribers   INTEGER NOT NULL DEFAULT 0,
+                        RedditActive48H     REAL    NOT NULL DEFAULT 0,
+                        SentimentUpPct      REAL    NOT NULL DEFAULT 0,
+                        ScoreTokenomics     REAL    NOT NULL DEFAULT 0,
+                        ScoreLiquidity      REAL    NOT NULL DEFAULT 0,
+                        ScoreValuation      REAL    NOT NULL DEFAULT 0,
+                        ScoreCommunity      REAL    NOT NULL DEFAULT 0,
+                        ScoreDevelopment    REAL    NOT NULL DEFAULT 0,
+                        ScoreProject        REAL    NOT NULL DEFAULT 0,
+                        DataScore           REAL    NOT NULL DEFAULT 0,
+                        DdTeam              INTEGER,
+                        DdProductMaturity   INTEGER,
+                        DdAdoption          INTEGER,
+                        DdRevenue           INTEGER,
+                        DdUnlocks           INTEGER,
+                        DdNotes             TEXT    NOT NULL DEFAULT '',
+                        TotalScore          REAL    NOT NULL DEFAULT 0,
+                        Verdict             TEXT    NOT NULL DEFAULT '',
+                        Confidence          REAL    NOT NULL DEFAULT 0,
+                        UpdatedAt           TEXT    NOT NULL DEFAULT '0001-01-01 00:00:00'
+                    )");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_CoinFundamentals_ApiId
+                    ON CoinFundamentals(ApiId)");
+
                 Logger?.Information("PLUS schema applied successfully");
             }
             catch (Exception ex)
