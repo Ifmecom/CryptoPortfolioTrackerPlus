@@ -24,7 +24,7 @@ public partial class TradeAnalysisViewModel : BaseViewModel
 
     [ObservableProperty] private ObservableCollection<Coin> coins = new();
     [ObservableProperty] private Coin? selectedCoin;
-    [ObservableProperty] private bool isLoading;
+    // IsLoading is inherited from BaseViewModel
     [ObservableProperty] private bool isAnalyzingAll;
     [ObservableProperty] private string statusMessage    = string.Empty;
     [ObservableProperty] private string portfolioName    = string.Empty;

@@ -12,21 +12,35 @@ public class TradeAnalysisService : ITradeAnalysisService
     private static readonly ILogger Logger = Log.Logger.ForContext(
         Constants.SourceContextPropertyName, nameof(TradeAnalysisService).PadRight(22));
 
-    private readonly IBinanceDataService  _binance;
-    private readonly IKuCoinDataService   _kuCoin;
-    private readonly IGateIoDataService   _gateIo;
-    private readonly IMexcDataService     _mexc;
+    private readonly IBinanceDataService      _binance;
+    private readonly IKuCoinDataService       _kuCoin;
+    private readonly IGateIoDataService       _gateIo;
+    private readonly IMexcDataService         _mexc;
+    private readonly IPatternDetectionService _patternDetection;
+
+    // Sprint B-services hergebruikt voor verrijking (liquiditeit/positionering/events)
+    private readonly IOrderBookService?          _orderBook;
+    private readonly IBinanceFuturesDataService? _futures;
+    private readonly IMacroEventService?         _macroEvents;
 
     public TradeAnalysisService(
-        IBinanceDataService binance,
-        IKuCoinDataService  kuCoin,
-        IGateIoDataService  gateIo,
-        IMexcDataService    mexc)
+        IBinanceDataService      binance,
+        IKuCoinDataService       kuCoin,
+        IGateIoDataService       gateIo,
+        IMexcDataService         mexc,
+        IPatternDetectionService patternDetection,
+        IOrderBookService?          orderBook   = null,
+        IBinanceFuturesDataService? futures     = null,
+        IMacroEventService?         macroEvents = null)
     {
-        _binance = binance ?? throw new ArgumentNullException(nameof(binance));
-        _kuCoin  = kuCoin  ?? throw new ArgumentNullException(nameof(kuCoin));
-        _gateIo  = gateIo  ?? throw new ArgumentNullException(nameof(gateIo));
-        _mexc    = mexc    ?? throw new ArgumentNullException(nameof(mexc));
+        _binance          = binance          ?? throw new ArgumentNullException(nameof(binance));
+        _kuCoin           = kuCoin           ?? throw new ArgumentNullException(nameof(kuCoin));
+        _gateIo           = gateIo           ?? throw new ArgumentNullException(nameof(gateIo));
+        _mexc             = mexc             ?? throw new ArgumentNullException(nameof(mexc));
+        _patternDetection = patternDetection ?? throw new ArgumentNullException(nameof(patternDetection));
+        _orderBook        = orderBook;
+        _futures          = futures;
+        _macroEvents      = macroEvents;
     }
 
     // -----------------------------------------------------------------------
@@ -109,6 +123,20 @@ public class TradeAnalysisService : ITradeAnalysisService
         result.OneHour     = AnalyzeTimeframe("1H",      h1Bars,     coin.Price);
         result.FifteenMin  = AnalyzeTimeframe("15m",     m15Bars,    coin.Price);
 
+        // ── Live score — gebruik hetzelfde engine als Pattern Trading ────
+        // Vervang de verouderde coin.LatestSignalScore (DB-waarde van SignalEngine)
+        // door een real-time score op basis van de vers opgehaalde OHLCV-data.
+        // Zo zijn Trade Advies en Pattern Trading altijd consistent.
+        if (result.Daily.HasData || result.FourHour.HasData)
+        {
+            var (freshScore, freshDir) = _patternDetection.CalculateTradabilityScore(
+                new List<PatternResult>(), result.Daily, result.FourHour);
+            result.CombinedScore = freshScore;
+            result.Direction     = freshDir == "Long"  ? "Long"
+                                 : freshDir == "Short" ? "Short"
+                                 :                       "Flat";
+        }
+
         // ── Key levels (prefer 4H for granularity, fall back to daily) ───
         var levelsSource = h4Bars.Count >= 50 ? h4Bars : dailyBars;
         (result.ResistanceLevels, result.SupportLevels) = FindKeyLevels(levelsSource, coin.Price);
@@ -119,6 +147,26 @@ public class TradeAnalysisService : ITradeAnalysisService
                    : coin.Price * 0.03;                                    // 3% fallback
 
         result.Setup = BuildTradeSetup(coin, result, atr);
+
+        // ── Verrijking: liquiditeit (F6), positionering (F7) en macro-events ──
+        // Alleen zinvol als we een geldig setup-signaal hebben en op Binance zitten.
+        if (result.Setup.Direction is "Long" or "Short" && result.DataSource.StartsWith("Binance"))
+        {
+            if (_orderBook is not null)
+            {
+                try { result.OrderBook = await _orderBook.GetSnapshotAsync(binanceSymbol); }
+                catch (Exception ex) { Logger.Debug(ex, "TradeAnalysis: orderbook fetch failed"); }
+            }
+            if (_futures is not null)
+            {
+                try { result.Positioning = await _futures.GetPositioningAsync(binanceSymbol); }
+                catch (Exception ex) { Logger.Debug(ex, "TradeAnalysis: futures fetch failed"); }
+            }
+        }
+
+        // Macro-events binnen ~15 dagen (timeframe-onafhankelijk risico)
+        if (_macroEvents is not null)
+            result.MacroEvents = _macroEvents.GetUpcoming(15).ToList();
 
         return result;
     }
@@ -373,7 +421,7 @@ public class TradeAnalysisService : ITradeAnalysisService
     private TradeSetupAdvice BuildTradeSetup(Coin coin, TradeAnalysisResult res, double atr)
     {
         var setup = new TradeSetupAdvice();
-        double score = coin.LatestSignalScore;
+        double score = res.CombinedScore;   // live score (zelfde engine als Pattern Trading)
         double price = coin.Price;
 
         // Direction from combined score
@@ -409,9 +457,8 @@ public class TradeAnalysisService : ITradeAnalysisService
                 setup.EntryNote = "Marktprijs — of stel een limietorder net onder de actuele koers.";
             }
 
-            setup.StopLoss = setup.EntryPrice - 1.5 * atr;
-            setup.Target1  = setup.EntryPrice + 2.0 * atr;
-            setup.Target2  = setup.EntryPrice + 3.5 * atr;
+            (setup.StopLoss, setup.Target1, setup.Target2) =
+                TradeLevelCalculator.FromAtr("Long", setup.EntryPrice, atr);
 
             // Override TP2 with nearest resistance if within 20%
             var nearRes = res.ResistanceLevels.FirstOrDefault(r => r > setup.EntryPrice && r < setup.EntryPrice * 1.20);
@@ -431,21 +478,30 @@ public class TradeAnalysisService : ITradeAnalysisService
                 setup.EntryNote = "Marktprijs — of stel een limietorder net boven de actuele koers.";
             }
 
-            setup.StopLoss = setup.EntryPrice + 1.5 * atr;
-            setup.Target1  = setup.EntryPrice - 2.0 * atr;
-            setup.Target2  = setup.EntryPrice - 3.5 * atr;
+            (setup.StopLoss, setup.Target1, setup.Target2) =
+                TradeLevelCalculator.FromAtr("Short", setup.EntryPrice, atr);
 
             // Override TP2 with nearest support if within 20%
             var nearSup = res.SupportLevels.FirstOrDefault(s => s < setup.EntryPrice && s > setup.EntryPrice * 0.80);
             if (nearSup > 0) setup.Target2 = nearSup;
         }
 
+        // Garandeer dat Target1 het dichtstbijzijnde (eerst geraakte) doel is.
+        (setup.Target1, setup.Target2) =
+            TradeLevelCalculator.OrderTargets(setup.Direction, setup.EntryPrice, setup.Target1, setup.Target2);
+
         // Percentages & R:R
-        setup.StopLossPct = Math.Abs((setup.StopLoss  - setup.EntryPrice) / setup.EntryPrice * 100);
-        setup.Target1Pct  = Math.Abs((setup.Target1   - setup.EntryPrice) / setup.EntryPrice * 100);
-        setup.Target2Pct  = Math.Abs((setup.Target2   - setup.EntryPrice) / setup.EntryPrice * 100);
-        setup.RiskReward1 = setup.StopLossPct > 0 ? setup.Target1Pct / setup.StopLossPct : 0;
-        setup.RiskReward2 = setup.StopLossPct > 0 ? setup.Target2Pct / setup.StopLossPct : 0;
+        (setup.StopLossPct, setup.Target1Pct, setup.Target2Pct, setup.RiskReward1, setup.RiskReward2) =
+            TradeLevelCalculator.Percentages(setup.EntryPrice, setup.StopLoss, setup.Target1, setup.Target2);
+
+        // ── Validatie van de gegenereerde niveaus (degenerate ATR=0, richting, R/R) ──
+        var advCheck = TradeSetupValidator.CheckAdvice(
+            setup.Direction, setup.EntryPrice, setup.StopLoss,
+            setup.Target1, setup.Target2, setup.RiskReward1);
+        setup.IsValid           = advCheck.IsValid;
+        setup.ValidationWarning = advCheck.Warning;
+        if (!string.IsNullOrEmpty(advCheck.Warning))
+            setup.Reasoning.Add($"⚠ {advCheck.Warning}");
 
         // Confidence
         double dist = Math.Abs(score - 50);
@@ -455,7 +511,7 @@ public class TradeAnalysisService : ITradeAnalysisService
                          :                          "Laag";
 
         // Reasoning — uitgebreid met het hoe en waarom
-        setup.Reasoning.Add($"Gecombineerde score {score:F0}/100: de signal-engine weegt TA (EMA-cross, RSI, MACD, ADX, %B, Squeeze, 52w%) samen tot één richting. Boven 60 = Long-bias, onder 40 = Short-bias.");
+        setup.Reasoning.Add($"Gecombineerde score {score:F0}/100: live berekening op basis van vers opgehaalde OHLCV-data — zelfde engine als Pattern Trading (EMA-cross, RSI, MACD, ADX, %B, Squeeze). Boven 60 = Long-bias, onder 40 = Short-bias.");
 
         if (setup.Direction != "Geen signaal")
         {

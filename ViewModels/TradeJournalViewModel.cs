@@ -247,69 +247,95 @@ public partial class TradeJournalViewModel : BaseViewModel
         var context = _portfolioService.Context;
         if (context is null) return;
 
-        var query = context.ExchangeOrders.AsNoTracking().AsQueryable();
-
-        query = _activeFilter switch
+        IsLoading = true;
+        try
         {
-            "Open"   => query.Where(o => o.Status == OrderStatus.Filled || o.Status == OrderStatus.Pending || o.Status == OrderStatus.PartiallyFilled),
-            "Closed" => query.Where(o => o.Status == OrderStatus.Closed || o.Status == OrderStatus.Cancelled || o.Status == OrderStatus.Rejected),
-            "Paper"  => query.Where(o => o.IsPaper),
-            "Live"   => query.Where(o => !o.IsPaper),
-            _        => query,
-        };
+            var query = context.ExchangeOrders.AsNoTracking().AsQueryable();
 
-        var orders = await query
-            .OrderByDescending(o => o.CreatedAt)
-            .Take(500)
-            .ToListAsync();
+            query = _activeFilter switch
+            {
+                "Open"   => query.Where(o => o.Status == OrderStatus.Filled || o.Status == OrderStatus.Pending || o.Status == OrderStatus.PartiallyFilled),
+                "Closed" => query.Where(o => o.Status == OrderStatus.Closed || o.Status == OrderStatus.Cancelled || o.Status == OrderStatus.Rejected),
+                "Paper"  => query.Where(o => o.IsPaper),
+                "Live"   => query.Where(o => !o.IsPaper),
+                _        => query,
+            };
 
-        // Load current coin prices for PnL estimate
-        var coinSymbols = orders
-            .Select(o => o.Symbol.Replace("USDT", "").ToLowerInvariant())
-            .Distinct()
-            .ToList();
-
-        var coins = await context.Coins
-            .AsNoTracking()
-            .Where(c => coinSymbols.Contains(c.Symbol.ToLower()))
-            .ToListAsync();
-
-        var priceMap = coins.ToDictionary(
-            c => c.Symbol.ToUpperInvariant(),
-            c => c.Price,
-            StringComparer.OrdinalIgnoreCase);
-
-        _lastPriceMap = priceMap;   // keep for Kill All
-
-        // ── Auto-close any orders whose TP/SL has been hit ──────────────────
-        var triggered = await _tradeService.AutoCloseTriggeredAsync(priceMap);
-        if (triggered.Count > 0)
-        {
-            // Reload orders so the closed ones appear with correct status
-            orders = await query
+            var orders = await query
                 .OrderByDescending(o => o.CreatedAt)
                 .Take(500)
                 .ToListAsync();
 
-            var autoMsg = string.Join(", ", triggered.Select(t => $"{t.Symbol} {t.Reason}"));
-            StatusMessage = $"⚡ Auto-gesloten: {autoMsg}";
+            // Load current coin prices for PnL estimate
+            var coinSymbols = orders
+                .Select(o => o.Symbol.Replace("USDT", "").ToLowerInvariant())
+                .Distinct()
+                .ToList();
+
+            var coins = await context.Coins
+                .AsNoTracking()
+                .Where(c => coinSymbols.Contains(c.Symbol.ToLower()))
+                .ToListAsync();
+
+            var priceMap = coins.ToDictionary(
+                c => c.Symbol.ToUpperInvariant(),
+                c => c.Price,
+                StringComparer.OrdinalIgnoreCase);
+
+            _lastPriceMap = priceMap;   // keep for Kill All
+
+            // ── Auto-fill any pending limit orders whose entry price has been reached ──
+            var autoFilled = await _tradeService.AutoFillPendingAsync(priceMap);
+            bool needsReload = autoFilled.Count > 0;
+
+            // ── Auto-close any orders whose TP/SL has been hit ──────────────────
+            var triggered = await _tradeService.AutoCloseTriggeredAsync(priceMap);
+            needsReload |= triggered.Count > 0;
+
+            if (needsReload)
+            {
+                // Reload orders so fills/closures appear with correct status
+                orders = await query
+                    .OrderByDescending(o => o.CreatedAt)
+                    .Take(500)
+                    .ToListAsync();
+
+                if (triggered.Count > 0)
+                {
+                    var autoMsg = string.Join(", ", triggered.Select(t => $"{t.Symbol} {t.Reason}"));
+                    StatusMessage = $"⚡ Auto-gesloten: {autoMsg}";
+                }
+                else if (autoFilled.Count > 0)
+                {
+                    var fillMsg = string.Join(", ", autoFilled.Select(f => f.Symbol).Distinct());
+                    StatusMessage = $"✅ Auto-gevuld: {fillMsg}";
+                }
+            }
+
+            Rows = new ObservableCollection<TradeJournalRow>(
+                orders.Select(o => new TradeJournalRow(o, priceMap)));
+
+            // Total PnL across all rows that have a value
+            var totalPnl = Rows.Sum(r => r.PnlUsdt);
+            TotalPnlDisplay = totalPnl == 0
+                ? "–"
+                : $"{totalPnl:+0.00;-0.00} USDT";
+            TotalPnlBrush = totalPnl > 0 ? BrushGreen : totalPnl < 0 ? BrushRed : BrushGrey;
+
+            StatusMessage        = Rows.Count == 0
+                ? "No trades found."
+                : $"{Rows.Count} trade(s) — filter: {_activeFilter}";
+            LastRefreshedDisplay = $"Prijzen: {DateTime.Now:HH:mm:ss}";
+            _isDataLoaded = true;
         }
-
-        Rows = new ObservableCollection<TradeJournalRow>(
-            orders.Select(o => new TradeJournalRow(o, priceMap)));
-
-        // Total PnL across all rows that have a value
-        var totalPnl = Rows.Sum(r => r.PnlUsdt);
-        TotalPnlDisplay = totalPnl == 0
-            ? "–"
-            : $"{totalPnl:+0.00;-0.00} USDT";
-        TotalPnlBrush = totalPnl > 0 ? BrushGreen : totalPnl < 0 ? BrushRed : BrushGrey;
-
-        StatusMessage        = Rows.Count == 0
-            ? "No trades found."
-            : $"{Rows.Count} trade(s) — filter: {_activeFilter}";
-        LastRefreshedDisplay = $"Prijzen: {DateTime.Now:HH:mm:ss}";
-        _isDataLoaded = true;
+        catch (Exception ex)
+        {
+            Logger.Error(ex, "TradeJournalViewModel.LoadRowsAsync failed");
+        }
+        finally
+        {
+            IsLoading = false;
+        }
     }
 }
 
@@ -370,6 +396,9 @@ public class TradeJournalRow
 
     /// <summary>True for open or pending paper trades whose SL/TP can be edited.</summary>
     public bool IsEditable => Status is "Filled" or "Pending" && Order.IsPaper;
+
+    /// <summary>True wanneer er een sluit-/annuleer-actie mogelijk is (open positie of pending order).</summary>
+    public bool IsActionable => IsCloseable || IsCancellable;
 
     // PnL colour: green / red / grey — stored once in constructor, never reallocated per render.
     public Microsoft.UI.Xaml.Media.SolidColorBrush PnlBrush { get; }

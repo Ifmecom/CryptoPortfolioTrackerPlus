@@ -12,20 +12,29 @@
         <x:Double x:Key="ContentDialogMaxWidth">600</x:Double>
     </ContentDialog.Resources>
 
-    <Grid Width="540" RowSpacing="10">
+    <Grid Width="540">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>  <!-- 0: Coin banner          -->
-            <RowDefinition Height="Auto"/>  <!-- 1: Market type + Exch  -->
-            <RowDefinition Height="1"/>     <!-- 2: Divider             -->
-            <RowDefinition Height="Auto"/>  <!-- 3: Order type          -->
-            <RowDefinition Height="Auto"/>  <!-- 4: Limit price         -->
-            <RowDefinition Height="Auto"/>  <!-- 5: Amount + quick %    -->
-            <RowDefinition Height="Auto"/>  <!-- 6: Leverage            -->
-            <RowDefinition Height="Auto"/>  <!-- 7: SL / TP             -->
-            <RowDefinition Height="Auto"/>  <!-- 8: Summary bar         -->
-            <RowDefinition Height="Auto"/>  <!-- 9: Reasoning           -->
-            <RowDefinition Height="Auto"/>  <!-- 10: Action buttons     -->
+            <RowDefinition Height="Auto"/>  <!-- 0: scrollable content  -->
+            <RowDefinition Height="Auto"/>  <!-- 1: action buttons      -->
         </Grid.RowDefinitions>
+
+        <!-- All form fields scroll; action buttons stay fixed at bottom -->
+        <ScrollViewer Grid.Row="0"
+                      VerticalScrollBarVisibility="Auto"
+                      MaxHeight="520">
+            <Grid RowSpacing="10" Margin="0,0,0,6">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>  <!-- 0: Coin banner          -->
+                    <RowDefinition Height="Auto"/>  <!-- 1: Market type + Exch  -->
+                    <RowDefinition Height="1"/>     <!-- 2: Divider             -->
+                    <RowDefinition Height="Auto"/>  <!-- 3: Order type          -->
+                    <RowDefinition Height="Auto"/>  <!-- 4: Limit price         -->
+                    <RowDefinition Height="Auto"/>  <!-- 5: Amount + quick %    -->
+                    <RowDefinition Height="Auto"/>  <!-- 6: Leverage            -->
+                    <RowDefinition Height="Auto"/>  <!-- 7: SL / TP             -->
+                    <RowDefinition Height="Auto"/>  <!-- 8: Summary bar         -->
+                    <RowDefinition Height="Auto"/>  <!-- 9: Reasoning           -->
+                </Grid.RowDefinitions>
 
         <!-- ── 0 · Coin banner ────────────────────────────────────────────── -->
         <Border Grid.Row="0"
@@ -249,7 +258,6 @@
                                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                         <Slider x:Name="sldTP1Close"
-                                Minimum="1" Maximum="100" Value="50"
                                 StepFrequency="1"
                                 ValueChanged="OnTP1CloseSlider"/>
                     </StackPanel>
@@ -306,7 +314,6 @@
                                        HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         </Grid>
                         <Slider x:Name="sldTP2Close"
-                                Minimum="1" Maximum="100" Value="50"
                                 StepFrequency="1"
                                 ValueChanged="OnTP2CloseSlider"/>
                     </StackPanel>
@@ -387,8 +394,11 @@
                        TextWrapping="Wrap" Margin="4,4,4,4"/>
         </Expander>
 
-        <!-- ── 10 · Action buttons ────────────────────────────────────────── -->
-        <Grid Grid.Row="10" ColumnSpacing="8" Margin="0,4,0,0">
+            </Grid>  <!-- /inner scrollable Grid -->
+        </ScrollViewer>
+
+        <!-- ── Action buttons — always visible at bottom ───────────────────── -->
+        <Grid Grid.Row="1" ColumnSpacing="8" Margin="0,8,0,0">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="*"/>
@@ -423,5 +433,5 @@
             </Button>
         </Grid>
 
-    </Grid>
+    </Grid>  <!-- /outer Grid -->
 </ContentDialog>

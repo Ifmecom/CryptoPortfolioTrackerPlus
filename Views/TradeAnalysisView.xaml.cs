@@ -749,6 +749,20 @@ public sealed partial class TradeAnalysisView : Page
         AddPriceCell(priceGrid, 3, "Target 2",    FormatPrice(setup.Target2),   $"+{setup.Target2Pct:F1}%  R/R 1:{setup.RiskReward2:F1}", DarkGold());
         col.Children.Add(priceGrid);
 
+        // Validatie-waarschuwing (ongeldige niveaus of krappe R/R)
+        if (!string.IsNullOrEmpty(setup.ValidationWarning))
+        {
+            col.Children.Add(new InfoBar
+            {
+                IsOpen     = true,
+                IsClosable = false,
+                Severity   = setup.IsValid ? InfoBarSeverity.Warning : InfoBarSeverity.Error,
+                Title      = setup.IsValid ? "Let op" : "Ongeldige setup",
+                Message    = setup.ValidationWarning,
+                Margin     = new Thickness(0, 4, 0, 0),
+            });
+        }
+
         // Entry note
         if (!string.IsNullOrEmpty(setup.EntryNote))
         {
@@ -772,6 +786,26 @@ public sealed partial class TradeAnalysisView : Page
         });
         foreach (var line in setup.Reasoning)
             col.Children.Add(BulletText(line));
+
+        // ── Verrijking: liquiditeit / positionering / event-risico ──────────
+        if (r.OrderBook is not null || r.Positioning is { IsAvailable: true } || r.HasEventRisk)
+        {
+            col.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(0x25, 0xFF, 0xFF, 0xFF)) });
+            col.Children.Add(new TextBlock { Text = "Markt-context:", FontSize = 12, FontWeight = FontWeights.SemiBold });
+
+            if (r.OrderBook is not null)
+                col.Children.Add(BulletText($"💧 Liquiditeit: {r.LiquidityDisplay}"));
+
+            if (r.Positioning is { IsAvailable: true })
+                col.Children.Add(BulletText($"📉 Positionering: funding {r.FundingDisplay}"));
+
+            foreach (var ev in r.MacroEvents)
+            {
+                var evBullet = BulletText($"⚠ Event-risico: {ev.ShortDisplay}");
+                evBullet.Foreground = Orange();
+                col.Children.Add(evBullet);
+            }
+        }
 
         card.Child = col;
         return card;

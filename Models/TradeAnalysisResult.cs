@@ -27,6 +27,29 @@ public class TradeAnalysisResult
     public List<double> ResistanceLevels { get; set; } = new();
     public List<double> SupportLevels    { get; set; } = new();
     public TradeSetupAdvice Setup        { get; set; } = new();
+
+    // ── Verrijking (gedeeld met 3%-trading): liquiditeit, positionering, events ──
+
+    /// <summary>Orderboek-snapshot (spread + diepte). Null = niet beschikbaar.</summary>
+    public OrderBookSnapshot?   OrderBook    { get; set; }
+
+    /// <summary>Futures-positionering (funding/OI/long-short). Null = spot-only.</summary>
+    public FuturesPositioning?  Positioning  { get; set; }
+
+    /// <summary>Macro-events binnen de handelshorizon (FOMC/CPI/NFP/PCE).</summary>
+    public List<MacroEvent>     MacroEvents  { get; set; } = new();
+
+    // ── Display helpers voor de verrijkingssectie ────────────────────────────
+
+    public string LiquidityDisplay => OrderBook is null
+        ? "n/v"
+        : $"spread {OrderBook.SpreadPct:0.000}% · diepte ${OrderBook.MinDepthUsdt:N0}";
+
+    public string FundingDisplay => Positioning is { IsAvailable: true }
+        ? $"{Positioning.FundingRatePct:+0.000;-0.000}% · L/S {Positioning.LongShortRatio:F2}"
+        : "n/v (spot)";
+
+    public bool HasEventRisk => MacroEvents.Count > 0;
 }
 
 /// <summary>Indicators and observations for a single timeframe.</summary>
@@ -72,4 +95,13 @@ public class TradeSetupAdvice
     public double RiskReward2  { get; set; }
     public string Confidence   { get; set; } = string.Empty;  // "Laag" / "Gemiddeld" / "Hoog"
     public List<string> Reasoning { get; set; } = new();
+
+    /// <summary>
+    /// False wanneer de SL/TP-niveaus richtingsgewijs ongeldig of degenerate zijn
+    /// (bijv. ATR=0 → SL=Entry). Gezet door TradeSetupValidator bij generatie.
+    /// </summary>
+    public bool   IsValid           { get; set; } = true;
+
+    /// <summary>Waarschuwing bij ongeldige niveaus of krappe R/R (&lt; 1,5:1). Leeg = ok.</summary>
+    public string ValidationWarning { get; set; } = string.Empty;
 }

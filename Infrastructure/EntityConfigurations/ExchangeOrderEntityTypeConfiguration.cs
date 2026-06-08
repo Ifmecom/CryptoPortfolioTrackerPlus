@@ -23,6 +23,9 @@ class ExchangeOrderEntityTypeConfiguration : IEntityTypeConfiguration<ExchangeOr
             .HasForeignKey(x => x.SignalId)
             .OnDelete(DeleteBehavior.SetNull);
 
+        // Optional FK to WatchedSetup (no navigation property — avoids circular dependency)
+        configuration.Property(x => x.WatchedSetupId).IsRequired(false);
+
         // Compound index voor auto-close en journal-filter (IsPaper + Status)
         configuration.HasIndex(x => new { x.IsPaper, x.Status });
     }

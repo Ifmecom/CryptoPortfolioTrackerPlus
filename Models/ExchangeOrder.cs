@@ -43,5 +43,8 @@ public class ExchangeOrder
     /// <summary>Percentage of position to close when TP2 is hit (1–100, default 100).</summary>
     public double Tp2ClosePct { get; set; } = 100;
 
+    /// <summary>Optional reference to the WatchedSetup that spawned this order (for strategy linkage).</summary>
+    public int? WatchedSetupId { get; set; }
+
     public Signal? Signal { get; set; }
 }

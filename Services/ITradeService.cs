@@ -20,6 +20,14 @@ public interface ITradeService
     Task<int> CloseAllPaperAsync(Dictionary<string, double> priceMap);
 
     /// <summary>
+    /// Check all Pending paper limit orders against the provided price map and mark them
+    /// as Filled when the entry price has been reached (Buy: price ≤ entry; Sell: price ≥ entry).
+    /// Returns the orders that were filled.
+    /// </summary>
+    Task<List<(int OrderId, string Symbol)>> AutoFillPendingAsync(
+        Dictionary<string, double> priceMap);
+
+    /// <summary>
     /// Check all Filled paper orders against the provided price map and auto-close
     /// those whose TP or SL level has been reached. Returns (closed, reasons) pairs.
     /// </summary>

@@ -34,6 +34,12 @@ public class TradeService : ITradeService
             ? req.LimitPrice
             : coin.Price;
 
+        // Guard: SL/TP must be directionally correct before we persist anything.
+        var validation = TradeSetupValidator.Validate(
+            req.Side, entry, req.StopLossPrice, req.TakeProfitPrice, req.TakeProfit2Price);
+        if (!validation.IsValid)
+            throw new ArgumentException(validation.Error, nameof(req));
+
         // Effective amount including leverage for quantity calculation
         var effectiveAmount = req.AmountUsdt * req.Leverage;
         var qty = Math.Round(effectiveAmount / entry, 8);
@@ -64,6 +70,7 @@ public class TradeService : ITradeService
             CreatedAt       = DateTime.UtcNow,
             FilledAt        = filledAt,
             Notes           = req.Notes,
+            WatchedSetupId  = req.WatchedSetupId,
         };
 
         context.ExchangeOrders.Add(order);
@@ -160,6 +167,52 @@ public class TradeService : ITradeService
     }
 
     public Task SyncFillsAsync() => Task.CompletedTask; // Sprint 2
+
+    // -----------------------------------------------------------------------
+    // Automatic fill monitoring (Pending → Filled)
+    // -----------------------------------------------------------------------
+
+    public async Task<List<(int OrderId, string Symbol)>> AutoFillPendingAsync(
+        Dictionary<string, double> priceMap)
+    {
+        var context = _portfolioService.Context;
+        if (context is null) return new();
+
+        var pending = await context.ExchangeOrders
+            .Where(o => o.IsPaper && o.Status == OrderStatus.Pending)
+            .ToListAsync();
+
+        var filled = new List<(int, string)>();
+        var now = DateTime.UtcNow;
+
+        foreach (var order in pending)
+        {
+            var baseSymbol = order.Symbol.Replace("USDT", "").ToUpperInvariant();
+            if (!priceMap.TryGetValue(baseSymbol, out var price) || price <= 0) continue;
+            if (order.Entry <= 0) continue;
+
+            // Buy limit: fills when market price drops to or below the entry level.
+            // Sell limit: fills when market price rises to or above the entry level.
+            bool shouldFill = order.Side == OrderSide.Buy
+                ? price <= order.Entry
+                : price >= order.Entry;
+
+            if (!shouldFill) continue;
+
+            order.Status   = OrderStatus.Filled;
+            order.FilledAt = now;
+            filled.Add((order.Id, order.Symbol));
+
+            Logger.Information(
+                "TradeService AUTO-FILL: #{Id} {Symbol} {Side} entry={Entry} current={Price} → Filled",
+                order.Id, order.Symbol, order.Side, order.Entry, price);
+        }
+
+        if (filled.Count > 0)
+            await context.SaveChangesAsync();
+
+        return filled;
+    }
 
     // -----------------------------------------------------------------------
     // Automatic TP / SL monitoring
@@ -267,6 +320,11 @@ public class TradeService : ITradeService
 
         var order = await context.ExchangeOrders.FindAsync(orderId);
         if (order is null) return;
+
+        // Guard: validate new levels against the original entry price.
+        var validation = TradeSetupValidator.Validate(order.Side, order.Entry, stopLoss, takeProfit, takeProfit2);
+        if (!validation.IsValid)
+            throw new ArgumentException(validation.Error);
 
         order.StopLoss    = stopLoss;
         order.TakeProfit  = takeProfit;

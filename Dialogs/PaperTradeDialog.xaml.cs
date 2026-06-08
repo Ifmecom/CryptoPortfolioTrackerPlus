@@ -40,6 +40,10 @@ public sealed partial class PaperTradeDialog : ContentDialog
     public PaperTradeDialog(CoinSignalRow row, Settings settings)
     {
         _settings = settings;
+        // Set theme BEFORE InitializeComponent so the initial template application
+        // already uses the correct theme — avoids a re-template mid-show that can
+        // cause "Failed to assign to property 'RangeBase.Minimum'" on some SDK builds.
+        this.RequestedTheme = settings.AppTheme;
         InitializeComponent();
 
         var reasoning = row.Reasoning ?? string.Empty;
@@ -59,6 +63,8 @@ public sealed partial class PaperTradeDialog : ContentDialog
     public PaperTradeDialog(Coin coin, TradeSetupAdvice setup, Settings settings)
     {
         _settings = settings;
+        // Same pre-InitializeComponent theme trick as the other constructor.
+        this.RequestedTheme = settings.AppTheme;
         InitializeComponent();
 
         var reasoning = setup.Reasoning.Any()
@@ -91,17 +97,24 @@ public sealed partial class PaperTradeDialog : ContentDialog
         _symbolBase   = symbol.Replace("USDT", "").Replace("usdt", "").ToUpperInvariant();
 
         // ── Default radio / checkbox state (bool? needs code-behind in WinUI 3) ─
-        rdSpot.IsChecked  = true;
-        rdLimit.IsChecked = true;
+        rdSpot.IsChecked   = true;
+        rdMarket.IsChecked = true;          // Market = direct gevuld; gebruiker kan switchen naar Limit
+        pnlLimitPrice.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
         chkSL.IsChecked   = true;
         chkTP1.IsChecked  = true;
         chkTP2.IsChecked  = false;
 
         // ── TP close-% defaults ──────────────────────────────────────────────
+        // WinUI 3 rejects setting Minimum when Value < Minimum (throws RangeBase.Minimum).
+        // Safe order: Maximum first (expands range), then Value (within range), then Minimum.
         _tp1ClosePct = 50.0;
         _tp2ClosePct = 50.0;
-        sldTP1Close.Value = _tp1ClosePct;
-        sldTP2Close.Value = _tp2ClosePct;
+        sldTP1Close.Maximum = 100;
+        sldTP1Close.Value   = _tp1ClosePct;
+        sldTP1Close.Minimum = 1;
+        sldTP2Close.Maximum = 100;
+        sldTP2Close.Value   = _tp2ClosePct;
+        sldTP2Close.Minimum = 1;
         UpdateTpClosePctLabels();
 
         // ── Coin banner ──────────────────────────────────────────────────────
@@ -117,6 +130,17 @@ public sealed partial class PaperTradeDialog : ContentDialog
         else
         {
             txtChange.Text = string.Empty;
+        }
+
+        // ── Apply price formatter to eliminate IEEE-754 display noise ───────
+        // e.g. 73741.85 would otherwise show as "73741,849999999991"
+        if (price > 0)
+        {
+            var fmt = MakePriceFormatter(price);
+            nbLimitPrice.NumberFormatter = fmt;
+            nbSL.NumberFormatter         = fmt;
+            nbTP1.NumberFormatter        = fmt;
+            nbTP2.NumberFormatter        = fmt;
         }
 
         // ── Limit price default = current price ──────────────────────────────
@@ -179,8 +203,9 @@ public sealed partial class PaperTradeDialog : ContentDialog
 
     private void Dialog_Loading(FrameworkElement sender, object args)
     {
-        if (sender.ActualTheme != _settings.AppTheme)
-            sender.RequestedTheme = _settings.AppTheme;
+        // Theme is applied in the constructor (before InitializeComponent) so
+        // nothing to do here — the handler is kept to avoid removing the XAML
+        // Loading= attribute which would require a recompile of the XAML.
     }
 
     private void MarketType_Changed(object sender, RoutedEventArgs e)
@@ -464,4 +489,16 @@ public sealed partial class PaperTradeDialog : ContentDialog
         >= 0.01  => 6,
         _        => 8,
     };
+
+    /// <summary>
+    /// Returns a NumberFormatter that displays the right number of decimal places
+    /// for the given coin price, hiding IEEE-754 floating-point noise.
+    /// </summary>
+    private static Windows.Globalization.NumberFormatting.DecimalFormatter MakePriceFormatter(double price)
+        => new()
+        {
+            FractionDigits = GetDecimals(price),
+            IntegerDigits  = 1,
+            IsGrouped      = false,
+        };
 }

@@ -13,6 +13,12 @@
     mc:Ignorable="d">
 
     <Grid Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+        <!-- Laad-indicator: dunne balk bovenaan, zichtbaar tijdens laden -->
+        <ProgressBar VerticalAlignment="Top" IsIndeterminate="True"
+                     Visibility="{x:Bind _viewModel.IsLoading, Mode=OneWay}"
+                     Canvas.ZIndex="10"/>
+
         <Grid CornerRadius="8,8,0,0"
               Background="{ThemeResource ApplicationPageBackgroundThemeBrush}"
               Margin="0,0,5,10" VerticalAlignment="Stretch">
@@ -81,7 +87,8 @@
                             <!-- All -->
                             <StackPanel Orientation="Vertical" Spacing="0">
                                 <Button Content="All" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="All"
-                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                                        ToolTipService.ToolTip="Toon alle orders — open én gesloten, paper én live"/>
                                 <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
                                            Fill="DarkGoldenrod"
                                            Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterAll), Mode=OneWay}"/>
@@ -90,7 +97,8 @@
                             <!-- Open -->
                             <StackPanel Orientation="Vertical" Spacing="0">
                                 <Button Content="Open" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Open"
-                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                                        ToolTipService.ToolTip="Toon alleen actieve open posities — nog niet gesloten"/>
                                 <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
                                            Fill="DarkGoldenrod"
                                            Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterOpen), Mode=OneWay}"/>
@@ -99,7 +107,8 @@
                             <!-- Closed -->
                             <StackPanel Orientation="Vertical" Spacing="0">
                                 <Button Content="Closed" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Closed"
-                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                                        ToolTipService.ToolTip="Toon alleen gesloten trades — afgerond via TP, SL of handmatig"/>
                                 <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
                                            Fill="DarkGoldenrod"
                                            Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterClosed), Mode=OneWay}"/>
@@ -108,7 +117,8 @@
                             <!-- Paper -->
                             <StackPanel Orientation="Vertical" Spacing="0">
                                 <Button Content="Paper" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Paper"
-                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                                        ToolTipService.ToolTip="Toon alleen papieren (simulated) trades — geen echt geld"/>
                                 <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
                                            Fill="DarkGoldenrod"
                                            Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterPaper), Mode=OneWay}"/>
@@ -117,7 +127,8 @@
                             <!-- Live -->
                             <StackPanel Orientation="Vertical" Spacing="0">
                                 <Button Content="Live" Command="{x:Bind _viewModel.SetFilterCommand}" CommandParameter="Live"
-                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"/>
+                                        Style="{StaticResource DateTimePickerFlyoutButtonStyle}"
+                                        ToolTipService.ToolTip="Toon alleen live trades — uitgevoerd met echt geld via een exchange"/>
                                 <Rectangle Height="2" RadiusX="1" RadiusY="1" Margin="6,1"
                                            Fill="DarkGoldenrod"
                                            Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsFilterLive), Mode=OneWay}"/>
@@ -126,6 +137,8 @@
 
                         <!-- Refresh knop + Kill All + tijdstempel -->
                         <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                            <ProgressRing IsActive="{x:Bind _viewModel.IsLoading, Mode=OneWay}"
+                                          Width="18" Height="18" VerticalAlignment="Center"/>
                             <TextBlock Text="{x:Bind _viewModel.LastRefreshedDisplay, Mode=OneWay}"
                                        VerticalAlignment="Center" FontSize="11"
                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
