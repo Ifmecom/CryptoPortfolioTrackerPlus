@@ -88,6 +88,24 @@ public partial class FundamentalsViewModel : BaseViewModel
 
     public void Terminate() => Current = null;
 
+    /// <summary>Persisteert de handmatige due-diligence van een coin, herberekent de score en ververst de rij.</summary>
+    public async Task SaveDueDiligenceAsync(FundamentalRow row)
+    {
+        if (row?.Data is null) return;
+        try
+        {
+            await _fundamentals.SaveDueDiligenceAsync(row.Data);
+            row.RaiseAllChanged();
+            ApplyFilterAndSort();
+            StatusText = $"{row.Symbol}: due-diligence opgeslagen — score {row.Data.TotalScore:0} ({row.Data.Verdict}), betrouwbaarheid {row.Data.Confidence:0}%.";
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Fundamentals: due-diligence opslaan mislukt voor {ApiId}", row.ApiId);
+            StatusText = $"{row.Symbol}: opslaan mislukt — {ex.Message}";
+        }
+    }
+
     // ── Commands ────────────────────────────────────────────────────────────────
 
     [RelayCommand]
@@ -358,6 +376,9 @@ public partial class FundamentalRow : ObservableObject
     public string FavoriteGlyph => IsFavorite ? "★" : "☆";
     public Microsoft.UI.Xaml.Media.SolidColorBrush FavoriteBrush => IsFavorite ? BrushGold : BrushGrey;
 
+    /// <summary>Herwaardeer alle weergave-properties (na opslaan van due-diligence).</summary>
+    public void RaiseAllChanged() => NotifyAll();
+
     /// <summary>Herwaardeer de versheid-afhankelijke weergave (na wijziging van de drempel).</summary>
     public void NotifyFreshnessChanged()
     {
@@ -380,7 +401,7 @@ public partial class FundamentalRow : ObservableObject
             nameof(HasData), nameof(TotalScore), nameof(TotalScoreText), nameof(DataScoreText),
             nameof(Verdict), nameof(ScoreBrush), nameof(RankText), nameof(MarketCapText),
             nameof(FdvText), nameof(VolumeText), nameof(VolMcText), nameof(FdvMcText),
-            nameof(CirculatingText), nameof(AthText), nameof(CommunityText), nameof(DevText),
+            nameof(CirculatingText), nameof(AthText), nameof(TvlText), nameof(HasTvl), nameof(CommunityText), nameof(DevText),
             nameof(UpdatedText), nameof(AnalyzeLabel), nameof(IsStale), nameof(IsFresh),
             nameof(AgeText), nameof(FreshnessBrush), nameof(StalenessText),
         })
@@ -418,6 +439,8 @@ public partial class FundamentalRow : ObservableObject
 
     public string CirculatingText => HasData ? Functions.FormatSupply(Data!.CirculatingSupply) : "—";
     public string AthText  => HasData ? $"ATH {Functions.FormatPercentSigned(Data!.AthChangePct)}" : "";
+    public string TvlText  => HasData && Data!.Tvl > 0 ? $"TVL {Functions.FormatUsdCompact(Data.Tvl)}" : "";
+    public bool   HasTvl   => HasData && Data!.Tvl > 0;
     public string CommunityText => HasData ? $"𝕏 {Functions.FormatSupply(Data!.TwitterFollowers)}" : "";
     public string DevText  => HasData ? $"GH {Functions.FormatSupply(Data!.GithubStars)}★ · {Data!.CommitCount4Weeks} commits/4w" : "";
 

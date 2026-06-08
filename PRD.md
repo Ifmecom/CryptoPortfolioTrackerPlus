@@ -783,7 +783,21 @@ de knop **Verouderde** ververst alleen ontbrekende/verouderde coins (rate-limite
 **Favorieten:** tot 10 coins zijn als favoriet te markeren (`Settings.FundamentalsFavorites`, CSV van ApiId's).
 Favorieten staan bovenaan, zijn apart te filteren, en de knop **Favorieten** ververst in één keer alleen die set.
 
-> Handmatige DD-invoer (sliders) + SWOT/risico/waardering-rapport volgen in **Sprint C**.
+**Handmatige due-diligence + rapport (Sprint C):** in het detailvenster zijn de vijf DD-factoren (team,
+product-maturiteit, adoptie, revenue, unlock-risico) bewerkbaar via sliders 0-10 met een "beoordeeld"-vinkje
+(uitgevinkt = niet meegerekend) plus een notitieveld. Opslaan persisteert via `SaveDueDiligenceAsync`,
+herberekent `TotalScore`/`Confidence` en herordent de lijst. Het venster toont tevens een **rule-based
+analyse-rapport** (`FundamentalsReportBuilder`, puur/testbaar): executive summary, SWOT (sterktes/zwaktes/
+kansen/bedreigingen), risiconiveau (LOW/MEDIUM/HIGH), een heuristische waarderingsconclusie en de top-risico's.
+
+**On-chain TVL (DefiLlama):** `DefiLlamaService` (`IDefiLlamaService`) haalt éénmalig `api.llama.fi/protocols`
+op (gecached 30 min) en matcht per coin op CoinGecko-id (symbool als fallback) → `Tvl` + `TvlCategory` op
+`CoinFundamentals` (kolommen via `ApplyPlusSchemaAsync` + `TryAddColumnAsync` voor bestaande DBs). De
+**market-cap/TVL-ratio** is een sterk waarderingssignaal voor DeFi-protocollen en voedt het rapport
+(sterkte/zwakte/kans + verdict). Coins zonder DeFi-protocol (bv. BTC, de meeste L1's) hebben geen TVL → geen effect.
+*Token-unlocks* zijn **niet** opgenomen: de DefiLlama-emissions/unlocks-endpoint geeft op de gratis tier
+HTTP 402 (Pro/betaald). Unlock-risico wordt benaderd via de FDV/MC-overhang en de handmatige DD-factor "unlock-risico".
+
 > Tabel wordt aangemaakt via `ApplyPlusSchemaAsync` (`CREATE TABLE IF NOT EXISTS`).
 
 ---

@@ -44,6 +44,12 @@ public class CoinFundamentals
     public double  TotalSupply       { get; set; }
     public double  MaxSupply         { get; set; }
 
+    // ── On-chain (DefiLlama) ────────────────────────────────────────────────────
+    /// <summary>Total Value Locked in USD (DefiLlama); 0 als de coin geen DeFi-protocol is.</summary>
+    public double  Tvl         { get; set; }
+    /// <summary>DefiLlama-categorie (bv. "Dexs", "Lending"); leeg als onbekend.</summary>
+    public string  TvlCategory { get; set; } = string.Empty;
+
     // ── Development (GitHub) ──────────────────────────────────────────────────
     public long GithubStars         { get; set; }
     public long GithubForks         { get; set; }

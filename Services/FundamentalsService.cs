@@ -18,14 +18,16 @@ public class FundamentalsService : IFundamentalsService
         Constants.SourceContextPropertyName, nameof(FundamentalsService).PadRight(22));
 
     private readonly PortfolioService _portfolioService;
+    private readonly IDefiLlamaService _llama;
     private readonly CoinGeckoApiClient _gecko;
 
     // CoinGecko demo-tier: ~30 calls/min → ruime marge tussen calls bij bulk-refresh.
     private const int BulkDelayMs = 2200;
 
-    public FundamentalsService(PortfolioService portfolioService)
+    public FundamentalsService(PortfolioService portfolioService, IDefiLlamaService llama)
     {
         _portfolioService = portfolioService;
+        _llama = llama;
         _gecko = new CoinGeckoApiClient(AppConstants.ApiPath, AppConstants.CoinGeckoApiKey);
     }
 
@@ -45,6 +47,19 @@ public class FundamentalsService : IFundamentalsService
         }
 
         var f = MapToFundamentals(data, apiId, symbol, name);
+
+        // On-chain TVL (DefiLlama) — graceful: blijft 0 als de coin geen DeFi-protocol is.
+        try
+        {
+            var ll = await _llama.GetInfoAsync(apiId, f.Symbol, ct);
+            if (ll is not null)
+            {
+                f.Tvl = ll.Tvl;
+                f.TvlCategory = ll.Category;
+            }
+        }
+        catch (Exception ex) { Logger.Debug(ex, "FundamentalsService: DefiLlama TVL niet beschikbaar voor {ApiId}", apiId); }
+
         FundamentalsScoreCalculator.Recompute(f, DateTime.UtcNow);
         await UpsertAsync(f, ct);
         return f;

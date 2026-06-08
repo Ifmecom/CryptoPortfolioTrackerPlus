@@ -593,11 +593,16 @@ namespace CryptoPortfolioTracker.Services
                         TotalScore          REAL    NOT NULL DEFAULT 0,
                         Verdict             TEXT    NOT NULL DEFAULT '',
                         Confidence          REAL    NOT NULL DEFAULT 0,
+                        Tvl                 REAL    NOT NULL DEFAULT 0,
+                        TvlCategory         TEXT    NOT NULL DEFAULT '',
                         UpdatedAt           TEXT    NOT NULL DEFAULT '0001-01-01 00:00:00'
                     )");
                 await db.ExecuteSqlRawAsync(@"
                     CREATE UNIQUE INDEX IF NOT EXISTS IX_CoinFundamentals_ApiId
                     ON CoinFundamentals(ApiId)");
+                // On-chain TVL-kolommen voor bestaande installaties (idempotent)
+                await TryAddColumnAsync(db, "CoinFundamentals", "Tvl", "REAL", "0");
+                await TryAddColumnAsync(db, "CoinFundamentals", "TvlCategory", "TEXT", "''");
 
                 Logger?.Information("PLUS schema applied successfully");
             }

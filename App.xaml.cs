@@ -301,6 +301,7 @@ public partial class App : Application
         services.AddSingleton<IMacroEventService,        MacroEventService>();
 
         // Fundamentele analyse
+        services.AddSingleton<IDefiLlamaService,          DefiLlamaService>();
         services.AddScoped<IFundamentalsService,          FundamentalsService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));

@@ -630,6 +630,17 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <ct:SettingsCard Header="DefiLlama (TVL)"
+                                    Description="api.llama.fi/protocols"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9F5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Levert Total Value Locked (TVL) en de protocolcategorie voor de Fundamentals-tool. Gematcht op CoinGecko-id; coins zonder DeFi-protocol (bv. BTC) hebben geen TVL. Geen API-sleutel vereist."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: Fundamentals (market cap/TVL-waardering &amp; SWOT) · cache 30 min · token-unlocks zitten achter de betaalde DefiLlama-API en zijn niet opgenomen"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 

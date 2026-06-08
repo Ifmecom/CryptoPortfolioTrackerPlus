@@ -40,8 +40,17 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "met balken, zodat je ziet wáárom een coin zijn score krijgt.");
 
         AddFeature("🤝", "Eerlijke hybride score",
-            "Wat meetbaar is wordt automatisch gescoord; team, maturiteit, adoptie, revenue en unlocks komen via " +
-            "handmatige due-diligence (binnenkort). Een betrouwbaarheidsindicator toont hoeveel is onderbouwd.");
+            "Wat meetbaar is wordt automatisch gescoord; team, maturiteit, adoptie, revenue en unlocks beoordeel je " +
+            "zelf via sliders in het detailvenster. Een betrouwbaarheidsindicator toont hoeveel is onderbouwd.");
+
+        AddFeature("📝", "Due-diligence + SWOT-rapport",
+            "Het detailvenster toont een automatisch SWOT-rapport (sterktes/zwaktes/kansen/bedreigingen), een " +
+            "risiconiveau en een heuristische waarderingsconclusie — afgeleid van de cijfers en je eigen beoordeling.");
+
+        AddFeature("💾", "Opgeslagen met datum, favorieten & instelbare versheid",
+            "Opgehaalde fundamentals blijven met datum bewaard (geen onnodige API-calls). Stel zelf in na hoeveel " +
+            "dagen data 'verouderd' is, markeer tot 10 favorieten en ververs met één knop alleen je favorieten of " +
+            "alleen de verouderde coins.");
 
         AddVersionHeader("v1.33  —  3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
 

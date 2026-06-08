@@ -1,6 +1,9 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using CryptoPortfolioTracker.Converters;
 using CryptoPortfolioTracker.Models;
+using CryptoPortfolioTracker.Services;
 using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
@@ -24,13 +27,39 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
     private static readonly SolidColorBrush Orange  = new(Color.FromArgb(255, 255, 167, 38));
     private static readonly SolidColorBrush Neutral = new(Color.FromArgb(255, 160, 160, 160));
 
+    // Due-diligence invoercontrols (uitgelezen bij opslaan)
+    private readonly List<(CheckBox enabled, Slider slider)> _ddControls = new();
+    private TextBox? _ddNotes;
+
+    /// <summary>True wanneer de gebruiker op 'Opslaan' klikte (DD-waarden zijn op _f gezet).</summary>
+    public bool Saved { get; private set; }
+
     public FundamentalsDetailDialog(CoinFundamentals fundamentals, Settings settings)
     {
         _f        = fundamentals;
         _settings = settings;
         InitializeComponent();
-        Title             = $"{_f.Name}  ({_f.Symbol})  —  fundamentals";
-        PrimaryButtonText = "Sluiten";
+        Title              = $"{_f.Name}  ({_f.Symbol})  —  fundamentals";
+        PrimaryButtonText  = "Opslaan";
+        CloseButtonText    = "Sluiten";
+        DefaultButton      = ContentDialogButton.Close;
+        PrimaryButtonClick += OnSaveClick;
+    }
+
+    private void OnSaveClick(ContentDialog sender, ContentDialogButtonClickEventArgs args)
+    {
+        // Lees de DD-sliders uit: uitgevinkt = niet beoordeeld (null).
+        var values = _ddControls
+            .Select(c => c.enabled.IsChecked == true ? (int?)(int)c.slider.Value : null)
+            .ToList();
+
+        _f.DdTeam            = values.ElementAtOrDefault(0);
+        _f.DdProductMaturity = values.ElementAtOrDefault(1);
+        _f.DdAdoption        = values.ElementAtOrDefault(2);
+        _f.DdRevenue         = values.ElementAtOrDefault(3);
+        _f.DdUnlocks         = values.ElementAtOrDefault(4);
+        _f.DdNotes           = _ddNotes?.Text ?? string.Empty;
+        Saved = true;
     }
 
     private void Dialog_Loading(FrameworkElement sender, object args)
@@ -101,6 +130,18 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
         AddKv(g3, 2, "% van max in omloop", _f.MaxSupply > 0 ? $"{circPct:0.0}%" : "—", null);
         ContentPanel.Children.Add(g3);
 
+        // On-chain TVL (DefiLlama) — alleen voor DeFi-protocollen
+        if (_f.Tvl > 0)
+        {
+            double mcapTvl = _f.MarketCap > 0 ? _f.MarketCap / _f.Tvl : 0;
+            var gtvl = Grid3();
+            AddKv(gtvl, 0, "TVL (DefiLlama)", Functions.FormatUsdCompact(_f.Tvl), null);
+            AddKv(gtvl, 1, "Market cap / TVL", mcapTvl > 0 ? Functions.FormatRatioX(mcapTvl) : "—",
+                  mcapTvl > 15 ? Red : mcapTvl is > 0 and < 2 ? Green : Neutral);
+            AddKv(gtvl, 2, "Categorie", string.IsNullOrWhiteSpace(_f.TvlCategory) ? "—" : _f.TvlCategory, Neutral);
+            ContentPanel.Children.Add(gtvl);
+        }
+
         // ── Extremen ─────────────────────────────────────────────────────────────
         ContentPanel.Children.Add(Header("📈 Koers-extremen"));
         var g4 = Grid3();
@@ -148,27 +189,66 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
             });
         }
 
-        // ── Handmatige due-diligence (Sprint C) ──────────────────────────────────
-        ContentPanel.Children.Add(Header("📝 Handmatige due-diligence"));
-        bool anyDd = _f.DdTeam.HasValue || _f.DdProductMaturity.HasValue || _f.DdAdoption.HasValue || _f.DdRevenue.HasValue || _f.DdUnlocks.HasValue;
-        var ddGrid = Grid3();
-        AddKv(ddGrid, 0, "Team", DdText(_f.DdTeam), Neutral);
-        AddKv(ddGrid, 1, "Product-maturiteit", DdText(_f.DdProductMaturity), Neutral);
-        AddKv(ddGrid, 2, "Adoptie", DdText(_f.DdAdoption), Neutral);
-        ContentPanel.Children.Add(ddGrid);
-        var ddGrid2 = Grid3();
-        AddKv(ddGrid2, 0, "Revenue", DdText(_f.DdRevenue), Neutral);
-        AddKv(ddGrid2, 1, "Unlocks-risico", DdText(_f.DdUnlocks), Neutral);
-        AddKv(ddGrid2, 2, "", "", Neutral);
-        ContentPanel.Children.Add(ddGrid2);
-        if (!anyDd)
-            ContentPanel.Children.Add(new InfoBar
-            {
-                IsOpen = true, IsClosable = false, Severity = InfoBarSeverity.Informational,
-                Title = "Nog niet handmatig beoordeeld",
-                Message = "Team, maturiteit, adoptie, revenue en unlocks zijn niet automatisch meetbaar uit CoinGecko. " +
-                          "Handmatige invoer (en SWOT/risico-rapport) volgt in een latere versie en verhoogt de betrouwbaarheid van de totaalscore.",
-            });
+        // ── Handmatige due-diligence (bewerkbaar) ────────────────────────────────
+        ContentPanel.Children.Add(Header("📝 Handmatige due-diligence (0-10)"));
+        ContentPanel.Children.Add(new TextBlock
+        {
+            Text = "Beoordeel zelf wat niet automatisch meetbaar is. Vink 'beoordeeld' aan en zet de score; " +
+                   "ingevulde factoren tellen mee in de totaalscore en verhogen de betrouwbaarheid. Klik 'Opslaan'.",
+            FontSize = 11, Foreground = Neutral, TextWrapping = TextWrapping.Wrap,
+        });
+        _ddControls.Clear();
+        AddDdRow("Team & organisatie", _f.DdTeam);
+        AddDdRow("Product-maturiteit",  _f.DdProductMaturity);
+        AddDdRow("Adoptie & groei",     _f.DdAdoption);
+        AddDdRow("Revenue / business-model", _f.DdRevenue);
+        AddDdRow("Unlock-/vesting-risico (hoog cijfer = laag risico)", _f.DdUnlocks);
+
+        _ddNotes = new TextBox
+        {
+            PlaceholderText = "Notities bij je beoordeling…",
+            Text = _f.DdNotes ?? string.Empty,
+            AcceptsReturn = true, TextWrapping = TextWrapping.Wrap,
+            Height = 64, Margin = new Thickness(0, 4, 0, 0),
+        };
+        ContentPanel.Children.Add(_ddNotes);
+
+        // ── Analyse-rapport (SWOT & risico) ──────────────────────────────────────
+        var report = FundamentalsReportBuilder.Build(_f);
+        ContentPanel.Children.Add(Header("📋 Analyse-rapport (SWOT & risico)"));
+        ContentPanel.Children.Add(new TextBlock
+        {
+            Text = report.ExecutiveSummary, FontSize = 12, TextWrapping = TextWrapping.Wrap,
+        });
+
+        var riskRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Margin = new Thickness(0, 2, 0, 0) };
+        var riskBadge = new Border
+        {
+            CornerRadius = new CornerRadius(6), Padding = new Thickness(8, 2, 8, 2),
+            Background = report.RiskLevel == "HIGH" ? Red : report.RiskLevel == "MEDIUM" ? Orange : Green,
+        };
+        riskBadge.Child = new TextBlock { Text = $"Risico: {report.RiskLevel}", FontSize = 11, FontWeight = FontWeights.SemiBold, Foreground = new SolidColorBrush(Colors.White) };
+        riskRow.Children.Add(riskBadge);
+        riskRow.Children.Add(new TextBlock { Text = report.ValuationVerdict, FontSize = 11, Foreground = Neutral, TextWrapping = TextWrapping.Wrap, VerticalAlignment = VerticalAlignment.Center });
+        ContentPanel.Children.Add(riskRow);
+
+        AddBulletList("✅ Sterktes", report.Strengths, Green);
+        AddBulletList("⚠️ Zwaktes", report.Weaknesses, Red);
+        AddBulletList("🚀 Kansen", report.Opportunities, new SolidColorBrush(Color.FromArgb(255, 96, 165, 250)));
+        AddBulletList("⛈️ Bedreigingen", report.Threats, Orange);
+
+        if (report.TopRisks.Count > 0)
+        {
+            ContentPanel.Children.Add(new TextBlock { Text = "Top-risico's", FontSize = 12, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 4, 0, 0) });
+            int n = 1;
+            foreach (var risk in report.TopRisks)
+                ContentPanel.Children.Add(new TextBlock { Text = $"{n++}. {risk}", FontSize = 11, Foreground = Neutral, TextWrapping = TextWrapping.Wrap });
+        }
+        ContentPanel.Children.Add(new TextBlock
+        {
+            Text = "Het rapport is rule-based op de huidige cijfers; na opslaan van je due-diligence opnieuw openen om het bij te werken.",
+            FontSize = 10, Foreground = Neutral, TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 2, 0, 0),
+        });
 
         // ── Disclaimer ───────────────────────────────────────────────────────────
         ContentPanel.Children.Add(new TextBlock
@@ -180,7 +260,38 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
 
     // ── Helpers ──────────────────────────────────────────────────────────────────
 
-    private static string DdText(int? v) => v.HasValue ? $"{v.Value}/10" : "—";
+    private void AddDdRow(string label, int? current)
+    {
+        var grid = new Grid { ColumnSpacing = 10, Margin = new Thickness(0, 2, 0, 0) };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(2, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(3, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        var lbl = new TextBlock { Text = label, FontSize = 12, VerticalAlignment = VerticalAlignment.Center, TextWrapping = TextWrapping.Wrap };
+        Grid.SetColumn(lbl, 0); grid.Children.Add(lbl);
+
+        var chk = new CheckBox { IsChecked = current.HasValue, Content = "beoordeeld", FontSize = 11, MinWidth = 0, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(chk, 1); grid.Children.Add(chk);
+
+        var slider = new Slider { Minimum = 0, Maximum = 10, StepFrequency = 1, Value = current ?? 5, VerticalAlignment = VerticalAlignment.Center };
+        Grid.SetColumn(slider, 2); grid.Children.Add(slider);
+
+        var val = new TextBlock { Text = $"{(int)(current ?? 5)}/10", FontSize = 12, FontWeight = FontWeights.SemiBold, MinWidth = 38, VerticalAlignment = VerticalAlignment.Center };
+        slider.ValueChanged += (s, e) => val.Text = $"{(int)slider.Value}/10";
+        Grid.SetColumn(val, 3); grid.Children.Add(val);
+
+        _ddControls.Add((chk, slider));
+        ContentPanel.Children.Add(grid);
+    }
+
+    private void AddBulletList(string title, List<string> items, SolidColorBrush color)
+    {
+        if (items is null || items.Count == 0) return;
+        ContentPanel.Children.Add(new TextBlock { Text = title, FontSize = 12, FontWeight = FontWeights.SemiBold, Foreground = color, Margin = new Thickness(0, 4, 0, 0) });
+        foreach (var it in items)
+            ContentPanel.Children.Add(new TextBlock { Text = "•  " + it, FontSize = 11, TextWrapping = TextWrapping.Wrap });
+    }
 
     private static SolidColorBrush ScoreBrush(double s) => s switch
     {

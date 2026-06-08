@@ -59,6 +59,19 @@ public sealed partial class WhatsNewView : Page
             "De knop 'Favorieten' ververst in één klik alleen je favoriete coins — ideaal om je vaste shortlist " +
             "actueel te houden zonder alles af te roepen.");
 
+        AddFeature("📝", "Handmatige due-diligence + SWOT-rapport",
+            "In het detailvenster beoordeel je nu zelf team, product-maturiteit, adoptie, revenue en unlock-risico " +
+            "via sliders (0-10). Je oordeel telt mee in de totaalscore en tilt de betrouwbaarheid omhoog. Daaronder " +
+            "staat een automatisch SWOT-rapport: sterktes, zwaktes, kansen, bedreigingen, een risiconiveau " +
+            "(LAAG/MIDDEL/HOOG), een heuristische waarderingsconclusie en de top-risico's — volledig afgeleid van " +
+            "de cijfers, geen black box.");
+
+        AddFeature("🔒", "On-chain TVL via DefiLlama",
+            "Voor DeFi-protocollen toont de Fundamentals-tool nu de Total Value Locked (TVL) en de market-cap/TVL-ratio — " +
+            "een sterke waarderingsmaat die ook in het SWOT-rapport meeweegt. Gratis via DefiLlama, zonder API-sleutel. " +
+            "Coins zonder DeFi-protocol (zoals BTC) hebben simpelweg geen TVL. Let op: token-unlock-schema's zitten achter " +
+            "de betaalde DefiLlama-API en zijn daarom niet opgenomen — unlock-risico beoordeel je via de DD-slider.");
+
         // ── v1.33 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.33", "3% Trading-tool · Gekalibreerd scoremodel · Robuustere advieslogica");
 

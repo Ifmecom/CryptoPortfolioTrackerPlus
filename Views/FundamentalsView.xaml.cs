@@ -36,5 +36,8 @@ public sealed partial class FundamentalsView : Page
             XamlRoot = XamlRoot,
         };
         await App.ShowContentDialogAsync(dialog);
+
+        if (dialog.Saved)
+            await _viewModel.SaveDueDiligenceAsync(row);
     }
 }

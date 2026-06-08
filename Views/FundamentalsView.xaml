@@ -160,6 +160,9 @@
                                     <TextBlock Text="{x:Bind AthText, Mode=OneWay}" FontSize="11" Opacity="0.8"
                                                ToolTipService.ToolTip="Afstand tot all-time high"/>
                                 </StackPanel>
+                                <TextBlock Text="{x:Bind TvlText, Mode=OneWay}" FontSize="11" Opacity="0.8"
+                                           Visibility="{x:Bind HasTvl, Mode=OneWay}"
+                                           ToolTipService.ToolTip="Total Value Locked (DefiLlama) — alleen voor DeFi-protocollen"/>
                             </StackPanel>
 
                             <!-- Score badge + verdict -->
