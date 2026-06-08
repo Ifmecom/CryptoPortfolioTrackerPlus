@@ -40,6 +40,8 @@ CryptoPortfolioTracker Plus is een desktop-applicatie voor Windows waarmee een i
 - **Signaalgeneratie** — gecombineerde TA + sentiment + marktregime-score per coin
 - **Pattern Trading** — automatische patroonherkenning (Level 1–3) op 1D/4H/1H/15M met TradabilityScore en setup-advies
 - **Setup Tracker** — win-rate monitoring van gevolgde trade-setups met automatische TP/SL-detectie
+- **3% Trading** — gekalibreerd 7-factor scoremodel met +3% netto-doel (kalibratie, live scan, paper trades)
+- **Fundamentals** — fundamentele analyse met Fundamental Score (0-100), SWOT-rapport en DefiLlama TVL
 - **Trade Journal** — paper trading én live trades, met P&L en R-multiple
 - **Trade Advies** — multi-timeframe analyse per coin met entry/SL/TP-berekening
 - **Statistieken** — geaggregeerde handelsprestaties over meerdere periodes
@@ -162,6 +164,7 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 | Pattern Trading | `PatternTradingView` | Automatische patroonherkenning voor portfolio-coins |
 | Setup Tracker | `SetupTrackerView` | Win-rate monitoring van gevolgde trade-setups |
 | 3% Trading | `ThreePctView` | Gekalibreerd 7-factor scoremodel met +3% netto-doel (kalibratie + live scan) |
+| Fundamentals | `FundamentalsView` | Fundamentele analyse: Fundamental Score (0-100), DD-invoer, SWOT-rapport, DefiLlama TVL |
 
 ### 3.2 Footer-items
 
@@ -764,9 +767,10 @@ unlocks — 0-10 elk) blendt met de DataScore tot de **TotalScore**; het DD-gewi
 aantal ingevulde velden. Een **Confidence** (0-100) geeft aan hoeveel van het raamwerk is onderbouwd.
 **Verdict:** Exceptional (≥90) / Strong (≥80) / Promising (≥70) / Speculative (≥60) / High Risk (≥50) / Avoid.
 
-**Databron-grenzen (eerlijk):** team, maturiteit, adoptie (DAU/MAU), on-chain activiteit, revenue en
-unlock-schema's zijn met de gratis CoinGecko-API niet betrouwbaar te automatiseren en komen via
-handmatige DD. *Gepland (later):* DefiLlama TVL en token-unlocks.
+**Databron-grenzen (eerlijk):** team, maturiteit, adoptie (DAU/MAU), revenue en unlock-schema's zijn met de
+gratis API's niet betrouwbaar te automatiseren en komen via handmatige DD. On-chain TVL is wél geïntegreerd
+(DefiLlama, zie hieronder). *Niet beschikbaar:* token-unlock-schema's — de DefiLlama-emissions-endpoint is
+betaald (Pro); unlock-risico wordt benaderd via FDV/MC-overhang + de handmatige DD-factor.
 
 **UI (`FundamentalsView` + `FundamentalsViewModel`):** overzichtspagina met de bibliotheek-coins
 (via `ILibraryService.GetCoinsFromContext`), gesorteerd op score, met zoek-/filterbalk. Per coin een
@@ -1047,6 +1051,7 @@ Fundamentele analyse per coin (één rij per coin, upsert op `ApiId`). Tabel aan
 | `Ath` / `AthChangePct` / `AthDate` | double / double / DateTime? | All-time high + afstand |
 | `Atl` / `AtlChangePct` / `AtlDate` | double / double / DateTime? | All-time low + herstel |
 | `CirculatingSupply` / `TotalSupply` / `MaxSupply` | double | Aanbod & verwatering |
+| `Tvl` / `TvlCategory` | double / string | On-chain Total Value Locked + categorie (DefiLlama); 0/leeg voor niet-DeFi-coins |
 | `GithubStars` / `GithubForks` / `GithubSubscribers` / `CommitCount4Weeks` / `PullRequestsMerged` / `PullRequestContribs` | long | Development-activiteit |
 | `TwitterFollowers` / `RedditSubscribers` / `RedditActive48H` / `SentimentUpPct` | long / double | Community |
 | `ScoreTokenomics` / `ScoreLiquidity` / `ScoreValuation` / `ScoreCommunity` / `ScoreDevelopment` / `ScoreProject` | double | Auto-subscores (0–100) |
