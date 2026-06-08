@@ -77,6 +77,52 @@ public partial class DashboardViewModel : BaseViewModel
     }
 
     // -----------------------------------------------------------------------
+    // Fear & Greed widget
+    // -----------------------------------------------------------------------
+
+    // int backing field — gebruikt voor kleurberekening
+    [ObservableProperty] private int fearGreedValue = 50;
+    // string properties — gebind aan XAML Text (x:Bind eist string voor Text)
+    [ObservableProperty] private string fearGreedDisplay        = "–";
+    [ObservableProperty] private string fearGreedClassification = "–";
+    [ObservableProperty] private string fearGreedUpdated        = "–";
+    [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush fearGreedBrush =
+        new(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80));
+
+    private async Task LoadFearGreedAsync()
+    {
+        try
+        {
+            var reading = await _dashboardService.GetFearGreedAsync();
+            if (reading is null)
+            {
+                Logger.Warning("LoadFearGreedAsync: geen lezing ontvangen");
+                return;
+            }
+
+            FearGreedValue          = reading.Value;
+            FearGreedDisplay        = reading.Value.ToString();
+            FearGreedClassification = reading.Classification;
+            FearGreedUpdated        = reading.Timestamp.ToLocalTime().ToString("dd-MM HH:mm");
+            FearGreedBrush          = FearGreedToBrush(reading.Value);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "LoadFearGreedAsync failed");
+        }
+    }
+
+    private static Microsoft.UI.Xaml.Media.SolidColorBrush FearGreedToBrush(int value) =>
+        value switch
+        {
+            <= 24  => new(Windows.UI.Color.FromArgb(0xFF, 0xC0, 0x39, 0x2B)), // Extreme Fear – dark red
+            <= 44  => new(Windows.UI.Color.FromArgb(0xFF, 0xE6, 0x7E, 0x22)), // Fear          – orange
+            <= 54  => new(Windows.UI.Color.FromArgb(0xFF, 0x80, 0x80, 0x80)), // Neutral       – grey
+            <= 74  => new(Windows.UI.Color.FromArgb(0xFF, 0x27, 0x96, 0x42)), // Greed         – green
+            _      => new(Windows.UI.Color.FromArgb(0xFF, 0x1A, 0x5C, 0x2E)), // Extreme Greed – dark green
+        };
+
+    // -----------------------------------------------------------------------
     // Signal widgets
     // -----------------------------------------------------------------------
 
@@ -113,7 +159,7 @@ public partial class DashboardViewModel : BaseViewModel
                 .Where(c => coinIds.Contains(c.Id))
                 .ToDictionaryAsync(c => c.Id);
 
-            // Top 3 Long (highest) + top 3 Short (lowest)
+            // Top 3 Long (highest score) + top 3 Short (lowest score) → daarna de sterkste 5
             var topLong  = latestPerCoin.Where(s => s.Direction == SignalDirection.Long)
                                .OrderByDescending(s => s.CombinedScore).Take(3);
             var topShort = latestPerCoin.Where(s => s.Direction == SignalDirection.Short)
@@ -124,6 +170,7 @@ public partial class DashboardViewModel : BaseViewModel
                 .Select(s => coinDict.TryGetValue(s.CoinId, out var c) ? new DashboardSignalRow(s, c) : null)
                 .Where(r => r is not null)
                 .Select(r => r!)
+                .Take(5)        // max 5 signalen zodat de widget compact blijft
                 .ToList();
 
             TopSignals = new ObservableCollection<DashboardSignalRow>(rows);
@@ -200,6 +247,7 @@ public partial class DashboardViewModel : BaseViewModel
         await GetTop5();
         GetValueGains();
         await LoadSignalWidgetsAsync();
+        await LoadFearGreedAsync();
     }
 
     public DashboardViewModel(IDashboardService dashboardService, 

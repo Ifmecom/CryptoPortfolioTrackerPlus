@@ -28,5 +28,8 @@ namespace CryptoPortfolioTracker.Services
         Task EvaluatePriceLevels();
         Task CalculateRsiAllCoins();
         Task CalculateMaAllCoins();
+
+        /// <summary>Returns the current Fear &amp; Greed reading (fetches if stale).</summary>
+        Task<FearGreedReading?> GetFearGreedAsync();
     }
 }

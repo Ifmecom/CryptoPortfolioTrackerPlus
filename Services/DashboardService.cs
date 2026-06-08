@@ -29,13 +29,15 @@ public partial class DashboardService : ObservableObject, IDashboardService
     private readonly IAssetService _assetService;
     private readonly INarrativeService _narrativeService;
     private readonly IAccountService _accountService;
+    private readonly IFearGreedService _fearGreedService;
 
-    public DashboardService(PortfolioService portfolioService, 
-                        IAssetService assetService, 
-                        INarrativeService narrativeService, 
-                        IAccountService accountService, 
+    public DashboardService(PortfolioService portfolioService,
+                        IAssetService assetService,
+                        INarrativeService narrativeService,
+                        IAccountService accountService,
                         Settings appSettings,
-                        IIndicatorService indicatorService)
+                        IIndicatorService indicatorService,
+                        IFearGreedService fearGreedService)
     {
         _indicatorService = indicatorService;
         _appSettings = appSettings;
@@ -43,6 +45,7 @@ public partial class DashboardService : ObservableObject, IDashboardService
         _assetService = assetService;
         _accountService = accountService;
         _narrativeService = narrativeService;
+        _fearGreedService = fearGreedService;
     }
 
     public PortfolioContext GetContext()
@@ -304,6 +307,11 @@ public partial class DashboardService : ObservableObject, IDashboardService
     public Portfolio GetPortfolio()
     {
         return _portfolioService.CurrentPortfolio;
+    }
+
+    public Task<FearGreedReading?> GetFearGreedAsync()
+    {
+        return _fearGreedService.GetCurrentAsync();
     }
 }
 
