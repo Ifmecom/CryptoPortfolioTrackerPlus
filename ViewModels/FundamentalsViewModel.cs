@@ -115,6 +115,11 @@ public partial class FundamentalsViewModel : BaseViewModel
     private async Task Analyze(FundamentalRow? row)
     {
         if (row is null || string.IsNullOrWhiteSpace(row.ApiId) || row.IsAnalyzing) return;
+        if (IsBatchRunning)
+        {
+            StatusText = "Even wachten — er loopt al een batch-verversing.";
+            return;
+        }
         row.IsAnalyzing = true;
         StatusText = $"Fundamentals ophalen voor {row.Symbol}…";
         try
@@ -403,7 +408,7 @@ public partial class FundamentalRow : ObservableObject
             nameof(FdvText), nameof(VolumeText), nameof(VolMcText), nameof(FdvMcText),
             nameof(CirculatingText), nameof(AthText), nameof(TvlText), nameof(HasTvl), nameof(CommunityText), nameof(DevText),
             nameof(UpdatedText), nameof(AnalyzeLabel), nameof(IsStale), nameof(IsFresh),
-            nameof(AgeText), nameof(FreshnessBrush), nameof(StalenessText),
+            nameof(AgeText), nameof(FreshnessBrush), nameof(StalenessText), nameof(ScoreTooltip),
         })
             OnPropertyChanged(p);
     }
@@ -446,6 +451,14 @@ public partial class FundamentalRow : ObservableObject
 
     public string UpdatedText => HasData && Data!.UpdatedAt > DateTime.MinValue
         ? $"Bijgewerkt: {Data.UpdatedAt.ToLocalTime():dd-MM-yy HH:mm}" : "";
+
+    /// <summary>Uitgebreide tooltip met de factor-onderbouwing van de score.</summary>
+    public string ScoreTooltip => !HasData
+        ? "Nog niet geanalyseerd — klik 'Analyseer'."
+        : $"Totaalscore {Data!.TotalScore:0}/100 ({Data.Verdict})\n" +
+          $"Data-score {Data.DataScore:0} · betrouwbaarheid {Data.Confidence:0}%\n" +
+          $"Tokenomics {Data.ScoreTokenomics:0} · Liquiditeit {Data.ScoreLiquidity:0} · Waardering {Data.ScoreValuation:0}\n" +
+          $"Community {Data.ScoreCommunity:0} · Development {Data.ScoreDevelopment:0} · Project {Data.ScoreProject:0}";
 
     /// <summary>True als de data ouder is dan <see cref="FreshnessDays"/> dagen.</summary>
     public bool IsStale => HasData && Data!.UpdatedAt > DateTime.MinValue

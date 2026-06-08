@@ -103,12 +103,18 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
 
         // ── Factor-subscores ─────────────────────────────────────────────────────
         ContentPanel.Children.Add(Header("🎯 Factor-subscores (0-100)"));
-        ContentPanel.Children.Add(ScoreBar("Tokenomics (aanbod & verwatering)", _f.ScoreTokenomics));
-        ContentPanel.Children.Add(ScoreBar("Liquiditeit (volume/MC)", _f.ScoreLiquidity));
-        ContentPanel.Children.Add(ScoreBar("Waardering (rank & extremen)", _f.ScoreValuation));
-        ContentPanel.Children.Add(ScoreBar("Community", _f.ScoreCommunity));
-        ContentPanel.Children.Add(ScoreBar("Development (GitHub)", _f.ScoreDevelopment));
-        ContentPanel.Children.Add(ScoreBar("Projectvolledigheid", _f.ScoreProject));
+        ContentPanel.Children.Add(ScoreBar("Tokenomics (aanbod & verwatering)", _f.ScoreTokenomics,
+            "Circulerend aandeel van het max. aanbod + FDV/market-cap-overhang. Hoger = minder toekomstige verwatering. Weegt 25% in de data-score."));
+        ContentPanel.Children.Add(ScoreBar("Liquiditeit (volume/MC)", _f.ScoreLiquidity,
+            "24u-volume gedeeld door market cap. Gezonde band ~2-30%; extreem hoog kan op wash-trading wijzen. Weegt 20%."));
+        ContentPanel.Children.Add(ScoreBar("Waardering (rank & extremen)", _f.ScoreValuation,
+            "Vooral market-cap rang (gevestigdheid), licht bijgesteld op herstel vanaf de bodem (ATL). Weegt 15%."));
+        ContentPanel.Children.Add(ScoreBar("Community", _f.ScoreCommunity,
+            "Twitter- en Reddit-bereik (log-schaal) + sentiment. Weegt 15%."));
+        ContentPanel.Children.Add(ScoreBar("Development (GitHub)", _f.ScoreDevelopment,
+            "Recente commits (4 wkn), sterren en gemergede PR's. 0 bij coins zonder gekoppelde publieke repo. Weegt 15%."));
+        ContentPanel.Children.Add(ScoreBar("Projectvolledigheid", _f.ScoreProject,
+            "Aanwezigheid van homepage, whitepaper, repo, sector en track record (leeftijd). Weegt 10%."));
 
         // ── Waardering & aanbod ──────────────────────────────────────────────────
         ContentPanel.Children.Add(Header("💰 Waardering & aanbod"));
@@ -308,9 +314,11 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
         Text = text, FontSize = 14, FontWeight = FontWeights.SemiBold, Margin = new Thickness(0, 6, 0, 2),
     };
 
-    private UIElement ScoreBar(string label, double score)
+    private UIElement ScoreBar(string label, double score, string tooltip = "")
     {
         var sp = new StackPanel { Spacing = 2 };
+        if (!string.IsNullOrEmpty(tooltip))
+            ToolTipService.SetToolTip(sp, tooltip);
         var top = new Grid();
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         top.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });

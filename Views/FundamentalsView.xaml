@@ -65,7 +65,8 @@
                                ToolTipService.ToolTip="Aantal dagen dat opgehaalde data als 'vers' geldt; daarna 'verouderd'"/>
                     <TextBlock Text="dagen" VerticalAlignment="Center" FontSize="12"/>
                     <TextBlock Text="{x:Bind _viewModel.FavoritesCountText, Mode=OneWay}"
-                               VerticalAlignment="Center" FontSize="11" Opacity="0.7" Margin="6,0,2,0"/>
+                               VerticalAlignment="Center" FontSize="11" Opacity="0.7" Margin="6,0,2,0"
+                               ToolTipService.ToolTip="Aantal gemarkeerde favorieten (max 10)"/>
                     <Button Content="↻ Herladen"
                             Command="{x:Bind _viewModel.RefreshCommand}"
                             ToolTipService.ToolTip="Herlaad uit de database (geen API-calls)"/>
@@ -130,16 +131,19 @@
                                                ToolTipService.ToolTip="Market-cap rang"/>
                                 </StackPanel>
                                 <TextBlock Text="{x:Bind CommunityText, Mode=OneWay}" FontSize="11"
-                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                           ToolTipService.ToolTip="Twitter-volgers (community-data via CoinGecko)"/>
                                 <TextBlock Text="{x:Bind DevText, Mode=OneWay}" FontSize="11"
                                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                           TextTrimming="CharacterEllipsis" MaxWidth="320"/>
+                                           TextTrimming="CharacterEllipsis" MaxWidth="320"
+                                           ToolTipService.ToolTip="GitHub-sterren en aantal commits in de laatste 4 weken"/>
                             </StackPanel>
 
                             <!-- Valuation & supply -->
                             <StackPanel Grid.Column="2" VerticalAlignment="Center" Spacing="2">
                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <TextBlock Text="MC" FontSize="10" Width="34" Opacity="0.7"/>
+                                    <TextBlock Text="MC" FontSize="10" Width="34" Opacity="0.7"
+                                               ToolTipService.ToolTip="Market cap (marktkapitalisatie)"/>
                                     <TextBlock Text="{x:Bind MarketCapText, Mode=OneWay}" FontSize="11" FontWeight="SemiBold" Width="74"/>
                                     <TextBlock Text="Vol/MC" FontSize="10" Width="44" Opacity="0.7"
                                                ToolTipService.ToolTip="24u-volume gedeeld door market cap — liquiditeitsmaat"/>
@@ -168,7 +172,8 @@
                             <!-- Score badge + verdict -->
                             <StackPanel Grid.Column="3" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="3">
                                 <Border CornerRadius="8" Padding="12,4" HorizontalAlignment="Center"
-                                        Background="{x:Bind ScoreBrush, Mode=OneWay}">
+                                        Background="{x:Bind ScoreBrush, Mode=OneWay}"
+                                        ToolTipService.ToolTip="{x:Bind ScoreTooltip, Mode=OneWay}">
                                     <TextBlock Text="{x:Bind TotalScoreText, Mode=OneWay}"
                                                FontSize="18" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
                                 </Border>

@@ -21,6 +21,10 @@ public class FundamentalsService : IFundamentalsService
     private readonly IDefiLlamaService _llama;
     private readonly CoinGeckoApiClient _gecko;
 
+    // Serialiseert toegang tot de gedeelde PortfolioContext zodat gelijktijdige
+    // verversingen (batch + losse analyse) geen EF-concurrency-fout veroorzaken.
+    private static readonly System.Threading.SemaphoreSlim _dbGate = new(1, 1);
+
     // CoinGecko demo-tier: ~30 calls/min → ruime marge tussen calls bij bulk-refresh.
     private const int BulkDelayMs = 2200;
 
@@ -95,17 +99,27 @@ public class FundamentalsService : IFundamentalsService
     {
         var ctx = _portfolioService.Context;
         if (ctx is null) return new();
-        return await ctx.Set<CoinFundamentals>().AsNoTracking()
-            .OrderByDescending(x => x.TotalScore)
-            .ToListAsync(ct);
+        await _dbGate.WaitAsync(ct);
+        try
+        {
+            return await ctx.Set<CoinFundamentals>().AsNoTracking()
+                .OrderByDescending(x => x.TotalScore)
+                .ToListAsync(ct);
+        }
+        finally { _dbGate.Release(); }
     }
 
     public async Task<CoinFundamentals?> GetAsync(string apiId, CancellationToken ct = default)
     {
         var ctx = _portfolioService.Context;
         if (ctx is null) return null;
-        return await ctx.Set<CoinFundamentals>().AsNoTracking()
-            .FirstOrDefaultAsync(x => x.ApiId == apiId, ct);
+        await _dbGate.WaitAsync(ct);
+        try
+        {
+            return await ctx.Set<CoinFundamentals>().AsNoTracking()
+                .FirstOrDefaultAsync(x => x.ApiId == apiId, ct);
+        }
+        finally { _dbGate.Release(); }
     }
 
     public async Task SaveDueDiligenceAsync(CoinFundamentals fundamentals, CancellationToken ct = default)
@@ -122,6 +136,7 @@ public class FundamentalsService : IFundamentalsService
         if (ctx is null) return;
 
         f.UpdatedAt = DateTime.UtcNow;
+        await _dbGate.WaitAsync(ct);
         try
         {
             var existing = await ctx.Set<CoinFundamentals>().FirstOrDefaultAsync(x => x.ApiId == f.ApiId, ct);
@@ -141,6 +156,7 @@ public class FundamentalsService : IFundamentalsService
             Logger.Error(ex, "FundamentalsService: opslaan mislukt voor {ApiId}", f.ApiId);
             ctx.ChangeTracker?.Clear();
         }
+        finally { _dbGate.Release(); }
     }
 
     private static CoinFundamentals MapToFundamentals(CoinFullDataById d, string apiId, string symbol, string name)
