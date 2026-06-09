@@ -38,6 +38,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "De Setup Tracker toont per scoreklasse de werkelijk behaalde win-rate en R uit je gesloten setups, " +
             "zodat je ziet of een hogere score in de praktijk ook echt beter presteerde.");
 
+        AddFeature("🔗", "Portfolio-correlatie met BTC",
+            "Een knop in de Assets-header opent een diversificatie-analyse: per holding de correlatie met BTC + " +
+            "een waarde-gewogen oordeel of je portfolio met BTC meebeweegt of goed gespreid is.");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

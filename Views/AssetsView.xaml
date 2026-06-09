@@ -83,6 +83,19 @@
                     ToolTipService.ToolTip="Portfolio Settings">
                     <FontIcon Glyph="&#xE713;" FontSize="18" FontWeight="Normal" Height="20" Width="20" Foreground="Black" />
                 </helpers:CustomBtn>
+
+                <helpers:CustomBtn x:Name="btnCorrelation"
+                    Padding="2,2,2,2"
+                    Margin="5,5,0,0"
+                    Width="25"
+                    Height="25"
+                    Style="{StaticResource MK_ButtonStyle}"
+                    BorderThickness="0"
+                    Click="Correlation_Click"
+                    RelativePanel.RightOf="btnSettings" RelativePanel.AlignBottomWith="btnSettings"
+                    ToolTipService.ToolTip="Portfolio-correlatie met BTC — diversificatie-analyse">
+                    <FontIcon Glyph="&#xE71B;" FontSize="18" FontWeight="Normal" Height="20" Width="20" Foreground="Black" />
+                </helpers:CustomBtn>
             </RelativePanel>
 
             <RelativePanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" >

@@ -1,4 +1,8 @@
+using CryptoPortfolioTracker.Configuration;
+using CryptoPortfolioTracker.Dialogs;
+using CryptoPortfolioTracker.Services;
 using CryptoPortfolioTracker.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.VisualStudio.TestTools.UnitTesting.Logging;
 using System;
@@ -40,6 +44,16 @@ public partial class AssetsView : Page, IDisposable
         {
             MyAssetsListViewControl.AssetsListView.SelectedIndex = -1;
         }
+    }
+
+    private async void Correlation_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
+    {
+        var service  = App.Container.GetService<IPortfolioCorrelationService>();
+        var settings = App.Container.GetService<Settings>();
+        if (service is null || settings is null) return;
+
+        var dialog = new PortfolioCorrelationDialog(service, settings) { XamlRoot = XamlRoot };
+        await App.ShowContentDialogAsync(dialog);
     }
 
     private void View_Unloaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

@@ -199,6 +199,12 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 
 **Doel:** Realtime portfolio-overzicht per asset.
 
+**Portfolio-correlatie *(v1.35)*:** een knop in de header opent `PortfolioCorrelationDialog`, dat via
+`IPortfolioCorrelationService` per holding de Pearson-correlatie met BTC berekent (60 dagrendementen, Binance-klines
++ `ICorrelationService`) en deze **waarde-gewogen** aggregeert tot een diversificatie-oordeel
+(`PortfolioCorrelationCalculator`, puur/getest). Toont per coin een correlatiebalk + label (Hoog/Gemiddeld/Laag)
+en een samenvattend verdict. Geen nieuwe databron — hergebruikt de bestaande klines en correlatie-engine.
+
 **Kolommen:** Coin · Symbool · Rang · Hoeveelheid · Gem. kostprijs · Huidige prijs · Waarde · P&L (USDT + %) · Account
 
 **Sortering:** op elke kolom klikbaar (oplopend/aflopend)

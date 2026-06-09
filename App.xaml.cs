@@ -303,6 +303,7 @@ public partial class App : Application
         // Fundamentele analyse
         services.AddSingleton<IDefiLlamaService,          DefiLlamaService>();
         services.AddScoped<IFundamentalsService,          FundamentalsService>();
+        services.AddScoped<IPortfolioCorrelationService,  PortfolioCorrelationService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 

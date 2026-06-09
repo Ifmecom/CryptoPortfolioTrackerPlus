@@ -40,6 +40,11 @@ public sealed partial class WhatsNewView : Page
             "en gemiddelde R uit je gesloten setups. Dit is de feedback-loop op de TradabilityScore: je ziet of een " +
             "hogere score in de praktijk ook echt beter presteerde (klassen met te weinig trades worden gedimd getoond).");
 
+        AddFeature("🔗", "Portfolio-correlatie met BTC",
+            "Nieuwe knop in de Assets-header opent een diversificatie-analyse: per holding de correlatie met BTC " +
+            "(op 60 dagrendementen) plus een waarde-gewogen oordeel — beweegt je portfolio grotendeels met BTC mee, " +
+            "of is het goed gespreid? Hergebruikt de correlatie-engine van de 3% Trading-tool.");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 
