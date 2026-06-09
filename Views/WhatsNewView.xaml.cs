@@ -42,6 +42,11 @@ public sealed partial class WhatsNewView : Page
             "met duidelijke guardrail-waarschuwingen wanneer je een grens nadert of overschrijdt. Zo benut je " +
             "eindelijk álle risk-instellingen die je hebt ingesteld.");
 
+        AddFeature("⚖️", "Kies je kapitaalbasis: paper of echte portfolio",
+            "In Instellingen → Risk-guardrails kies je nu waartegen de risico-berekeningen rekenen: het virtuele " +
+            "paper-kapitaal (bedrag instelbaar) óf je werkelijke portfoliowaarde. Zowel de positiegrootte als het " +
+            "risico-dashboard volgen die keuze — geen verwarrende mix meer van paper-sizing met je echte saldo.");
+
         // ── v1.35 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.35", "Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 

@@ -22,24 +22,27 @@ public class RiskDashboardService : IRiskDashboardService
     private static readonly ILogger Logger = Log.Logger.ForContext(
         Constants.SourceContextPropertyName, nameof(RiskDashboardService).PadRight(22));
 
-    private const double Capital = 10_000.0;   // virtueel paper-kapitaal (zoals PaperTradeDialog)
+    private readonly PortfolioService    _portfolioService;
+    private readonly Settings            _settings;
+    private readonly IRiskCapitalService _capital;
 
-    private readonly PortfolioService _portfolioService;
-    private readonly Settings         _settings;
-
-    public RiskDashboardService(PortfolioService portfolioService, Settings settings)
+    public RiskDashboardService(PortfolioService portfolioService, Settings settings, IRiskCapitalService capital)
     {
         _portfolioService = portfolioService;
         _settings         = settings;
+        _capital          = capital;
     }
 
     public async Task<RiskDashboard> BuildAsync(CancellationToken ct = default)
     {
+        double capital = await _capital.GetCapitalAsync(ct);
+        string basis   = _capital.BasisLabel;
+
         var ctx = _portfolioService.Context;
         if (ctx is null)
-            return RiskDashboardCalculator.Build(Array.Empty<RiskPosition>(), 0, Capital,
+            return RiskDashboardCalculator.Build(Array.Empty<RiskPosition>(), 0, capital,
                 _settings.MaxOpenPositions, _settings.DailyLossLimitPerc,
-                _settings.MaxPortfolioPercPerTrade, _settings.IsKillSwitchActive);
+                _settings.MaxPortfolioPercPerTrade, _settings.IsKillSwitchActive, basis);
 
         // Open posities (gevuld, nog niet gesloten)
         var open = await ctx.ExchangeOrders.AsNoTracking()
@@ -75,8 +78,8 @@ public class RiskDashboardService : IRiskDashboardService
                 : (o.Entry - o.ClosePrice) * o.Qty);
 
         return RiskDashboardCalculator.Build(
-            positions, dayPnl, Capital,
+            positions, dayPnl, capital,
             _settings.MaxOpenPositions, _settings.DailyLossLimitPerc,
-            _settings.MaxPortfolioPercPerTrade, _settings.IsKillSwitchActive);
+            _settings.MaxPortfolioPercPerTrade, _settings.IsKillSwitchActive, basis);
     }
 }

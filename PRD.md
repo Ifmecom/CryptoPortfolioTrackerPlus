@@ -363,7 +363,9 @@ Bij elke vernieuwopdracht roept de ViewModel `AutoCloseTriggeredAsync()` aan. Or
 open (Filled) orders + gerealiseerde dag-P&L en bouwt via de pure `RiskDashboardCalculator` een portfolio-breed
 overzicht: aantal open posities vs `MaxOpenPositions`, totaal open risico (som van verlies-bij-SL) + % van kapitaal,
 grootste positie-risico, blootstelling, dag-P&L vs `DailyLossLimitPerc`, en kill-switch-status — met guardrail-alerts
-(LOW/MEDIUM/HIGH). Rekent tegen het virtuele paper-kapitaal (10.000 USDT), consistent met de positiegrootte-berekening.
+(LOW/MEDIUM/HIGH). De **kapitaalbasis is instelbaar** (`IRiskCapitalService`): virtueel paper-kapitaal
+(`Settings.PaperVirtualCapital`) of de werkelijke portfoliowaarde (`Settings.UseRealPortfolioForRisk`),
+consistent met de positiegrootte-berekening.
 
 **Zie §6.1 voor P&L- en R-multiple-berekeningen.**
 
@@ -374,8 +376,8 @@ grootste positie-risico, blootstelling, dag-P&L vs `DailyLossLimitPerc`, en kill
 Exchange-stijl orderformulier (540 px breed, `ContentDialog`).
 
 **Risico-gebaseerde positiegrootte *(v1.36)*:** een 'Risico %'-veld (standaard `Settings.MaxPortfolioPercPerTrade`)
-+ knop berekent via de pure `PositionSizeCalculator` het inlegbedrag zodat verlies-bij-SL = risico% van het
-(virtuele) kapitaal, met hefboom verrekend. Een live indicator toont continu het actuele risico-% en waarschuwt
++ knop berekent via de pure `PositionSizeCalculator` het inlegbedrag zodat verlies-bij-SL = risico% van de
+**gekozen kapitaalbasis** (via `IRiskCapitalService`: paper-kapitaal of echte portfolio), met hefboom verrekend. Een live indicator toont continu het actuele risico-% en waarschuwt
 bij overschrijding van de per-trade-limiet; bij een actieve kill-switch (`Settings.IsKillSwitchActive`) verschijnt
 een melding. *(Max-open-posities en dagelijkse-verlieslimiet horen op het toekomstige risico-dashboard.)*
 

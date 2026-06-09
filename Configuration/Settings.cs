@@ -308,6 +308,23 @@ public partial class Settings : ObservableObject
         set { _store.Set("IsKillSwitchActive", value); OnPropertyChanged(nameof(IsKillSwitchActive)); }
     }
 
+    /// <summary>
+    /// Kapitaalbasis voor risico-berekeningen (positiegrootte + risico-dashboard):
+    /// false = virtueel paper-kapitaal, true = werkelijke portfoliowaarde.
+    /// </summary>
+    public bool UseRealPortfolioForRisk
+    {
+        get => _store.Get("UseRealPortfolioForRisk", false);
+        set { _store.Set("UseRealPortfolioForRisk", value); OnPropertyChanged(nameof(UseRealPortfolioForRisk)); }
+    }
+
+    /// <summary>Virtueel paper-kapitaal (USDT) waartegen paper-risico wordt berekend.</summary>
+    public double PaperVirtualCapital
+    {
+        get => _store.Get("PaperVirtualCapital", 10_000.0);
+        set { _store.Set("PaperVirtualCapital", value <= 0 ? 10_000.0 : value); OnPropertyChanged(nameof(PaperVirtualCapital)); }
+    }
+
     // -----------------------------------------------------------------------
     // Exchange regio
     // -----------------------------------------------------------------------

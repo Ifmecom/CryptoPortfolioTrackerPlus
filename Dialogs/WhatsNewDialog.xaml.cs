@@ -39,6 +39,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Knop 'Risico' opent een portfolio-breed overzicht: open posities vs limiet, totaal open risico, " +
             "blootstelling, dag-P&L en verlieslimiet — met guardrail-waarschuwingen.");
 
+        AddFeature("⚖️", "Kapitaalbasis: paper of echte portfolio",
+            "Kies in Instellingen waartegen risico wordt berekend — virtueel paper-kapitaal of je echte " +
+            "portfoliowaarde. Positiegrootte én dashboard volgen die keuze.");
+
         AddVersionHeader("v1.35  —  Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
         AddFeature("Ⓕ", "Fundamentele kwaliteit naast je setups",

@@ -2,6 +2,7 @@ using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Models;
 using CryptoPortfolioTracker.Services;
 using CryptoPortfolioTracker.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
@@ -17,7 +18,8 @@ public sealed partial class PaperTradeDialog : ContentDialog
     private double  _currentPrice;
     private string  _symbolBase   = string.Empty;  // e.g. "BTC"
     private bool    _initialising = true;           // suppress recalc during setup
-    private const double VirtualCapital = 10_000.0; // simulated USDT balance
+    private double  _capital      = 10_000.0;        // kapitaalbasis (paper of echt) — gezet in Dialog_Loading
+    private string  _capitalBasis = "virtueel paper-kapitaal";
 
     // TP close percentages (% of total position to close at each TP level)
     private double _tp1ClosePct = 50.0;
@@ -192,7 +194,7 @@ public sealed partial class PaperTradeDialog : ContentDialog
         }
 
         // ── Available capital label ──────────────────────────────────────────
-        txtAvailable.Text = $"Beschikbaar: {VirtualCapital:#,0} USDT (virtueel)";
+        txtAvailable.Text = $"Kapitaalbasis: {_capital:#,0} USDT ({_capitalBasis})";
 
         // ── Risico-sizing defaults + kill-switch waarschuwing (guardrails) ────
         nbRiskPct.Value     = _settings.MaxPortfolioPercPerTrade > 0 ? _settings.MaxPortfolioPercPerTrade : 2.0;
@@ -206,11 +208,21 @@ public sealed partial class PaperTradeDialog : ContentDialog
     // Event handlers — selectors
     // ────────────────────────────────────────────────────────────────────────
 
-    private void Dialog_Loading(FrameworkElement sender, object args)
+    private async void Dialog_Loading(FrameworkElement sender, object args)
     {
-        // Theme is applied in the constructor (before InitializeComponent) so
-        // nothing to do here — the handler is kept to avoid removing the XAML
-        // Loading= attribute which would require a recompile of the XAML.
+        // Bepaal de kapitaalbasis (paper vs echte portfolio) volgens de instelling.
+        try
+        {
+            var capitalSvc = App.Container?.GetService<Services.IRiskCapitalService>();
+            if (capitalSvc is not null)
+            {
+                _capital      = await capitalSvc.GetCapitalAsync();
+                _capitalBasis = capitalSvc.BasisLabel;
+                txtAvailable.Text = $"Kapitaalbasis: {_capital:#,0} USDT ({_capitalBasis})";
+                Recalculate();
+            }
+        }
+        catch { /* val terug op de standaard paper-waarde */ }
     }
 
     private void MarketType_Changed(object sender, RoutedEventArgs e)
@@ -255,7 +267,7 @@ public sealed partial class PaperTradeDialog : ContentDialog
     private void QuickPct_Click(object sender, RoutedEventArgs e)
     {
         if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int pct))
-            nbAmount.Value = Math.Round(VirtualCapital * pct / 100.0, 2);
+            nbAmount.Value = Math.Round(_capital * pct / 100.0, 2);
     }
 
     /// <summary>Berekent het inlegbedrag zodat verlies-bij-SL = risico% van het kapitaal.</summary>
@@ -265,7 +277,7 @@ public sealed partial class PaperTradeDialog : ContentDialog
         var sl      = chkSL.IsChecked == true ? SafeValue(nbSL, 0) : 0;
         var riskPct = double.IsNaN(nbRiskPct.Value) ? 0 : nbRiskPct.Value;
 
-        var res = PositionSizeCalculator.Suggest(VirtualCapital, riskPct, entry, sl, GetLeverage());
+        var res = PositionSizeCalculator.Suggest(_capital, riskPct, entry, sl, GetLeverage());
         if (!res.IsValid)
         {
             txtRiskInfo.Text       = "⚠ Stel eerst een geldige entry én stop-loss in.";
@@ -274,7 +286,7 @@ public sealed partial class PaperTradeDialog : ContentDialog
         }
 
         // Niet meer margin inleggen dan beschikbaar (bij krappe SL kan de suggestie groot zijn).
-        var amount = Math.Min(res.Amount, VirtualCapital);
+        var amount = Math.Min(res.Amount, _capital);
         nbAmount.Value = Math.Round(amount, 2);   // triggert Recalculate via OnAmountChanged
     }
 
@@ -402,7 +414,7 @@ public sealed partial class PaperTradeDialog : ContentDialog
 
         // Risico als % van kapitaal + guardrail-vergelijking (max % per trade)
         var slNow = chkSL.IsChecked == true ? SafeValue(nbSL, 0) : 0;
-        var riskPctNow = PositionSizeCalculator.RiskPctOfCapital(amount, entryPrice, slNow, VirtualCapital, leverage);
+        var riskPctNow = PositionSizeCalculator.RiskPctOfCapital(amount, entryPrice, slNow, _capital, leverage);
         if (riskPctNow > 0)
         {
             var limit = _settings.MaxPortfolioPercPerTrade;

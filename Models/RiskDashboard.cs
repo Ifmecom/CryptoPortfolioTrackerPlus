@@ -36,6 +36,8 @@ public class RiskDashboard
 
     public bool   KillSwitchActive { get; init; }
     public double Capital          { get; init; }
+    /// <summary>Omschrijving van de gebruikte kapitaalbasis (paper vs echte portfolio).</summary>
+    public string CapitalBasis     { get; init; } = string.Empty;
 
     public List<RiskAlert> Alerts { get; init; } = new();
 

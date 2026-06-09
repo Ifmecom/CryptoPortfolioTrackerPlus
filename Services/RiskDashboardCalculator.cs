@@ -21,7 +21,8 @@ public static class RiskDashboardCalculator
         int    maxOpenPositions,
         double dailyLossLimitPct,
         double maxRiskPctPerTrade,
-        bool   killSwitch)
+        bool   killSwitch,
+        string capitalBasis = "")
     {
         if (capital <= 0) capital = 1; // guard tegen deling door 0
 
@@ -76,6 +77,7 @@ public static class RiskDashboardCalculator
             DayLossPct             = dayLossPct,
             KillSwitchActive       = killSwitch,
             Capital                = capital,
+            CapitalBasis           = capitalBasis,
             Alerts                 = alerts,
             Status                 = status,
         };

@@ -305,6 +305,7 @@ public partial class App : Application
         services.AddScoped<IFundamentalsService,          FundamentalsService>();
         services.AddScoped<IPortfolioCorrelationService,  PortfolioCorrelationService>();
         services.AddScoped<IMarketContextService,         MarketContextService>();
+        services.AddScoped<IRiskCapitalService,           RiskCapitalService>();
         services.AddScoped<IRiskDashboardService,         RiskDashboardService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));

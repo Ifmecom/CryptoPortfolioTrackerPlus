@@ -149,6 +149,12 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
     [ObservableProperty] private bool isKillSwitchActive;
     partial void OnIsKillSwitchActiveChanged(bool value) => AppSettings.IsKillSwitchActive = value;
 
+    [ObservableProperty] private bool useRealPortfolioForRisk;
+    partial void OnUseRealPortfolioForRiskChanged(bool value) => AppSettings.UseRealPortfolioForRisk = value;
+
+    [ObservableProperty] private double paperVirtualCapital;
+    partial void OnPaperVirtualCapitalChanged(double value) => AppSettings.PaperVirtualCapital = value;
+
     private readonly INotifierService _notifierService;
     private readonly IExchangeAccountService _exchangeAccountService;
 
@@ -455,6 +461,8 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         MaxOpenPositions         = AppSettings.MaxOpenPositions;
         DailyLossLimitPerc       = AppSettings.DailyLossLimitPerc;
         IsKillSwitchActive       = AppSettings.IsKillSwitchActive;
+        UseRealPortfolioForRisk  = AppSettings.UseRealPortfolioForRisk;
+        PaperVirtualCapital      = AppSettings.PaperVirtualCapital;
 
         CheckPasswordCredentials();
         _ = LoadExchangeStatusAsync();

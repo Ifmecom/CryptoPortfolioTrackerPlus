@@ -309,6 +309,23 @@
                                                   OnContent="ACTIEF" OffContent="Uit"/>
                                 </ct:SettingsCard>
 
+                                <!-- Kapitaalbasis voor risico -->
+                                <ct:SettingsCard Header="Kapitaalbasis voor risico"
+                                    Description="Waartegen positiegrootte en het risico-dashboard rekenen: virtueel paper-kapitaal of je werkelijke portfoliowaarde."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE7BF;}">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.UseRealPortfolioForRisk, Mode=TwoWay}"
+                                                  OnContent="Echte portfolio" OffContent="Paper (virtueel)"/>
+                                </ct:SettingsCard>
+
+                                <!-- Virtueel paper-kapitaal -->
+                                <ct:SettingsCard Header="Virtueel paper-kapitaal"
+                                    Description="Het simulatie-kapitaal (USDT) waartegen paper-risico wordt berekend."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE7BF;}">
+                                    <NumberBox Value="{x:Bind _viewModel.PaperVirtualCapital, Mode=TwoWay}"
+                                               Minimum="100" Maximum="100000000" SpinButtonPlacementMode="Compact"
+                                               Width="160"/>
+                                </ct:SettingsCard>
+
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 

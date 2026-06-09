@@ -72,7 +72,7 @@ public sealed partial class RiskDashboardDialog : ContentDialog
         ContentPanel.Children.Add(banner);
         ContentPanel.Children.Add(new TextBlock
         {
-            Text = $"Berekend t.o.v. virtueel kapitaal van {r.Capital:#,0} USDT (paper).",
+            Text = $"Berekend t.o.v. {r.CapitalBasis}: {r.Capital:#,0} USDT.",
             FontSize = 10, Foreground = Neutral,
         });
 
