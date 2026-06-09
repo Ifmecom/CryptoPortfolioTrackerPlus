@@ -5,6 +5,7 @@
     xmlns:viewmodels="using:CryptoPortfolioTracker.ViewModels"
     xmlns:models="using:CryptoPortfolioTracker.Models"
     xmlns:converters="using:CryptoPortfolioTracker.Converters"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Loaded="View_Loaded"
@@ -54,6 +55,8 @@
                            FontSize="12"
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                            Margin="0,2,0,0"/>
+                <!-- #4: gedeelde marktcontext-balk -->
+                <controls:MarketContextBar HorizontalAlignment="Left" Margin="0,8,0,0"/>
             </StackPanel>
 
             <!-- Refresh button + timestamp -->

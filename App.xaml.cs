@@ -304,6 +304,7 @@ public partial class App : Application
         services.AddSingleton<IDefiLlamaService,          DefiLlamaService>();
         services.AddScoped<IFundamentalsService,          FundamentalsService>();
         services.AddScoped<IPortfolioCorrelationService,  PortfolioCorrelationService>();
+        services.AddScoped<IMarketContextService,         MarketContextService>();
 
         services.AddSingleton<AuthenticationService>(sp => new AuthenticationService(keyBytes, sp.GetRequiredService<Settings>()));
 

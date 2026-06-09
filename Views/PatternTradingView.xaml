@@ -44,6 +44,12 @@
                            Style="{StaticResource SubSampleHeaderTextStyle}"
                            RelativePanel.Below="txtPageTitle"/>
 
+                <!-- #4: gedeelde marktcontext-balk -->
+                <controls:MarketContextBar x:Name="marketContext"
+                           RelativePanel.Below="txtSubTitle"
+                           RelativePanel.AlignLeftWith="txtPageTitle"
+                           Margin="0,8,0,0" HorizontalAlignment="Left"/>
+
                 <!-- Disclaimer -->
                 <Border x:Name="disclaimerBorder"
                         RelativePanel.AlignRightWithPanel="True"

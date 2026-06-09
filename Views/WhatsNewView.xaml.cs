@@ -45,6 +45,11 @@ public sealed partial class WhatsNewView : Page
             "(op 60 dagrendementen) plus een waarde-gewogen oordeel — beweegt je portfolio grotendeels met BTC mee, " +
             "of is het goed gespreid? Hergebruikt de correlatie-engine van de 3% Trading-tool.");
 
+        AddFeature("🧭", "Gedeelde marktcontext-balk",
+            "Pattern Trading, 3% Trading en de Setup Tracker tonen nu bovenaan dezelfde compacte marktcontext: " +
+            "het BTC-regime (Risk-On/Neutraal/Risk-Off), de Fear & Greed-index en het eerstvolgende macro-event " +
+            "(FOMC/CPI/NFP/PCE). Eén gedeelde, gecachte bron — zo handel je altijd met het bredere plaatje in beeld.");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 

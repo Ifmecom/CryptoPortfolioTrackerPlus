@@ -6,6 +6,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:vm="using:CryptoPortfolioTracker.ViewModels"
     xmlns:models="using:CryptoPortfolioTracker.Models"
+    xmlns:controls="using:CryptoPortfolioTracker.Controls"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     Loaded="View_Loaded"
@@ -32,6 +33,8 @@
                 <TextBlock Text="Gekalibreerd scoremodel — netto +3% target na fees en slippage"
                            Style="{ThemeResource CaptionTextBlockStyle}"
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                <!-- #4: gedeelde marktcontext-balk -->
+                <controls:MarketContextBar HorizontalAlignment="Left" Margin="0,8,0,0"/>
             </StackPanel>
 
             <!-- IsLoading indicator -->

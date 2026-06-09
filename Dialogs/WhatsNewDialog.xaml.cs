@@ -42,6 +42,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Een knop in de Assets-header opent een diversificatie-analyse: per holding de correlatie met BTC + " +
             "een waarde-gewogen oordeel of je portfolio met BTC meebeweegt of goed gespreid is.");
 
+        AddFeature("🧭", "Gedeelde marktcontext-balk",
+            "Pattern Trading, 3% Trading en de Setup Tracker tonen bovenaan dezelfde marktcontext: BTC-regime, " +
+            "Fear & Greed en het eerstvolgende macro-event.");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

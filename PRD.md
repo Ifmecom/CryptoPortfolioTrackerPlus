@@ -570,6 +570,11 @@ Box 3-calculator (zie §10).
 Fundamental-badge (`Ⓕ score · verdict`) via `IFundamentalsService.GetScoreMapAsync` (lookup op `ApiId`, gecachet
 bij `ViewLoading`), zodat technische en fundamentele kwaliteit in één oogopslag samenkomen.
 
+**Gedeelde marktcontext-balk *(v1.35)*:** de herbruikbare `Controls/MarketContextBar` toont bovenaan Pattern
+Trading, 3% Trading en de Setup Tracker dezelfde context — BTC-regime, Fear & Greed-index en het eerstvolgende
+macro-event — geaggregeerd door `IMarketContextService` (combineert `IMarketRegimeService` + `IFearGreedService`
++ `IMacroEventService`, ~5 min gecached). De control laadt zichzelf via `App.Container`; geen per-view bedrading nodig.
+
 **Werkwijze:**
 1. Gebruiker klikt **Analyseer** → app analyseert alle portfolio-coins met holdings concurrent (max 3 tegelijk)
 2. Per coin: OHLCV ophalen (Binance → KuCoin → Gate.io → MEXC), indicatoren berekenen, patronen detecteren
