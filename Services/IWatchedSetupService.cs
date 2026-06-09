@@ -59,6 +59,12 @@ public interface IWatchedSetupService
     /// When <paramref name="from"/> or <paramref name="to"/> is null the filter is not applied.
     /// </summary>
     Task<List<WatchedSetup>> GetClosedAsync(DateTime? from, DateTime? to);
+
+    /// <summary>
+    /// Empirische score-kalibratie: werkelijk behaalde win-rate en expectancy per scoreklasse,
+    /// afgeleid uit alle gesloten (Won/Lost) setups. De feedback-loop op de TradabilityScore.
+    /// </summary>
+    Task<List<ScoreBucketCalibration>> GetScoreCalibrationAsync();
 }
 
 /// <summary>Aggregated statistics for all closed setups.</summary>

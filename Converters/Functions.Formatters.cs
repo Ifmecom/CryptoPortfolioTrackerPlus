@@ -88,4 +88,7 @@ public partial class Functions
     /// <summary>Ratio met één decimaal en suffix, bijv. "2.4×". "—" bij 0.</summary>
     public static string FormatRatioX(double ratio)
         => ratio <= 0 ? "—" : $"{ratio:0.0}×";
+
+    /// <summary>Dim een kaart wanneer er te weinig data is voor een betrouwbare uitspraak.</summary>
+    public static double ReliableToOpacity(bool reliable) => reliable ? 1.0 : 0.5;
 }

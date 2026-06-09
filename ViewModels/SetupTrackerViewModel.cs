@@ -22,6 +22,7 @@ public partial class SetupTrackerViewModel : BaseViewModel
 
     private readonly IWatchedSetupService _service;
     private readonly ILibraryService      _libraryService;
+    private readonly IFundamentalsService _fundamentals;
     private readonly IMessenger           _messenger;
     private readonly DispatcherQueue?     _dispatcherQueue;
 
@@ -30,6 +31,10 @@ public partial class SetupTrackerViewModel : BaseViewModel
     [ObservableProperty] private ObservableCollection<WatchedSetup> setups    = new();
     [ObservableProperty] private string statusFilter  = "All";   // "All" | "Watching" | "Won" | "Lost" | "Expired"
     [ObservableProperty] private string statusText    = string.Empty;
+
+    /// <summary>Empirische score-kalibratie (werkelijke win-rate/expectancy per scoreklasse).</summary>
+    [ObservableProperty] private ObservableCollection<ScoreBucketCalibration> calibration = new();
+    [ObservableProperty] private bool hasCalibration;
 
     // ── Stats ─────────────────────────────────────────────────────────────────
     [ObservableProperty] private int    totalCount    = 0;
@@ -52,6 +57,7 @@ public partial class SetupTrackerViewModel : BaseViewModel
     public SetupTrackerViewModel(
         IWatchedSetupService service,
         ILibraryService      libraryService,
+        IFundamentalsService fundamentals,
         IMessenger           messenger,
         Settings             appSettings)
         : base(appSettings)
@@ -59,6 +65,7 @@ public partial class SetupTrackerViewModel : BaseViewModel
         Current          = this;
         _service         = service;
         _libraryService  = libraryService;
+        _fundamentals    = fundamentals;
         _messenger       = messenger;
         _dispatcherQueue = DispatcherQueue.GetForCurrentThread();
 
@@ -185,11 +192,22 @@ public partial class SetupTrackerViewModel : BaseViewModel
             var all   = await _service.GetAllAsync();
             var stats = await _service.GetStatsAsync();
 
-            // Populate live CurrentPrice on every setup (not stored in DB)
+            // Empirische score-kalibratie + fundamental-scores (kwaliteitsoordeel) ophalen
+            var calibration = await _service.GetScoreCalibrationAsync();
+            var scoreMap    = await _fundamentals.GetScoreMapAsync();
+
+            // Populate live CurrentPrice + fundamental badge on every setup (not stored in DB)
             foreach (var setup in all)
             {
                 if (priceByApiId.TryGetValue(setup.CoinApiId, out double price))
                     setup.CurrentPrice = price;
+
+                if (scoreMap.TryGetValue(setup.CoinApiId, out var f))
+                {
+                    setup.FundamentalScore   = f.TotalScore;
+                    setup.FundamentalVerdict = f.Verdict;
+                    setup.HasFundamental     = true;
+                }
             }
 
             var filtered = StatusFilter switch
@@ -221,6 +239,11 @@ public partial class SetupTrackerViewModel : BaseViewModel
                 OpenCount        = stats.Open;
                 WinRatePct       = stats.WinRatePct;
                 PricesTimestamp  = timestamp;
+
+                Calibration.Clear();
+                foreach (var c in calibration)
+                    Calibration.Add(c);
+                HasCalibration = calibration.Any(c => c.TradeCount > 0);
 
                 OnPropertyChanged(nameof(WinRateText));
                 OnPropertyChanged(nameof(WinRateColor));

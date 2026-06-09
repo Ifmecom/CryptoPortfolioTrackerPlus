@@ -61,16 +61,22 @@ public partial class PatternTradingViewModel : BaseViewModel
 
     // ── Constructor ──────────────────────────────────────────────────────────
 
+    private readonly IFundamentalsService _fundamentals;
+    private IReadOnlyDictionary<string, CoinFundamentals> _fundMap =
+        new Dictionary<string, CoinFundamentals>();
+
     public PatternTradingViewModel(
         IPatternTradingService patternService,
         IWatchlistService      watchlistService,
         IWatchedSetupService   watchedSetupService,
+        IFundamentalsService   fundamentals,
         Settings               appSettings) : base(appSettings)
     {
         Current               = this;
         _patternService       = patternService;
         _watchlistService     = watchlistService;
         _watchedSetupService  = watchedSetupService;
+        _fundamentals         = fundamentals;
         _dispatcherQueue  = DispatcherQueue.GetForCurrentThread();
         Logger = Log.Logger.ForContext(
             Constants.SourceContextPropertyName,
@@ -84,6 +90,8 @@ public partial class PatternTradingViewModel : BaseViewModel
     public async Task ViewLoading()
     {
         await LoadWatchlistItemsAsync();
+        try { _fundMap = await _fundamentals.GetScoreMapAsync(); }
+        catch (Exception ex) { Logger.Warning(ex, "PatternTrading: fundamentals-map laden mislukt"); }
     }
 
     private async Task LoadWatchlistItemsAsync()
@@ -468,6 +476,17 @@ public partial class PatternTradingViewModel : BaseViewModel
         };
 
         var rows = sorted.Select(r => new PatternCoinRow(r)).ToList();
+
+        // #1: fundamenteel kwaliteitsoordeel als badge naast de technische score
+        foreach (var row in rows)
+        {
+            if (!string.IsNullOrEmpty(row.ApiId) && _fundMap.TryGetValue(row.ApiId, out var f))
+            {
+                row.FundamentalScore   = f.TotalScore;
+                row.FundamentalVerdict = f.Verdict;
+                row.HasFundamental     = true;
+            }
+        }
 
         _dispatcherQueue?.TryEnqueue(() =>
         {

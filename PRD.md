@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.34
+## CryptoPortfolioTracker Plus — v1.35
 
 | | |
 |---|---|
@@ -556,6 +556,10 @@ Box 3-calculator (zie §10).
 
 **Doel:** Automatische technische patroonherkenning voor alle portfolio-coins. Scant op Level 1 (indicator-gebaseerd), Level 2 (koerstructuur) en Level 3 (klassieke grafiekpatronen) op **1D, 4H, 1H en 15M** en genereert een handelsscore + concreet setup-advies.
 
+**Fundamenteel kwaliteitsoordeel *(v1.35)*:** elke coin-kaart toont naast de technische TradabilityScore een
+Fundamental-badge (`Ⓕ score · verdict`) via `IFundamentalsService.GetScoreMapAsync` (lookup op `ApiId`, gecachet
+bij `ViewLoading`), zodat technische en fundamentele kwaliteit in één oogopslag samenkomen.
+
 **Werkwijze:**
 1. Gebruiker klikt **Analyseer** → app analyseert alle portfolio-coins met holdings concurrent (max 3 tegelijk)
 2. Per coin: OHLCV ophalen (Binance → KuCoin → Gate.io → MEXC), indicatoren berekenen, patronen detecteren
@@ -644,6 +648,16 @@ Box 3-calculator (zie §10).
 **ViewModel:** `SetupTrackerViewModel` (`ViewModels/`) erft van `BaseViewModel`  
 **View:** `SetupTrackerView` (`Views/`)  
 **Service-interface:** `IWatchedSetupService` (`Services/`)
+
+**Score-kalibratie / feedback-loop *(v1.35)*:** `IWatchedSetupService.GetScoreCalibrationAsync` voert de
+gesloten (Won/Lost) setups door de pure `SetupOutcomeCalibrator` → per scoreklasse (0-40/41-60/61-80/81-100)
+de **werkelijk behaalde win-rate en gemiddelde R** (`ScoreBucketCalibration`, ≥10 trades = betrouwbaar).
+Een kalibratie-strip in de stats-balk toont dit, zodat je ziet of een hogere TradabilityScore in jóuw praktijk
+ook echt beter presteerde — de empirische tegenhanger van de 3%-Trading-backtest.
+
+**Fundamenteel kwaliteitsoordeel *(v1.35)*:** per gevolgde setup wordt via `IFundamentalsService.GetScoreMapAsync`
+(lookup op `CoinApiId`) de Fundamental Score + verdict als badge getoond (`Ⓕ 72 · Strong`), zodat technische
+setup-kwaliteit en fundamentele kwaliteit naast elkaar staan.
 
 **Marktregime vastleggen *(v1.31)*:** bij aanmaken van een setup zoekt `PatternTradingViewModel.WatchSetup` naar BTC in `_allResults` en slaat `Coin.MarketRegime.ToString()` op als `MarketRegimeAtCreation`.
 

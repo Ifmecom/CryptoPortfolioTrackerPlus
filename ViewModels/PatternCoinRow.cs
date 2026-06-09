@@ -134,6 +134,14 @@ public class PatternCoinRow
 
     public string AnalyzedAtText => Analysis.AnalyzedAt.ToString("HH:mm");
 
+    // ── Fundamental quality (set by ViewModel uit IFundamentalsService) ───────
+    public double FundamentalScore   { get; set; }
+    public string FundamentalVerdict { get; set; } = string.Empty;
+    public bool   HasFundamental     { get; set; }
+    public string FundamentalDisplay =>
+        HasFundamental ? $"Ⓕ {FundamentalScore:0} · {FundamentalVerdict}" : string.Empty;
+    public Visibility FundamentalVis => HasFundamental ? Visibility.Visible : Visibility.Collapsed;
+
     // ── Constructor ─────────────────────────────────────────────────────────
     public PatternCoinRow(PatternCoinAnalysis analysis)
     {

@@ -57,6 +57,23 @@ public class WatchedSetup
     [NotMapped]
     public double CurrentPrice { get; set; }
 
+    /// <summary>Fundamental score (0-100) van de coin — runtime ingevuld vanuit IFundamentalsService.</summary>
+    [NotMapped]
+    public double FundamentalScore { get; set; }
+
+    /// <summary>Fundamental verdict (bv. "Strong"), of leeg als de coin niet fundamenteel is geanalyseerd.</summary>
+    [NotMapped]
+    public string FundamentalVerdict { get; set; } = string.Empty;
+
+    /// <summary>True wanneer er een fundamental-score beschikbaar is om te tonen.</summary>
+    [NotMapped]
+    public bool HasFundamental { get; set; }
+
+    /// <summary>Compacte weergave van het fundamentele kwaliteitsoordeel, bv. "Ⓕ 72 · Strong".</summary>
+    [NotMapped]
+    public string FundamentalDisplay =>
+        HasFundamental ? $"Ⓕ {FundamentalScore:0} · {FundamentalVerdict}" : string.Empty;
+
     // ── Computed helpers (not stored) ─────────────────────────────────────────
 
     /// <summary>R/R ratio: reward (TP1–Entry) / risk (Entry–SL). 0 when levels are missing.</summary>

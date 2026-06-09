@@ -27,6 +27,19 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.35 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.35", "Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
+
+        AddFeature("Ⓕ", "Fundamentele kwaliteit naast je technische setups",
+            "De Fundamental Score (0-100) + verdict verschijnt nu als badge in Pattern Trading en de Setup Tracker, " +
+            "naast de technische TradabilityScore. Zo zie je in één oogopslag of een mooie technische setup ook " +
+            "fundamenteel hout snijdt — of juist een 'Avoid' is.");
+
+        AddFeature("📈", "Score-kalibratie: wat werkte er in jouw praktijk?",
+            "De Setup Tracker toont nu per scoreklasse (0-40 / 41-60 / 61-80 / 81-100) de wérkelijk behaalde win-rate " +
+            "en gemiddelde R uit je gesloten setups. Dit is de feedback-loop op de TradabilityScore: je ziet of een " +
+            "hogere score in de praktijk ook echt beter presteerde (klassen met te weinig trades worden gedimd getoond).");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 

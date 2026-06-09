@@ -75,6 +75,7 @@
         <Border Grid.Row="1"
                 Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                 CornerRadius="8" Padding="16,12" Margin="0,0,0,10">
+            <StackPanel Spacing="12">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
@@ -155,6 +156,37 @@
                                HorizontalAlignment="Center"/>
                 </StackPanel>
             </Grid>
+
+            <!-- Score-kalibratie: werkelijke uitkomsten per TradabilityScore-klasse (feedback-loop) -->
+            <StackPanel Spacing="4" Visibility="{x:Bind _viewModel.HasCalibration, Mode=OneWay}">
+                <TextBlock Text="📈 Score-kalibratie — wat je gevolgde setups in de praktijk deden per scoreklasse"
+                           FontSize="11" FontWeight="SemiBold" Opacity="0.85"
+                           ToolTipService.ToolTip="Werkelijk behaalde win-rate en gemiddelde R per TradabilityScore-klasse, berekend uit je gesloten (Won/Lost) setups. Zo zie je of een hogere score in jouw praktijk ook echt beter presteert."/>
+                <ItemsControl ItemsSource="{x:Bind _viewModel.Calibration, Mode=OneWay}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Orientation="Horizontal" Spacing="8"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="models:ScoreBucketCalibration">
+                            <Border Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}"
+                                    CornerRadius="6" Padding="10,6" MinWidth="118"
+                                    Opacity="{x:Bind converters:Functions.ReliableToOpacity(IsReliable)}"
+                                    ToolTipService.ToolTip="{x:Bind CountDisplay}">
+                                <StackPanel Spacing="1">
+                                    <TextBlock Text="{x:Bind ScoreClass}" FontSize="11" FontWeight="SemiBold" Opacity="0.7"/>
+                                    <TextBlock Text="{x:Bind WinRateDisplay}" FontSize="16" FontWeight="Bold"/>
+                                    <TextBlock Text="{x:Bind ExpectancyDisplay}" FontSize="10"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind CountDisplay}" FontSize="9" Opacity="0.55"/>
+                                </StackPanel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </StackPanel>
+            </StackPanel>
         </Border>
 
         <!-- ── Row 2: Filter buttons ────────────────────────────────────────── -->
@@ -307,12 +339,19 @@
                                 <!-- Score badge -->
                                 <Border CornerRadius="6" Padding="8,4"
                                         HorizontalAlignment="Right"
-                                        Background="{x:Bind converters:Functions.ScoreToBrush(Score)}">
+                                        Background="{x:Bind converters:Functions.ScoreToBrush(Score)}"
+                                        ToolTipService.ToolTip="TradabilityScore (technische setup-kwaliteit) op het moment van volgen">
                                     <TextBlock Text="{x:Bind Score}"
                                                FontSize="14" FontWeight="Bold"
                                                Foreground="White"
                                                HorizontalAlignment="Center"/>
                                 </Border>
+                                <!-- Fundamental quality badge (kwaliteitsoordeel uit de Fundamentals-tab) -->
+                                <TextBlock Text="{x:Bind FundamentalDisplay}"
+                                           FontSize="10" HorizontalAlignment="Right"
+                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                           Visibility="{x:Bind HasFundamental}"
+                                           ToolTipService.ToolTip="Fundamentele kwaliteitsscore (0-100) + verdict uit de Fundamentals-tab"/>
                                 <!-- Status badge -->
                                 <Border CornerRadius="4" Padding="6,2"
                                         HorizontalAlignment="Right"

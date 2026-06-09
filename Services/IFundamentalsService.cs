@@ -20,6 +20,12 @@ public interface IFundamentalsService
     /// <summary>Opgeslagen fundamentals voor één coin, of null.</summary>
     Task<CoinFundamentals?> GetAsync(string apiId, CancellationToken ct = default);
 
+    /// <summary>
+    /// Lichtgewicht lookup van alle opgeslagen fundamental-scores, gekeyd op CoinGecko-ApiId.
+    /// Voor het tonen van het kwaliteitsoordeel als badge in andere tabs (Pattern/3%/Setup Tracker).
+    /// </summary>
+    Task<IReadOnlyDictionary<string, CoinFundamentals>> GetScoreMapAsync(CancellationToken ct = default);
+
     /// <summary>Slaat de handmatige due-diligence-velden op en herberekent de totaalscore.</summary>
     Task SaveDueDiligenceAsync(CoinFundamentals fundamentals, CancellationToken ct = default);
 }

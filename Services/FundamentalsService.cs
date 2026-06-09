@@ -128,6 +128,16 @@ public class FundamentalsService : IFundamentalsService
         await UpsertAsync(fundamentals, ct);
     }
 
+    public async Task<IReadOnlyDictionary<string, CoinFundamentals>> GetScoreMapAsync(CancellationToken ct = default)
+    {
+        var all = await GetAllAsync(ct);
+        var map = new Dictionary<string, CoinFundamentals>(StringComparer.OrdinalIgnoreCase);
+        foreach (var f in all)
+            if (!string.IsNullOrEmpty(f.ApiId))
+                map[f.ApiId] = f;
+        return map;
+    }
+
     // ── Helpers ────────────────────────────────────────────────────────────────
 
     private async Task UpsertAsync(CoinFundamentals f, CancellationToken ct)

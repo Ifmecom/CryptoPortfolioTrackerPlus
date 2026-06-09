@@ -496,6 +496,13 @@
                                                        FontSize="9" Foreground="White"
                                                        HorizontalAlignment="Center"
                                                        TextWrapping="Wrap" MaxWidth="90"/>
+                                            <!-- #1: fundamenteel kwaliteitsoordeel naast de technische score -->
+                                            <TextBlock Text="{x:Bind FundamentalDisplay}"
+                                                       Visibility="{x:Bind FundamentalVis}"
+                                                       FontSize="9" Foreground="White" Opacity="0.9"
+                                                       HorizontalAlignment="Center"
+                                                       TextWrapping="Wrap" MaxWidth="90"
+                                                       ToolTipService.ToolTip="Fundamentele kwaliteitsscore (0-100) + verdict uit de Fundamentals-tab"/>
                                         </StackPanel>
                                     </Border>
 

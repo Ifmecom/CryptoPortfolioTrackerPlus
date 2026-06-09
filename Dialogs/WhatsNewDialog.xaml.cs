@@ -28,6 +28,16 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.35  —  Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
+
+        AddFeature("Ⓕ", "Fundamentele kwaliteit naast je setups",
+            "De Fundamental Score + verdict staat nu als badge in Pattern Trading en de Setup Tracker, naast de " +
+            "technische TradabilityScore — technische én fundamentele kwaliteit in één oogopslag.");
+
+        AddFeature("📈", "Score-kalibratie (feedback-loop)",
+            "De Setup Tracker toont per scoreklasse de werkelijk behaalde win-rate en R uit je gesloten setups, " +
+            "zodat je ziet of een hogere score in de praktijk ook echt beter presteerde.");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

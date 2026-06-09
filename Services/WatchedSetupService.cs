@@ -108,6 +108,16 @@ public class WatchedSetupService : IWatchedSetupService
         return await query.OrderByDescending(s => s.ClosedAt).ToListAsync();
     }
 
+    public async Task<List<ScoreBucketCalibration>> GetScoreCalibrationAsync()
+    {
+        var closed = await Ctx.WatchedSetups
+            .Where(s => s.Status == WatchedSetupStatus.Won
+                     || s.Status == WatchedSetupStatus.Lost)
+            .AsNoTracking()
+            .ToListAsync();
+        return SetupOutcomeCalibrator.Calibrate(closed);
+    }
+
     public async Task<bool> ExistsAsync(string coinApiId, string direction)
         => await Ctx.WatchedSetups
                .AnyAsync(s => s.CoinApiId == coinApiId
