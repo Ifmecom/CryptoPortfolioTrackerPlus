@@ -92,12 +92,18 @@
                                Foreground="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
                 </StackPanel>
 
-                <!-- Handbook button -->
-                <Button Grid.Column="2"
-                        Content="📖  Handboek"
-                        Click="ShowHandbook_Click"
-                        Padding="10,6" FontSize="12"
-                        ToolTipService.ToolTip="Open het Pattern Handboek — uitleg per patroon met drempelwaarden en criteria"/>
+                <!-- Acties rechts: liquiditeitscheck + handboek -->
+                <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                    <Button Content="💧  Check liquiditeit"
+                            Command="{x:Bind _viewModel.CheckLiquidityCommand}"
+                            IsEnabled="{x:Bind _viewModel.CanCheckLiquidity, Mode=OneWay}"
+                            Padding="10,6" FontSize="12"
+                            ToolTipService.ToolTip="Haalt het Binance-orderboek op voor de getoonde setups en labelt de liquiditeit (Liquide/Matig/Dun). Apart van de scan om die niet te vertragen."/>
+                    <Button Content="📖  Handboek"
+                            Click="ShowHandbook_Click"
+                            Padding="10,6" FontSize="12"
+                            ToolTipService.ToolTip="Open het Pattern Handboek — uitleg per patroon met drempelwaarden en criteria"/>
+                </StackPanel>
             </Grid>
 
             <!-- ══════════════════════════════════════════ Row 2 — Watchlijst Expander -->
@@ -509,6 +515,12 @@
                                                        HorizontalAlignment="Center"
                                                        TextWrapping="Wrap" MaxWidth="90"
                                                        ToolTipService.ToolTip="Fundamentele kwaliteitsscore (0-100) + verdict uit de Fundamentals-tab"/>
+                                            <!-- #5: on-demand liquiditeitslabel (F6) -->
+                                            <TextBlock Text="{x:Bind LiquidityDisplay}"
+                                                       Visibility="{x:Bind LiquidityVis}"
+                                                       FontSize="9" Foreground="White" Opacity="0.9"
+                                                       HorizontalAlignment="Center"
+                                                       ToolTipService.ToolTip="Orderboek-liquiditeit (bid-ask spread + diepte) — klik 'Check liquiditeit'"/>
                                         </StackPanel>
                                     </Border>
 

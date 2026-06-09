@@ -575,6 +575,11 @@ Trading, 3% Trading en de Setup Tracker dezelfde context — BTC-regime, Fear & 
 macro-event — geaggregeerd door `IMarketContextService` (combineert `IMarketRegimeService` + `IFearGreedService`
 + `IMacroEventService`, ~5 min gecached). De control laadt zichzelf via `App.Container`; geen per-view bedrading nodig.
 
+**Liquiditeitscheck *(v1.35)*:** de knop 'Check liquiditeit' draait `CheckLiquidityCommand` — haalt voor de
+getoonde setups het Binance-orderboek op (`IOrderBookService`) en labelt elke setup via de pure
+`LiquidityClassifier` (spread + diepte → Liquide/Matig/Dun). Bewust **on-demand** i.p.v. in de bulk-scan, zodat de
+multi-timeframe patroonanalyse snel blijft. Zelfde F6-gatekeeper-gedachte als 3% Trading.
+
 **Werkwijze:**
 1. Gebruiker klikt **Analyseer** → app analyseert alle portfolio-coins met holdings concurrent (max 3 tegelijk)
 2. Per coin: OHLCV ophalen (Binance → KuCoin → Gate.io → MEXC), indicatoren berekenen, patronen detecteren

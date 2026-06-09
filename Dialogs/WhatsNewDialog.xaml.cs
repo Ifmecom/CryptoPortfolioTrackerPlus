@@ -50,6 +50,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Het door de app verzamelde sentiment (Reddit/RSS) telt nu mee in de Community-factor van de " +
             "Fundamental Score, bovenop de CoinGecko-cijfers.");
 
+        AddFeature("💧", "Liquiditeitscheck in Pattern Trading",
+            "Knop 'Check liquiditeit' labelt de getoonde setups als Liquide/Matig/Dun op basis van het " +
+            "Binance-orderboek — on-demand, los van de scan.");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

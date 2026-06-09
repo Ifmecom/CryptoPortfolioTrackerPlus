@@ -2,6 +2,7 @@ using CryptoPortfolioTracker.Converters;
 using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Helpers;
 using CryptoPortfolioTracker.Models;
+using CryptoPortfolioTracker.Services;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
@@ -141,6 +142,19 @@ public class PatternCoinRow
     public string FundamentalDisplay =>
         HasFundamental ? $"Ⓕ {FundamentalScore:0} · {FundamentalVerdict}" : string.Empty;
     public Visibility FundamentalVis => HasFundamental ? Visibility.Visible : Visibility.Collapsed;
+
+    // ── #5: on-demand liquiditeit (F6) — gezet door de ViewModel na een check ──
+    public bool LiquidityChecked { get; set; }
+    public LiquidityClassifier.Level LiquidityLevel { get; set; } = LiquidityClassifier.Level.Unknown;
+    public string LiquidityDisplay => LiquidityClassifier.Label(LiquidityLevel);
+    public Visibility LiquidityVis => LiquidityChecked ? Visibility.Visible : Visibility.Collapsed;
+    public SolidColorBrush LiquidityBrush => LiquidityLevel switch
+    {
+        LiquidityClassifier.Level.Good   => new SolidColorBrush(Color.FromArgb(0xFF, 0x27, 0x96, 0x42)),
+        LiquidityClassifier.Level.Medium => new SolidColorBrush(Color.FromArgb(0xFF, 0xE6, 0x7E, 0x22)),
+        LiquidityClassifier.Level.Thin   => new SolidColorBrush(Color.FromArgb(0xFF, 0xCD, 0x5C, 0x5C)),
+        _                                => new SolidColorBrush(Color.FromArgb(0xFF, 0x80, 0x80, 0x80)),
+    };
 
     // ── Constructor ─────────────────────────────────────────────────────────
     public PatternCoinRow(PatternCoinAnalysis analysis)

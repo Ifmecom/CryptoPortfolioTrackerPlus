@@ -62,14 +62,22 @@ public partial class PatternTradingViewModel : BaseViewModel
     // ── Constructor ──────────────────────────────────────────────────────────
 
     private readonly IFundamentalsService _fundamentals;
+    private readonly IOrderBookService    _orderBook;
+    private readonly IBinanceDataService  _binance;
     private IReadOnlyDictionary<string, CoinFundamentals> _fundMap =
         new Dictionary<string, CoinFundamentals>();
+
+    [ObservableProperty] private bool isCheckingLiquidity;
+    public bool CanCheckLiquidity => !IsCheckingLiquidity;
+    partial void OnIsCheckingLiquidityChanged(bool value) => OnPropertyChanged(nameof(CanCheckLiquidity));
 
     public PatternTradingViewModel(
         IPatternTradingService patternService,
         IWatchlistService      watchlistService,
         IWatchedSetupService   watchedSetupService,
         IFundamentalsService   fundamentals,
+        IOrderBookService      orderBook,
+        IBinanceDataService    binance,
         Settings               appSettings) : base(appSettings)
     {
         Current               = this;
@@ -77,6 +85,8 @@ public partial class PatternTradingViewModel : BaseViewModel
         _watchlistService     = watchlistService;
         _watchedSetupService  = watchedSetupService;
         _fundamentals         = fundamentals;
+        _orderBook            = orderBook;
+        _binance              = binance;
         _dispatcherQueue  = DispatcherQueue.GetForCurrentThread();
         Logger = Log.Logger.ForContext(
             Constants.SourceContextPropertyName,
@@ -92,6 +102,50 @@ public partial class PatternTradingViewModel : BaseViewModel
         await LoadWatchlistItemsAsync();
         try { _fundMap = await _fundamentals.GetScoreMapAsync(); }
         catch (Exception ex) { Logger.Warning(ex, "PatternTrading: fundamentals-map laden mislukt"); }
+    }
+
+    /// <summary>
+    /// #5: on-demand liquiditeitscheck (F6) voor de getoonde setups — haalt het Binance-orderboek op
+    /// en zet per rij een liquiditeitslabel. Bewust niet in de bulk-scan om die niet te vertragen.
+    /// </summary>
+    [RelayCommand]
+    private async Task CheckLiquidity()
+    {
+        if (IsCheckingLiquidity) return;
+        var targets = DisplayItems.Where(r => r.HasSetup).ToList();
+        if (targets.Count == 0) return;
+
+        IsCheckingLiquidity = true;
+        try
+        {
+            foreach (var row in targets)
+            {
+                try
+                {
+                    var symbol = _binance.ResolveBinanceSymbol(row.ApiId, row.Symbol);
+                    var snap   = await _orderBook.GetSnapshotAsync(symbol);
+                    row.LiquidityLevel = snap is null
+                        ? LiquidityClassifier.Level.Unknown
+                        : LiquidityClassifier.Classify(snap.SpreadPct, snap.MinDepthUsdt);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning(ex, "PatternTrading: liquiditeit ophalen mislukt voor {Symbol}", row.Symbol);
+                    row.LiquidityLevel = LiquidityClassifier.Level.Unknown;
+                }
+                row.LiquidityChecked = true;
+                await Task.Delay(120);
+            }
+
+            // Herbouw DisplayItems zodat de (OneTime-gebonden) badges de nieuwe waarden tonen.
+            _dispatcherQueue?.TryEnqueue(() =>
+            {
+                var snapshot = DisplayItems.ToList();
+                DisplayItems.Clear();
+                foreach (var r in snapshot) DisplayItems.Add(r);
+            });
+        }
+        finally { IsCheckingLiquidity = false; }
     }
 
     private async Task LoadWatchlistItemsAsync()

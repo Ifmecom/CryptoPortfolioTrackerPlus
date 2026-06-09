@@ -55,6 +55,11 @@ public sealed partial class WhatsNewView : Page
             "Fundamental Score — een bescheiden bijsturing bovenop de CoinGecko-cijfers. Het detailvenster toont " +
             "de gebruikte sentiment-waarde. Geen extra API-calls: de data lag al klaar op de coin.");
 
+        AddFeature("💧", "Liquiditeitscheck in Pattern Trading",
+            "Nieuwe knop 'Check liquiditeit' haalt voor de getoonde setups het Binance-orderboek op en labelt elke " +
+            "setup als Liquide / Matig / ⚠ Dun (op basis van bid-ask spread en orderboekdiepte) — dezelfde " +
+            "liquiditeits-gatekeeper als 3% Trading. Bewust on-demand (apart van de scan) zodat de patroonanalyse snel blijft.");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 
