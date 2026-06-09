@@ -28,6 +28,13 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.36  —  Risk-managed trading · positiegrootte op risico");
+
+        AddFeature("📐", "Positiegrootte op basis van risico",
+            "In de paper-trade dialoog bereken je het inlegbedrag vanuit een 'Risico %' zodat je verlies bij de " +
+            "stop-loss precies dat percentage van je kapitaal is. Een live indicator waarschuwt als je je " +
+            "max % per trade overschrijdt; een actieve kill-switch toont een melding.");
+
         AddVersionHeader("v1.35  —  Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
         AddFeature("Ⓕ", "Fundamentele kwaliteit naast je setups",

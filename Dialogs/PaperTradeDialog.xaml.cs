@@ -1,5 +1,6 @@
 using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Models;
+using CryptoPortfolioTracker.Services;
 using CryptoPortfolioTracker.ViewModels;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
@@ -193,6 +194,10 @@ public sealed partial class PaperTradeDialog : ContentDialog
         // ── Available capital label ──────────────────────────────────────────
         txtAvailable.Text = $"Beschikbaar: {VirtualCapital:#,0} USDT (virtueel)";
 
+        // ── Risico-sizing defaults + kill-switch waarschuwing (guardrails) ────
+        nbRiskPct.Value     = _settings.MaxPortfolioPercPerTrade > 0 ? _settings.MaxPortfolioPercPerTrade : 2.0;
+        killSwitchBar.IsOpen = _settings.IsKillSwitchActive;
+
         _initialising = false;
         Recalculate();
     }
@@ -251,6 +256,26 @@ public sealed partial class PaperTradeDialog : ContentDialog
     {
         if (sender is Button btn && int.TryParse(btn.Tag?.ToString(), out int pct))
             nbAmount.Value = Math.Round(VirtualCapital * pct / 100.0, 2);
+    }
+
+    /// <summary>Berekent het inlegbedrag zodat verlies-bij-SL = risico% van het kapitaal.</summary>
+    private void RiskSize_Click(object sender, RoutedEventArgs e)
+    {
+        var entry   = EffectiveEntryPrice();
+        var sl      = chkSL.IsChecked == true ? SafeValue(nbSL, 0) : 0;
+        var riskPct = double.IsNaN(nbRiskPct.Value) ? 0 : nbRiskPct.Value;
+
+        var res = PositionSizeCalculator.Suggest(VirtualCapital, riskPct, entry, sl, GetLeverage());
+        if (!res.IsValid)
+        {
+            txtRiskInfo.Text       = "⚠ Stel eerst een geldige entry én stop-loss in.";
+            txtRiskInfo.Foreground = RedBrush;
+            return;
+        }
+
+        // Niet meer margin inleggen dan beschikbaar (bij krappe SL kan de suggestie groot zijn).
+        var amount = Math.Min(res.Amount, VirtualCapital);
+        nbAmount.Value = Math.Round(amount, 2);   // triggert Recalculate via OnAmountChanged
     }
 
     // ── TP1 close-% ─────────────────────────────────────────────────────────
@@ -373,6 +398,23 @@ public sealed partial class PaperTradeDialog : ContentDialog
         {
             var notional = amount * leverage;
             txtLeverageInfo.Text = $"Notioneel: {notional:N0} USDT";
+        }
+
+        // Risico als % van kapitaal + guardrail-vergelijking (max % per trade)
+        var slNow = chkSL.IsChecked == true ? SafeValue(nbSL, 0) : 0;
+        var riskPctNow = PositionSizeCalculator.RiskPctOfCapital(amount, entryPrice, slNow, VirtualCapital, leverage);
+        if (riskPctNow > 0)
+        {
+            var limit = _settings.MaxPortfolioPercPerTrade;
+            bool over = limit > 0 && riskPctNow > limit + 0.05;
+            txtRiskInfo.Text = over
+                ? $"⚠ {riskPctNow:0.0}% risico — boven je limiet van {limit:0.#}%"
+                : $"{riskPctNow:0.0}% van kapitaal op het spel";
+            txtRiskInfo.Foreground = over ? RedBrush : NeutralBrush;
+        }
+        else
+        {
+            txtRiskInfo.Text = string.Empty;
         }
     }
 

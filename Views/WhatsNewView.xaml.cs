@@ -27,6 +27,15 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.36 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.36", "Risk-managed trading · positiegrootte op risico");
+
+        AddFeature("📐", "Positiegrootte op basis van risico",
+            "In de paper-trade dialoog vul je nu een 'Risico %' in (standaard je ingestelde max % per trade) en " +
+            "berekent de knop het inlegbedrag zó dat je verlies bij de stop-loss precies dat percentage van je " +
+            "kapitaal is. Een live indicator laat continu zien hoeveel % er op het spel staat en wáárschuwt zodra " +
+            "je je eigen limiet overschrijdt. Een actieve kill-switch toont een duidelijke melding.");
+
         // ── v1.35 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.35", "Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 

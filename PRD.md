@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.35
+## CryptoPortfolioTracker Plus — v1.36
 
 | | |
 |---|---|
@@ -366,6 +366,12 @@ Bij elke vernieuwopdracht roept de ViewModel `AutoCloseTriggeredAsync()` aan. Or
 #### 4.7.1 PaperTradeDialog
 
 Exchange-stijl orderformulier (540 px breed, `ContentDialog`).
+
+**Risico-gebaseerde positiegrootte *(v1.36)*:** een 'Risico %'-veld (standaard `Settings.MaxPortfolioPercPerTrade`)
++ knop berekent via de pure `PositionSizeCalculator` het inlegbedrag zodat verlies-bij-SL = risico% van het
+(virtuele) kapitaal, met hefboom verrekend. Een live indicator toont continu het actuele risico-% en waarschuwt
+bij overschrijding van de per-trade-limiet; bij een actieve kill-switch (`Settings.IsKillSwitchActive`) verschijnt
+een melding. *(Max-open-posities en dagelijkse-verlieslimiet horen op het toekomstige risico-dashboard.)*
 
 **Rij-indeling:**
 
