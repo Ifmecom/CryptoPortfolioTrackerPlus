@@ -21,6 +21,7 @@ public partial class TradeAnalysisViewModel : BaseViewModel
     private readonly PortfolioService      _portfolioService;
     private readonly ITradeAnalysisService _analysisService;
     private readonly ITradeService         _tradeService;
+    private readonly IFundamentalsService  _fundamentals;
 
     [ObservableProperty] private ObservableCollection<Coin> coins = new();
     [ObservableProperty] private Coin? selectedCoin;
@@ -32,16 +33,22 @@ public partial class TradeAnalysisViewModel : BaseViewModel
     [ObservableProperty] private IReadOnlyList<CoinAnalysisSummary>? allResults;
     [ObservableProperty] private DateTime? allResultsGeneratedAt;
 
+    // #1: fundamenteel kwaliteitsoordeel van de geanalyseerde coin
+    [ObservableProperty] private string fundamentalDisplay = string.Empty;
+    [ObservableProperty] private bool   hasFundamental;
+
     public TradeAnalysisViewModel(
         PortfolioService portfolioService,
         ITradeAnalysisService analysisService,
         ITradeService tradeService,
+        IFundamentalsService fundamentals,
         Settings appSettings)
         : base(appSettings)
     {
         _portfolioService = portfolioService;
         _analysisService  = analysisService;
         _tradeService     = tradeService;
+        _fundamentals     = fundamentals;
     }
 
     // -----------------------------------------------------------------------
@@ -98,6 +105,15 @@ public partial class TradeAnalysisViewModel : BaseViewModel
             var result = await _analysisService.GenerateAsync(SelectedCoin);
             CurrentAnalysis = result;
             StatusMessage   = $"Analyse gereed — {result.GeneratedAt:HH:mm:ss} — bron: {result.DataSource}";
+
+            // #1: fundamenteel kwaliteitsoordeel erbij tonen (indien geanalyseerd in de Fundamentals-tab)
+            try
+            {
+                var f = await _fundamentals.GetAsync(SelectedCoin.ApiId);
+                HasFundamental     = f is not null;
+                FundamentalDisplay = f is not null ? $"Ⓕ {f.TotalScore:0} · {f.Verdict}" : string.Empty;
+            }
+            catch { HasFundamental = false; FundamentalDisplay = string.Empty; }
         }
         catch (Exception ex)
         {

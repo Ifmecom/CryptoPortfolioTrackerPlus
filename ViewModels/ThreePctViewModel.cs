@@ -24,7 +24,11 @@ public partial class ThreePctViewModel : BaseViewModel
     private readonly ICorrelationService        _correlation;
     private readonly IMacroEventService         _macroEvents;
     private readonly ITradeService              _tradeService;
+    private readonly IFundamentalsService       _fundamentals;
     private readonly PortfolioService           _portfolioService;
+
+    private IReadOnlyDictionary<string, CoinFundamentals> _fundMap =
+        new Dictionary<string, CoinFundamentals>();
 
     /// <summary>Notes-tag waarmee 3%-Trading paper trades worden gemarkeerd.</summary>
     private const string StrategyTag = "[3%]";
@@ -109,6 +113,7 @@ public partial class ThreePctViewModel : BaseViewModel
         ICorrelationService        correlation,
         IMacroEventService         macroEvents,
         ITradeService              tradeService,
+        IFundamentalsService       fundamentals,
         PortfolioService           portfolioService,
         Settings                   appSettings)
         : base(appSettings)
@@ -122,6 +127,7 @@ public partial class ThreePctViewModel : BaseViewModel
         _correlation      = correlation;
         _macroEvents      = macroEvents;
         _tradeService     = tradeService;
+        _fundamentals     = fundamentals;
         _portfolioService = portfolioService;
     }
 
@@ -294,6 +300,10 @@ public partial class ThreePctViewModel : BaseViewModel
                 return;
             }
 
+            // #1: fundamenteel kwaliteitsoordeel ophalen voor de badge
+            try { _fundMap = await _fundamentals.GetScoreMapAsync(_cts.Token); }
+            catch (Exception ex) { Logger.Warning(ex, "ThreePct: fundamentals-map laden mislukt"); }
+
             LiveScanStatus = $"0 / {coins.Count} coins gescand…";
             var rows = new List<ThreePctLiveRow>();
             int done = 0;
@@ -347,6 +357,7 @@ public partial class ThreePctViewModel : BaseViewModel
 
                         var cal = calibration?.FirstOrDefault(c => c.ScoreClass == cls);
 
+                        _fundMap.TryGetValue(coin.ApiId ?? string.Empty, out var fund);
                         rows.Add(new ThreePctLiveRow
                         {
                             Symbol          = coin.Symbol,
@@ -367,6 +378,9 @@ public partial class ThreePctViewModel : BaseViewModel
                             IsFiltered      = !score.IsQualified,
                             FilterReason    = score.FilterReason,
                             BtcCorrelation  = btcCorr,
+                            FundamentalScore   = fund?.TotalScore ?? 0,
+                            FundamentalVerdict = fund?.Verdict ?? string.Empty,
+                            HasFundamental     = fund is not null,
                         });
                     }
 
@@ -412,6 +426,9 @@ public partial class ThreePctViewModel : BaseViewModel
                           F6Score = r.F6Score, F7Score = r.F7Score,
                           IsFiltered = r.IsFiltered, FilterReason = r.FilterReason,
                           BtcCorrelation = r.BtcCorrelation,
+                          FundamentalScore = r.FundamentalScore,
+                          FundamentalVerdict = r.FundamentalVerdict,
+                          HasFundamental = r.HasFundamental,
                           IsDiversifiedPick = true,
                       }
                     : r)

@@ -271,6 +271,10 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 
 **Doel:** Multi-timeframe analyse per coin met concreet handelsadvies.
 
+**Fundamenteel kwaliteitsoordeel *(v1.35)*:** na het analyseren toont de statusbalk een Fundamental-badge
+(`Ⓕ score · verdict`) van de geanalyseerde coin via `IFundamentalsService.GetAsync(ApiId)`, zodat technische
+en fundamentele kwaliteit naast elkaar staan.
+
 **Werkwijze:**
 1. Gebruiker selecteert coin uit portfolio-lijst
 2. App haalt live OHLCV op van Binance (geen API-key vereist)
@@ -737,6 +741,8 @@ Een "kans" is hier een historisch gemeten waarschijnlijkheid (uit een backtest),
   met onderlinge correlatie < 0,80, zodat sterk gecorreleerde alts als één trade tellen.
 - **Detailvenster** (`SetupDetailDialog`): indicatoren, S/R, BTC-correlatie, positionering,
   liquiditeit, concreet invalidatieniveau en aankomende macro-events.
+- **Fundamenteel kwaliteitsoordeel *(v1.35)*:** per live-scan-rij een Fundamental-badge (`Ⓕ score · verdict`)
+  via `IFundamentalsService.GetScoreMapAsync` (lookup op `ApiId`), naast de technische score.
 
 **Fase 3 — Paper Trades (forward-test):**
 - Vanuit de Live Scan opent een **Paper**-knop de bestaande `PaperTradeDialog` (entry/SL/TP voorgevuld

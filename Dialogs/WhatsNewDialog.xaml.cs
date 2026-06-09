@@ -31,8 +31,8 @@ public sealed partial class WhatsNewDialog : ContentDialog
         AddVersionHeader("v1.35  —  Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
         AddFeature("Ⓕ", "Fundamentele kwaliteit naast je setups",
-            "De Fundamental Score + verdict staat nu als badge in Pattern Trading en de Setup Tracker, naast de " +
-            "technische TradabilityScore — technische én fundamentele kwaliteit in één oogopslag.");
+            "De Fundamental Score + verdict staat nu als badge in Pattern Trading, 3% Trading, Trade Advies en de " +
+            "Setup Tracker — technische én fundamentele kwaliteit in één oogopslag.");
 
         AddFeature("📈", "Score-kalibratie (feedback-loop)",
             "De Setup Tracker toont per scoreklasse de werkelijk behaalde win-rate en R uit je gesloten setups, " +

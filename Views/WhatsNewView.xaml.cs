@@ -31,8 +31,8 @@ public sealed partial class WhatsNewView : Page
         AddVersionHeader("v1.35", "Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
         AddFeature("Ⓕ", "Fundamentele kwaliteit naast je technische setups",
-            "De Fundamental Score (0-100) + verdict verschijnt nu als badge in Pattern Trading en de Setup Tracker, " +
-            "naast de technische TradabilityScore. Zo zie je in één oogopslag of een mooie technische setup ook " +
+            "De Fundamental Score (0-100) + verdict verschijnt nu als badge in Pattern Trading, 3% Trading, Trade Advies " +
+            "én de Setup Tracker, naast de technische score. Zo zie je in één oogopslag of een mooie technische setup ook " +
             "fundamenteel hout snijdt — of juist een 'Avoid' is.");
 
         AddFeature("📈", "Score-kalibratie: wat werkte er in jouw praktijk?",

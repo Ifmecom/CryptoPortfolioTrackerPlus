@@ -223,6 +223,13 @@ public sealed class ThreePctLiveRow
     /// <summary>True als dit een van de top-5 gediversifieerde setups is.</summary>
     public bool   IsDiversifiedPick     { get; init; }
 
+    // ── #1: fundamenteel kwaliteitsoordeel (uit IFundamentalsService) ─────────
+    public double FundamentalScore   { get; init; }
+    public string FundamentalVerdict { get; init; } = string.Empty;
+    public bool   HasFundamental     { get; init; }
+    public string FundamentalDisplay =>
+        HasFundamental ? $"Ⓕ {FundamentalScore:0} · {FundamentalVerdict}" : string.Empty;
+
     // ── Display helpers ──────────────────────────────────────────────────────
 
     public string ScoreDisplay      => $"{Score:0.0}";
