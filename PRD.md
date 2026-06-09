@@ -359,6 +359,12 @@ Bij elke vernieuwopdracht roept de ViewModel `AutoCloseTriggeredAsync()` aan. Or
 
 **Totaalregel:** som van alle gerealiseerde P&L voor de actieve filter.
 
+**Risico-dashboard *(v1.36)*:** de knop 'Risico' opent `RiskDashboardDialog`. `IRiskDashboardService` verzamelt de
+open (Filled) orders + gerealiseerde dag-P&L en bouwt via de pure `RiskDashboardCalculator` een portfolio-breed
+overzicht: aantal open posities vs `MaxOpenPositions`, totaal open risico (som van verlies-bij-SL) + % van kapitaal,
+grootste positie-risico, blootstelling, dag-P&L vs `DailyLossLimitPerc`, en kill-switch-status — met guardrail-alerts
+(LOW/MEDIUM/HIGH). Rekent tegen het virtuele paper-kapitaal (10.000 USDT), consistent met de positiegrootte-berekening.
+
 **Zie §6.1 voor P&L- en R-multiple-berekeningen.**
 
 ---

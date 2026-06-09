@@ -35,6 +35,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "stop-loss precies dat percentage van je kapitaal is. Een live indicator waarschuwt als je je " +
             "max % per trade overschrijdt; een actieve kill-switch toont een melding.");
 
+        AddFeature("🛡️", "Risico-dashboard in het Trade Journal",
+            "Knop 'Risico' opent een portfolio-breed overzicht: open posities vs limiet, totaal open risico, " +
+            "blootstelling, dag-P&L en verlieslimiet — met guardrail-waarschuwingen.");
+
         AddVersionHeader("v1.35  —  Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
         AddFeature("Ⓕ", "Fundamentele kwaliteit naast je setups",

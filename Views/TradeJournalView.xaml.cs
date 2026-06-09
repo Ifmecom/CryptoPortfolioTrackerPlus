@@ -1,5 +1,8 @@
+using CryptoPortfolioTracker.Configuration;
 using CryptoPortfolioTracker.Dialogs;
+using CryptoPortfolioTracker.Services;
 using CryptoPortfolioTracker.ViewModels;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
@@ -27,6 +30,16 @@ public sealed partial class TradeJournalView : Page
     {
         _viewModel.Terminate();
         Current = null;
+    }
+
+    private async void Risk_Click(object sender, RoutedEventArgs e)
+    {
+        var service  = App.Container.GetService<IRiskDashboardService>();
+        var settings = App.Container.GetService<Settings>();
+        if (service is null || settings is null) return;
+
+        var dialog = new RiskDashboardDialog(service, settings) { XamlRoot = XamlRoot };
+        await App.ShowContentDialogAsync(dialog);
     }
 
     private async void CancelOrder_Click(object sender, RoutedEventArgs e)

@@ -142,6 +142,14 @@
                             <TextBlock Text="{x:Bind _viewModel.LastRefreshedDisplay, Mode=OneWay}"
                                        VerticalAlignment="Center" FontSize="11"
                                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <Button Click="Risk_Click"
+                                    ToolTipService.ToolTip="Risico-dashboard: open risico, blootstelling, dag-P&amp;L en guardrail-status"
+                                    Padding="8,4">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xEA18;" FontSize="12"/>
+                                    <TextBlock Text="Risico" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </Button>
                             <Button Command="{x:Bind _viewModel.RefreshCommand}"
                                     ToolTipService.ToolTip="Gegevens vernieuwen"
                                     Padding="8,4">

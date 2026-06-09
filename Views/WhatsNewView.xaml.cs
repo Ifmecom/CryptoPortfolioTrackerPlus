@@ -36,6 +36,12 @@ public sealed partial class WhatsNewView : Page
             "kapitaal is. Een live indicator laat continu zien hoeveel % er op het spel staat en wáárschuwt zodra " +
             "je je eigen limiet overschrijdt. Een actieve kill-switch toont een duidelijke melding.");
 
+        AddFeature("🛡️", "Risico-dashboard in het Trade Journal",
+            "Een nieuwe knop 'Risico' opent een portfolio-breed overzicht: aantal open posities (vs je limiet), " +
+            "totaal open risico (som van verlies-bij-SL), blootstelling, dag-P&L en de dagelijkse verlieslimiet — " +
+            "met duidelijke guardrail-waarschuwingen wanneer je een grens nadert of overschrijdt. Zo benut je " +
+            "eindelijk álle risk-instellingen die je hebt ingesteld.");
+
         // ── v1.35 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.35", "Synergie tussen tabs · kwaliteitsoordeel & feedback-loop");
 
