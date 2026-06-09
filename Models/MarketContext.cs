@@ -15,6 +15,7 @@ public sealed record MarketContext(
     bool    HasFearGreed,
     string  NextEventType,
     int     NextEventDays,
+    string  NextEventLocalTime,   // lokale kloktijd van het event, bv. "20:00"
     bool    HasNextEvent)
 {
     public string RegimeText => Regime switch
@@ -28,9 +29,16 @@ public sealed record MarketContext(
         ? $"😨 F&G {FearGreedValue} · {FearGreedClassification}"
         : "F&G —";
 
-    public string NextEventText => !HasNextEvent
-        ? string.Empty
-        : NextEventDays <= 0 ? $"⚠ {NextEventType} vandaag"
-        : NextEventDays == 1 ? $"⚠ {NextEventType} morgen"
-        : $"⚠ {NextEventType} over {NextEventDays}d";
+    public string NextEventText
+    {
+        get
+        {
+            if (!HasNextEvent) return string.Empty;
+            string when = NextEventDays <= 0 ? "vandaag"
+                        : NextEventDays == 1 ? "morgen"
+                        : $"over {NextEventDays}d";
+            string time = string.IsNullOrEmpty(NextEventLocalTime) ? string.Empty : $" om {NextEventLocalTime}";
+            return $"⚠ {NextEventType} {when}{time}";
+        }
+    }
 }

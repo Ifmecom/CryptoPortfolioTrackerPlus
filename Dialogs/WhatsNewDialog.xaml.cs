@@ -54,6 +54,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Knop 'Check liquiditeit' labelt de getoonde setups als Liquide/Matig/Dun op basis van het " +
             "Binance-orderboek — on-demand, los van de scan.");
 
+        AddFeature("🕒", "Macro-events in jouw tijdzone",
+            "FOMC/CPI/NFP/PCE tonen nu de releasetijd omgerekend naar je lokale tijd (met zomertijd verrekend).");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

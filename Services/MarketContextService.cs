@@ -64,20 +64,21 @@ public class MarketContextService : IMarketContextService
             }
             catch (Exception ex) { Logger.Warning(ex, "MarketContext: Fear&Greed laden mislukt"); }
 
-            string evType = string.Empty; int evDays = 0; bool hasEv = false;
+            string evType = string.Empty; int evDays = 0; string evTime = string.Empty; bool hasEv = false;
             try
             {
                 var next = _macro.GetUpcoming(14).OrderBy(e => e.Date).FirstOrDefault();
                 if (next is not null)
                 {
                     evType = next.Type;
-                    evDays = Math.Max(0, (int)Math.Round((next.Date.Date - DateTime.UtcNow.Date).TotalDays));
+                    evDays = Math.Max(0, (int)Math.Round((next.Date.Date - DateTime.Today).TotalDays));
+                    evTime = next.LocalTimeDisplay;
                     hasEv  = true;
                 }
             }
             catch (Exception ex) { Logger.Warning(ex, "MarketContext: macro-events laden mislukt"); }
 
-            _cached = new MarketContext(regime, regimeSummary, fgValue, fgClass, hasFg, evType, evDays, hasEv);
+            _cached = new MarketContext(regime, regimeSummary, fgValue, fgClass, hasFg, evType, evDays, evTime, hasEv);
             _expiry = DateTime.UtcNow.AddSeconds(CacheTtlSec);
             return _cached;
         }

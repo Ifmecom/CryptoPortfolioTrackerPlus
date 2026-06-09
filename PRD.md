@@ -779,6 +779,10 @@ Een "kans" is hier een historisch gemeten waarschijnlijkheid (uit een backtest),
 (`fapi.binance.com` funding/OI/long-short), `GlobalMarketDataService` (CoinGecko `/global`),
 `MacroEventService` (FOMC/CPI/NFP/PCE-kalender). Alle netwerk-calls delen `TtlCache<T>`.
 
+> **Macro-event tijden *(v1.35)*:** `MacroEvent.TimeUtc` bevat de precieze releasetijd (FOMC 14:00 ET,
+> data-releases 08:30 ET, ET→UTC met zomertijd via `TimeZoneInfo`). Weergaven (`ShortDisplay`/`LocalDisplay`,
+> marktcontext-balk) tonen die in de **lokale tijdzone** van de gebruiker. `Date` blijft de date-only kalenderdag.
+
 ---
 
 ### 4.18 Fundamentele Analyse *(v1.34)*

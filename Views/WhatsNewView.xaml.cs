@@ -60,6 +60,11 @@ public sealed partial class WhatsNewView : Page
             "setup als Liquide / Matig / ⚠ Dun (op basis van bid-ask spread en orderboekdiepte) — dezelfde " +
             "liquiditeits-gatekeeper als 3% Trading. Bewust on-demand (apart van de scan) zodat de patroonanalyse snel blijft.");
 
+        AddFeature("🕒", "Macro-events met tijd in jouw tijdzone",
+            "FOMC, CPI, NFP en PCE tonen nu de precieze releasetijd omgerekend naar jouw lokale tijdzone " +
+            "(FOMC 14:00 ET, data-releases 08:30 ET → automatisch met zomertijd verrekend). Zichtbaar in de " +
+            "marktcontext-balk, het 3%-detailvenster en het Trade Advies.");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 

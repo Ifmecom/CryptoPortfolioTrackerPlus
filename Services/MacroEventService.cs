@@ -54,11 +54,16 @@ public class MacroEventService : IMacroEventService
     {
         var events = new List<MacroEvent>();
 
+        // Bekende US-releasetijden (Eastern Time): FOMC-besluit 14:00, data-releases 08:30.
+        const int FomcEtHour = 14, FomcEtMin = 0;
+        const int DataEtHour = 8,  DataEtMin = 30;
+
         // ── FOMC ─────────────────────────────────────────────────────────────
         foreach (var d in FomcDates)
             if (d >= from && d <= to)
                 events.Add(new MacroEvent("FOMC", d,
-                    "Federal Reserve rentebeslissing — hoge volatiliteit verwacht"));
+                    "Federal Reserve rentebeslissing — hoge volatiliteit verwacht",
+                    EventUtc(d, FomcEtHour, FomcEtMin)));
 
         // ── Per maand: NFP, CPI, PCE ─────────────────────────────────────────
         for (var m = new DateTime(from.Year, from.Month, 1);
@@ -69,25 +74,52 @@ public class MacroEventService : IMacroEventService
             var nfp = FirstWeekdayOfMonth(m, DayOfWeek.Friday);
             if (nfp >= from && nfp <= to)
                 events.Add(new MacroEvent("US NFP", nfp,
-                    "Non-Farm Payrolls (arbeidsmarkt) — hoge volatiliteit USD/risico"));
+                    "Non-Farm Payrolls (arbeidsmarkt) — hoge volatiliteit USD/risico",
+                    EventUtc(nfp, DataEtHour, DataEtMin)));
 
             // CPI: tweede dinsdag ± 2 dagen (benadering — check officieel)
             var cpi = SecondWeekdayOfMonth(m, DayOfWeek.Wednesday);
             if (cpi >= from && cpi <= to)
                 events.Add(new MacroEvent("US CPI", cpi,
-                    "Consumer Price Index (inflatie) — BENADERING, check BLS.gov"));
+                    "Consumer Price Index (inflatie) — BENADERING, check BLS.gov",
+                    EventUtc(cpi, DataEtHour, DataEtMin)));
 
             // PCE: laatste vrijdag van de maand (Personal Consumption Expenditure)
             var pce = LastWeekdayOfMonth(m, DayOfWeek.Friday);
             if (pce >= from && pce <= to)
                 events.Add(new MacroEvent("US PCE", pce,
-                    "PCE-inflatie (Fed-voorkeurmeter) — BENADERING"));
+                    "PCE-inflatie (Fed-voorkeurmeter) — BENADERING",
+                    EventUtc(pce, DataEtHour, DataEtMin)));
         }
 
         return events.OrderBy(e => e.Date).ToList();
     }
 
-    // ── Datum-hulpmethoden ────────────────────────────────────────────────────
+    // ── Tijd-/datum-hulpmethoden ──────────────────────────────────────────────
+
+    private static readonly Lazy<TimeZoneInfo?> EasternTz = new(() =>
+    {
+        try { return TimeZoneInfo.FindSystemTimeZoneById("Eastern Standard Time"); }
+        catch
+        {
+            try { return TimeZoneInfo.FindSystemTimeZoneById("America/New_York"); }
+            catch { return null; }
+        }
+    });
+
+    /// <summary>Zet een US Eastern datum+tijd om naar UTC (rekening houdend met zomertijd).</summary>
+    private static DateTime EventUtc(DateTime date, int etHour, int etMin)
+    {
+        var local = new DateTime(date.Year, date.Month, date.Day, etHour, etMin, 0, DateTimeKind.Unspecified);
+        var tz = EasternTz.Value;
+        if (tz is not null)
+        {
+            try { return TimeZoneInfo.ConvertTimeToUtc(local, tz); }
+            catch { /* fall through */ }
+        }
+        // Fallback: benader ET als UTC-4 (EDT).
+        return DateTime.SpecifyKind(local.AddHours(4), DateTimeKind.Utc);
+    }
 
     private static DateTime FirstWeekdayOfMonth(DateTime month, DayOfWeek day)
     {

@@ -156,10 +156,21 @@ public sealed record FuturesPositioning(
 /// </summary>
 public sealed record MacroEvent(
     string   Type,
-    DateTime Date,
-    string   Description)
+    DateTime Date,                 // kalenderdatum (date-only) van het event
+    string   Description,
+    DateTime TimeUtc = default)    // precieze UTC-tijd van de release (0 = onbekend)
 {
-    public string ShortDisplay => $"{Type} — {Date:dd-MM-yyyy} ({Description})";
+    private bool HasTime => TimeUtc != default;
+
+    /// <summary>Lokale tijd van het event, bv. "12-06-2026 20:00". Valt terug op de datum als de tijd onbekend is.</summary>
+    public string LocalDisplay => HasTime
+        ? $"{TimeUtc.ToLocalTime():dd-MM-yyyy HH:mm}"
+        : $"{Date:dd-MM-yyyy}";
+
+    /// <summary>Alleen de lokale kloktijd, bv. "20:00". Leeg als onbekend.</summary>
+    public string LocalTimeDisplay => HasTime ? $"{TimeUtc.ToLocalTime():HH:mm}" : string.Empty;
+
+    public string ShortDisplay => $"{Type} — {LocalDisplay} ({Description})";
 }
 
 /// <summary>Globale marktdata van CoinGecko /global.</summary>
