@@ -794,6 +794,8 @@ drempels — Tokenomics (22%), Liquiditeit (18%), Waardering (13%), Community (1
 Projectvolledigheid (9%) en **On-Chain/TVL (12%)** → samengestelde **DataScore**. De On-Chain-factor
 (TVL-omvang + market-cap/TVL-efficiëntie) telt **alleen mee voor DeFi-coins met TVL**; voor niet-DeFi-coins
 vervalt hij en worden de overige gewichten gehernormaliseerd, zodat ze niet onterecht worden afgestraft.
+De Community-factor wordt *(v1.35)* bovendien bescheiden bijgestuurd door het eigen app-sentiment
+(`Coin.LatestSentimentScore`, Reddit/RSS) wanneer beschikbaar — geen extra API-call.
 
 **Hybride totaalscore:** handmatige due-diligence (team, product-maturiteit, adoptie, revenue,
 unlocks — 0-10 elk) blendt met de DataScore tot de **TotalScore**; het DD-gewicht schaalt met het
@@ -1087,6 +1089,7 @@ Fundamentele analyse per coin (één rij per coin, upsert op `ApiId`). Tabel aan
 | `Tvl` / `TvlCategory` | double / string | On-chain Total Value Locked + categorie (DefiLlama); 0/leeg voor niet-DeFi-coins |
 | `GithubStars` / `GithubForks` / `GithubSubscribers` / `CommitCount4Weeks` / `PullRequestsMerged` / `PullRequestContribs` | long | Development-activiteit |
 | `TwitterFollowers` / `RedditSubscribers` / `RedditActive48H` / `SentimentUpPct` | long / double | Community |
+| `AppSentiment` | double | Eigen app-sentiment (Reddit/RSS, −1..1); voedt de Community-factor *(v1.35)* |
 | `ScoreTokenomics` / `ScoreLiquidity` / `ScoreValuation` / `ScoreCommunity` / `ScoreDevelopment` / `ScoreProject` / `ScoreOnChain` | double | Auto-subscores (0–100); `ScoreOnChain` (TVL) weegt alleen mee bij DeFi-coins |
 | `DataScore` | double | Samengestelde auto-score (0–100) |
 | `DdTeam` / `DdProductMaturity` / `DdAdoption` / `DdRevenue` / `DdUnlocks` | int? | Handmatige DD (0–10, null = niet beoordeeld) |

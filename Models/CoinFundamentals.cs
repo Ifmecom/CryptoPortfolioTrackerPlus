@@ -63,6 +63,8 @@ public class CoinFundamentals
     public long   RedditSubscribers { get; set; }
     public double RedditActive48H   { get; set; }
     public double SentimentUpPct    { get; set; }
+    /// <summary>Eigen sentiment-score van de app (Reddit/RSS, −1..1; 0 = geen). Voedt de Community-factor.</summary>
+    public double AppSentiment      { get; set; }
 
     // ── Auto-subscores (0-100) ────────────────────────────────────────────────
     public double ScoreTokenomics  { get; set; }

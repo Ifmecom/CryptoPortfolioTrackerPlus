@@ -596,6 +596,7 @@ namespace CryptoPortfolioTracker.Services
                         Tvl                 REAL    NOT NULL DEFAULT 0,
                         TvlCategory         TEXT    NOT NULL DEFAULT '',
                         ScoreOnChain        REAL    NOT NULL DEFAULT 0,
+                        AppSentiment        REAL    NOT NULL DEFAULT 0,
                         UpdatedAt           TEXT    NOT NULL DEFAULT '0001-01-01 00:00:00'
                     )");
                 await db.ExecuteSqlRawAsync(@"
@@ -605,6 +606,7 @@ namespace CryptoPortfolioTracker.Services
                 await TryAddColumnAsync(db, "CoinFundamentals", "Tvl", "REAL", "0");
                 await TryAddColumnAsync(db, "CoinFundamentals", "TvlCategory", "TEXT", "''");
                 await TryAddColumnAsync(db, "CoinFundamentals", "ScoreOnChain", "REAL", "0");
+                await TryAddColumnAsync(db, "CoinFundamentals", "AppSentiment", "REAL", "0");
 
                 Logger?.Information("PLUS schema applied successfully");
             }

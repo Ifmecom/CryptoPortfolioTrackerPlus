@@ -46,6 +46,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Pattern Trading, 3% Trading en de Setup Tracker tonen bovenaan dezelfde marktcontext: BTC-regime, " +
             "Fear & Greed en het eerstvolgende macro-event.");
 
+        AddFeature("💬", "Eigen sentiment voedt de Fundamentals-score",
+            "Het door de app verzamelde sentiment (Reddit/RSS) telt nu mee in de Community-factor van de " +
+            "Fundamental Score, bovenop de CoinGecko-cijfers.");
+
         AddVersionHeader("v1.34  —  Fundamentele analyse · Fundamental Score (0-100) per coin");
 
         AddFeature("📊", "Nieuw tabblad: Fundamentals",

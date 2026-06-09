@@ -172,6 +172,14 @@ public sealed partial class FundamentalsDetailDialog : ContentDialog
         AddKv(g6, 2, "Merged PR's", Functions.FormatSupply(_f.PullRequestsMerged), null);
         ContentPanel.Children.Add(g6);
 
+        // #6: eigen app-sentiment (Reddit/RSS) dat de Community-factor mee voedt
+        if (_f.AppSentiment != 0)
+            ContentPanel.Children.Add(new TextBlock
+            {
+                Text = $"App-sentiment (Reddit/RSS): {_f.AppSentiment:+0.00;-0.00} — verwerkt in de Community-score.",
+                FontSize = 11, Foreground = _f.AppSentiment > 0 ? Green : Red, Margin = new Thickness(0, 2, 0, 0),
+            });
+
         // ── Project ──────────────────────────────────────────────────────────────
         ContentPanel.Children.Add(Header("🏗️ Project"));
         if (!string.IsNullOrWhiteSpace(_f.Categories))

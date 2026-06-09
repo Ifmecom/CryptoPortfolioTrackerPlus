@@ -50,6 +50,11 @@ public sealed partial class WhatsNewView : Page
             "het BTC-regime (Risk-On/Neutraal/Risk-Off), de Fear & Greed-index en het eerstvolgende macro-event " +
             "(FOMC/CPI/NFP/PCE). Eén gedeelde, gecachte bron — zo handel je altijd met het bredere plaatje in beeld.");
 
+        AddFeature("💬", "Eigen sentiment voedt de Fundamentals-score",
+            "Het sentiment dat de app zelf verzamelt (Reddit/RSS) telt nu mee in de Community-factor van de " +
+            "Fundamental Score — een bescheiden bijsturing bovenop de CoinGecko-cijfers. Het detailvenster toont " +
+            "de gebruikte sentiment-waarde. Geen extra API-calls: de data lag al klaar op de coin.");
+
         // ── v1.34 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.34", "Fundamentele analyse · Fundamental Score (0-100) per coin");
 

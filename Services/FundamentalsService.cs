@@ -64,6 +64,25 @@ public class FundamentalsService : IFundamentalsService
         }
         catch (Exception ex) { Logger.Debug(ex, "FundamentalsService: DefiLlama TVL niet beschikbaar voor {ApiId}", apiId); }
 
+        // #6: eigen app-sentiment (Reddit/RSS) — al opgeslagen op de Coin, geen extra API-call
+        try
+        {
+            var ctx = _portfolioService.Context;
+            if (ctx is not null)
+            {
+                await _dbGate.WaitAsync(ct);
+                try
+                {
+                    f.AppSentiment = await ctx.Coins.AsNoTracking()
+                        .Where(c => c.ApiId == apiId)
+                        .Select(c => c.LatestSentimentScore)
+                        .FirstOrDefaultAsync(ct);
+                }
+                finally { _dbGate.Release(); }
+            }
+        }
+        catch (Exception ex) { Logger.Debug(ex, "FundamentalsService: app-sentiment lezen mislukt voor {ApiId}", apiId); }
+
         FundamentalsScoreCalculator.Recompute(f, DateTime.UtcNow);
         await UpsertAsync(f, ct);
         return f;

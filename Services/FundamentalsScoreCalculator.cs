@@ -102,15 +102,28 @@ public static class FundamentalsScoreCalculator
     }
 
     /// <summary>Community: Twitter + Reddit (log-schaal) + sentiment.</summary>
-    public static double Community(long twitterFollowers, long redditSubscribers, double sentimentUpPct)
+    /// <summary>
+    /// Community: Twitter + Reddit (log-schaal) + CoinGecko-sentiment. Optioneel verrijkt met het
+    /// eigen app-sentiment (Reddit/RSS, −1..1) wanneer beschikbaar (#6).
+    /// </summary>
+    public static double Community(long twitterFollowers, long redditSubscribers, double sentimentUpPct,
+                                   double appSentiment = double.NaN)
     {
         double tw  = LogScore(twitterFollowers, 1_000_000);
         double rd  = LogScore(redditSubscribers, 500_000);
         double sen = Clamp(sentimentUpPct);                       // 0-100
         bool hasSen = sentimentUpPct > 0;
-        return hasSen
-            ? Clamp(0.45 * tw + 0.35 * rd + 0.20 * sen)
-            : Clamp((0.45 * tw + 0.35 * rd) / 0.80);              // sentiment ontbreekt → herweeg
+        double baseScore = hasSen
+            ? 0.45 * tw + 0.35 * rd + 0.20 * sen
+            : (0.45 * tw + 0.35 * rd) / 0.80;                     // sentiment ontbreekt → herweeg
+
+        // App-sentiment (−1..1 → 0..100) als bescheiden extra signaal.
+        if (!double.IsNaN(appSentiment) && appSentiment != 0)
+        {
+            double appSen = Clamp((appSentiment + 1) / 2 * 100);
+            baseScore = 0.85 * baseScore + 0.15 * appSen;
+        }
+        return Clamp(baseScore);
     }
 
     /// <summary>Development: recente commits + sterren + gemergede PR's.</summary>
@@ -242,7 +255,7 @@ public static class FundamentalsScoreCalculator
         f.ScoreTokenomics  = Tokenomics(f.CirculatingSupply, f.TotalSupply, f.MaxSupply, f.MarketCap, f.Fdv);
         f.ScoreLiquidity   = Liquidity(f.TotalVolume, f.MarketCap);
         f.ScoreValuation   = Valuation(f.MarketCapRank, f.AtlChangePct);
-        f.ScoreCommunity   = Community(f.TwitterFollowers, f.RedditSubscribers, f.SentimentUpPct);
+        f.ScoreCommunity   = Community(f.TwitterFollowers, f.RedditSubscribers, f.SentimentUpPct, f.AppSentiment);
         f.ScoreDevelopment = Development(f.CommitCount4Weeks, f.GithubStars, f.PullRequestsMerged);
         f.ScoreProject     = Project(
             hasWhitepaper: !string.IsNullOrWhiteSpace(f.WhitepaperUrl),
