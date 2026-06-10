@@ -50,6 +50,11 @@ public sealed partial class WhatsNewView : Page
             "De grafiek toont nu het aangeklikte patroon, of anders het sterkste patroon van dat timeframe — " +
             "niet meer alle patronen tegelijk over elkaar heen.");
 
+        AddFeature("🚩", "Scherpere bull- en bear-flags",
+            "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
+            "bodem naar top. Belangrijker: een vlaggetje moet nu écht consolideren — een koers die gewoon blijft " +
+            "doorstijgen (of -dalen) wordt niet langer als flag bestempeld. De pool-richting wordt geverifieerd.");
+
         // ── v1.37 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.37", "Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 

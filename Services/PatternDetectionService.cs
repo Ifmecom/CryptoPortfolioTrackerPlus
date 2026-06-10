@@ -595,23 +595,35 @@ public class PatternDetectionService : IPatternDetectionService
     {
         if (bars.Count < 15) return null;
 
-        // Pole: strong up move in bars [-14 … -5]
-        var pole = bars.TakeLast(14).Take(9).ToList();  // 9 bars before the flag
-        double poleStart = pole.First().Open;   // bottom boundary = open (no wicks)
-        double poleEnd   = pole.Last().Close;   // top boundary    = close (no wicks)
-        double poleGain  = (poleEnd - poleStart) / poleStart;
-        if (poleGain < 0.08) return null;  // need at least 8% up move for a pole (handbook: F5 — 8%, not 5%)
+        // Pole = the run before the flag (bars [-14 … -6]); flag = last 5 bars.
+        var poleBars = bars.Skip(Math.Max(0, bars.Count - 14)).Take(9).ToList();
+        var flag     = bars.TakeLast(5).ToList();
+        if (poleBars.Count < 5) return null;
 
-        // Flag: consolidation in last 5 bars
-        var flag = bars.TakeLast(5).ToList();
-        double flagHigh = flag.Max(b => b.Close);   // top boundary    = close (no wicks)
-        double flagLow  = flag.Min(b => b.Open);    // bottom boundary = open  (no wicks)
-        double flagRange = (flagHigh - flagLow) / flagHigh;
+        // Pole measured on the WICKS (visible extremes), from its low to its high.
+        double poleLow  = poleBars.Min(b => b.Low);
+        double poleHigh = poleBars.Max(b => b.High);
+        double poleGain = poleLow > 0 ? (poleHigh - poleLow) / poleLow : 0;
+        if (poleGain < 0.08) return null;             // need ≥ 8% up move for a pole
 
-        if (flagRange > 0.05) return null;  // flag must be tight (<5% range)
+        // The pole must actually rise: its high has to come AFTER its low.
+        int loIdx = poleBars.FindIndex(b => b.Low  <= poleLow  + 1e-12);
+        int hiIdx = poleBars.FindLastIndex(b => b.High >= poleHigh - 1e-12);
+        if (hiIdx <= loIdx) return null;
 
-        // Flag should not retrace more than 50 % of the pole
-        double retrace = (poleEnd - flagLow) / (poleEnd - poleStart);
+        // Flag on wicks — tight consolidation.
+        double flagHigh  = flag.Max(b => b.High);
+        double flagLow   = flag.Min(b => b.Low);
+        double flagRange = flagHigh > 0 ? (flagHigh - flagLow) / flagHigh : 1;
+        if (flagRange > 0.06) return null;            // flag must be tight (< 6% range, wick-based)
+
+        // A flag CONSOLIDATES — it drifts sideways/down. A 5-bar stretch that keeps ripping up
+        // is still part of the pole, not a flag. Reject a strongly rising consolidation.
+        double flagSlope = LinearSlope(flag.Select(b => b.Close).ToList());
+        if (flagSlope > 0.004) return null;
+
+        // Flag should not retrace more than 50 % of the pole.
+        double retrace = (poleHigh - flagLow) / (poleHigh - poleLow);
         if (retrace > 0.5) return null;
 
         return new PatternResult
@@ -627,10 +639,15 @@ public class PatternDetectionService : IPatternDetectionService
             DistancePct = (flagHigh - currentPrice) / currentPrice * 100,
             Annotation  = new PatternAnnotation
             {
-                Markers = new()
+                // Pole as a diagonal line from its wick-low to its wick-high.
+                Trendlines = new()
                 {
-                    new PatternPoint { Time = pole.First().Date, Price = poleStart, Label = "Pole↓", AboveBar = false },
-                    new PatternPoint { Time = pole.Last().Date,  Price = poleEnd,   Label = "Pole↑", AboveBar = true  },
+                    new PatternTrendline
+                    {
+                        StartTime  = poleBars[loIdx].Date, StartPrice = poleLow,
+                        EndTime    = poleBars[hiIdx].Date, EndPrice   = poleHigh,
+                        Color      = "#26a69a",
+                    },
                 },
                 HLines = new()
                 {
@@ -647,19 +664,34 @@ public class PatternDetectionService : IPatternDetectionService
     {
         if (bars.Count < 15) return null;
 
-        var pole  = bars.TakeLast(14).Take(9).ToList();
-        double poleStart = pole.First().Close;  // top boundary    = close (no wicks)
-        double poleEnd   = pole.Last().Open;    // bottom boundary = open  (no wicks)
-        double poleLoss  = (poleStart - poleEnd) / poleStart;
-        if (poleLoss < 0.08) return null;  // need at least 8% down move for a pole (handbook: F5)
-
+        // Pole = the run before the flag (bars [-14 … -6]); flag = last 5 bars.
+        var poleBars = bars.Skip(Math.Max(0, bars.Count - 14)).Take(9).ToList();
         var flag     = bars.TakeLast(5).ToList();
-        double flagHigh  = flag.Max(b => b.Close);  // top boundary    = close (no wicks)
-        double flagLow   = flag.Min(b => b.Open);   // bottom boundary = open  (no wicks)
-        double flagRange = (flagHigh - flagLow) / flagHigh;
-        if (flagRange > 0.05) return null;  // flag must be tight (<5% range)
+        if (poleBars.Count < 5) return null;
 
-        double retrace = (flagHigh - poleEnd) / (poleStart - poleEnd);
+        // Pole measured on the WICKS, from its high to its low.
+        double poleHigh = poleBars.Max(b => b.High);
+        double poleLow  = poleBars.Min(b => b.Low);
+        double poleLoss = poleHigh > 0 ? (poleHigh - poleLow) / poleHigh : 0;
+        if (poleLoss < 0.08) return null;             // need ≥ 8% down move for a pole
+
+        // The pole must actually fall: its low has to come AFTER its high.
+        int hiIdx = poleBars.FindIndex(b => b.High >= poleHigh - 1e-12);
+        int loIdx = poleBars.FindLastIndex(b => b.Low <= poleLow + 1e-12);
+        if (loIdx <= hiIdx) return null;
+
+        // Flag on wicks — tight consolidation.
+        double flagHigh  = flag.Max(b => b.High);
+        double flagLow   = flag.Min(b => b.Low);
+        double flagRange = flagHigh > 0 ? (flagHigh - flagLow) / flagHigh : 1;
+        if (flagRange > 0.06) return null;            // flag must be tight (< 6% range, wick-based)
+
+        // A bear-flag consolidation drifts sideways/up. A 5-bar stretch still falling hard is
+        // part of the pole, not a flag → reject a strongly falling consolidation.
+        double flagSlope = LinearSlope(flag.Select(b => b.Close).ToList());
+        if (flagSlope < -0.004) return null;
+
+        double retrace = (flagHigh - poleLow) / (poleHigh - poleLow);
         if (retrace > 0.5) return null;
 
         return new PatternResult
@@ -675,10 +707,15 @@ public class PatternDetectionService : IPatternDetectionService
             DistancePct = (currentPrice - flagLow) / currentPrice * 100,
             Annotation  = new PatternAnnotation
             {
-                Markers = new()
+                // Pole as a diagonal line from its wick-high to its wick-low.
+                Trendlines = new()
                 {
-                    new PatternPoint { Time = pole.First().Date, Price = poleStart, Label = "Pole↑", AboveBar = true  },
-                    new PatternPoint { Time = pole.Last().Date,  Price = poleEnd,   Label = "Pole↓", AboveBar = false },
+                    new PatternTrendline
+                    {
+                        StartTime  = poleBars[hiIdx].Date, StartPrice = poleHigh,
+                        EndTime    = poleBars[loIdx].Date, EndPrice   = poleLow,
+                        Color      = "#ef5350",
+                    },
                 },
                 HLines = new()
                 {

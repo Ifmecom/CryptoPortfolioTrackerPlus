@@ -41,6 +41,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
         AddFeature("🧹", "Eén patroon per grafiek",
             "De grafiek toont het aangeklikte of sterkste patroon i.p.v. alle patronen over elkaar.");
 
+        AddFeature("🚩", "Scherpere bull- en bear-flags",
+            "Pool op de wicks + als diagonale lijn getekend; een doorgaande rally/daling telt niet meer als flag.");
+
         AddVersionHeader("v1.37  —  Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 
         AddFeature("⛔", "Guardrails worden nu écht afgedwongen",
