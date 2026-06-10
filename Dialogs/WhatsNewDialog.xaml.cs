@@ -42,6 +42,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Schakelaar in het dashboard — paper tegen je gekozen kapitaalbasis, live altijd tegen je echte " +
             "portfoliowaarde.");
 
+        AddFeature("🔍", "Filter op specifiek patroon",
+            "In Pattern Trading filter je nu op één patroon (bv. Bull Flag of Dubbele Bodem). De dropdown vult " +
+            "zich met de patronen uit je laatste scan, met aantal coins per patroon.");
+
         AddVersionHeader("v1.36  —  Risk-managed trading · positiegrootte op risico");
 
         AddFeature("📐", "Positiegrootte op basis van risico",

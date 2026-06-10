@@ -310,6 +310,20 @@
                         <ToggleButton Content="4H"       IsChecked="{x:Bind _viewModel.Tf4H,   Mode=OneWay}" Click="Tf4H_Click"   Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 4-uurs (4H) patronen — middelmatige looptijd"/>
                         <ToggleButton Content="1H"       IsChecked="{x:Bind _viewModel.Tf1H,   Mode=OneWay}" Click="Tf1H_Click"   Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 1-uurs (1H) patronen — korte looptijd, meer ruis"/>
                         <ToggleButton Content="15M"      IsChecked="{x:Bind _viewModel.Tf15M,  Mode=OneWay}" Click="Tf15M_Click"  Padding="7,3" FontSize="11" ToolTipService.ToolTip="Toon alleen 15-minuten (15M) patronen — zeer korte looptijd, scalping"/>
+
+                        <!-- Separator -->
+                        <Border Width="1" Height="18" Background="{ThemeResource SystemControlForegroundBaseLowBrush}"
+                                Margin="4,0" VerticalAlignment="Center"/>
+
+                        <!-- Pattern-type filter -->
+                        <TextBlock Text="Patroon:" FontSize="11" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <ComboBox MinWidth="170" FontSize="11" Padding="8,2"
+                                  VerticalAlignment="Center"
+                                  ItemsSource="{x:Bind _viewModel.PatternOptions, Mode=OneWay}"
+                                  SelectedItem="{x:Bind _viewModel.SelectedPattern, Mode=TwoWay}"
+                                  DisplayMemberPath="Label"
+                                  ToolTipService.ToolTip="Toon alleen coins met een specifiek patroon (sterkte ≥ 60). De lijst toont de patronen uit de laatste scan, met het aantal coins."/>
                     </StackPanel>
 
                     <!-- In-list search -->

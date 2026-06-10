@@ -43,7 +43,10 @@ public class PatternResult
     // ── Display helpers used by PatternCoinRow ──────────────────────────────
 
     /// <summary>Human-readable pattern name (Dutch).</summary>
-    public string DisplayName => Type switch
+    public string DisplayName => NameFor(Type);
+
+    /// <summary>Human-readable pattern name (Dutch) for a given type — usable zonder instance.</summary>
+    public static string NameFor(PatternType type) => type switch
     {
         PatternType.RsiOversold              => "RSI Oversold",
         PatternType.RsiOverbought            => "RSI Overbought",
@@ -79,6 +82,6 @@ public class PatternResult
         PatternType.RisingWedge              => "Rising Wedge",
         PatternType.FallingWedge             => "Falling Wedge",
         PatternType.CupAndHandle             => "Cup & Handle",
-        _                                    => Type.ToString(),
+        _                                    => type.ToString(),
     };
 }

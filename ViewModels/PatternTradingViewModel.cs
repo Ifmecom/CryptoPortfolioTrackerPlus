@@ -39,6 +39,15 @@ public partial class PatternTradingViewModel : BaseViewModel
     [ObservableProperty] private string listSearchText    = string.Empty;
     [ObservableProperty] private string tfFilter          = "All";     // "All" | "1D" | "4H" | "1H" | "15M"
 
+    // ── Pattern-type filter ────────────────────────────────────────────────────
+    [ObservableProperty] private ObservableCollection<PatternFilterOption> patternOptions = new();
+    [ObservableProperty] private PatternFilterOption? selectedPattern;
+    partial void OnSelectedPatternChanged(PatternFilterOption? value)
+    {
+        if (_suppressPatternApply) return;
+        ApplyFilter(ActiveFilter);
+    }
+
     // ── Watchlist state ───────────────────────────────────────────────────────
     [ObservableProperty] private ObservableCollection<WatchlistItem> watchlistItems = new();
     [ObservableProperty] private bool watchlistExpanded = false;
@@ -95,6 +104,10 @@ public partial class PatternTradingViewModel : BaseViewModel
         // Keep WatchlistCountText in sync when items are added/removed
         WatchlistItems.CollectionChanged += (_, _) =>
             OnPropertyChanged(nameof(WatchlistCountText));
+
+        // Seed the pattern-filter dropdown with the "all" option.
+        PatternOptions.Add(PatternFilterOption.All());
+        SelectedPattern = PatternOptions[0];
     }
 
     public async Task ViewLoading()
@@ -209,6 +222,7 @@ public partial class PatternTradingViewModel : BaseViewModel
             if (updated > 0)
                 StatusText += $"  ·  {updated} setup(s) automatisch bijgewerkt.";
 
+            RebuildPatternOptions();   // vul de patroon-dropdown met wat er nú gevonden is
             ApplyFilter(ActiveFilter);
         }
         catch (OperationCanceledException)
@@ -512,6 +526,12 @@ public partial class PatternTradingViewModel : BaseViewModel
                 r.Patterns.Any(p => p.Timeframe == TfFilter));
         }
 
+        // 3b. Pattern-type filter — only coins with a key pattern (Strength ≥ 60) of the chosen type
+        if (SelectedPattern?.Type is PatternType pt)
+        {
+            filtered = filtered.Where(r => r.KeyPatterns.Any(p => p.Type == pt));
+        }
+
         // 4. Sort
         var sorted = SortMode switch
         {
@@ -549,6 +569,42 @@ public partial class PatternTradingViewModel : BaseViewModel
                 DisplayItems.Add(row);
         });
     }
+
+    /// <summary>
+    /// Vult de patroon-dropdown met de patroontypes die in de huidige scan voorkomen (Strength ≥ 60),
+    /// elk met het aantal coins dat dat patroon heeft. Bewaart de bestaande keuze als die nog bestaat.
+    /// </summary>
+    private void RebuildPatternOptions()
+    {
+        // Tel per patroontype hoeveel coins dat key-patroon hebben.
+        var coinCountByType = new Dictionary<PatternType, int>();
+        foreach (var r in _allResults)
+            foreach (var type in r.KeyPatterns.Select(p => p.Type).Distinct())
+                coinCountByType[type] = coinCountByType.GetValueOrDefault(type) + 1;
+
+        var prevType = SelectedPattern?.Type;
+
+        var options = new List<PatternFilterOption> { PatternFilterOption.All() };
+        options.AddRange(coinCountByType
+            .OrderByDescending(kv => kv.Value)
+            .ThenBy(kv => PatternResult.NameFor(kv.Key))
+            .Select(kv => new PatternFilterOption
+            {
+                Type  = kv.Key,
+                Label = $"{PatternResult.NameFor(kv.Key)} ({kv.Value})",
+            }));
+
+        _dispatcherQueue?.TryEnqueue(() =>
+        {
+            _suppressPatternApply = true;       // voorkom dubbele ApplyFilter; AnalyzePortfolio doet dat zelf
+            PatternOptions.Clear();
+            foreach (var o in options) PatternOptions.Add(o);
+            SelectedPattern = PatternOptions.FirstOrDefault(o => o.Type == prevType) ?? PatternOptions[0];
+            _suppressPatternApply = false;
+        });
+    }
+
+    private bool _suppressPatternApply;
 
     // Called when the in-list search text changes (from code-behind TextBox event).
     // Setting ListSearchText triggers OnListSearchTextChanged → ApplyFilter automatically.

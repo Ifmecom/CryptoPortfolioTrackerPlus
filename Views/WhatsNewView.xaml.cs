@@ -47,6 +47,12 @@ public sealed partial class WhatsNewView : Page
             "gekozen) kapitaalbasis gerekend, live-posities altijd tegen je echte portfoliowaarde. Geen vermenging " +
             "meer van paper-risico met echte blootstelling.");
 
+        AddFeature("🔍", "Filter op specifiek patroon (Pattern Trading)",
+            "Naast de bestaande filters kun je in Pattern Trading nu filteren op een specifiek patroon — " +
+            "bijvoorbeeld alleen Bull Flag, Dubbele Bodem of Cup & Handle. De dropdown vult zich automatisch met " +
+            "de patronen uit je laatste scan (sterkte ≥ 60) en toont per patroon hoeveel coins het hebben. " +
+            "Combineerbaar met de categorie-, timeframe- en zoekfilters.");
+
         // ── v1.36 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.36", "Risk-managed trading · positiegrootte op risico");
 

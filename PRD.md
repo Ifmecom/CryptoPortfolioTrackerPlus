@@ -621,6 +621,14 @@ multi-timeframe patroonanalyse snel blijft. Zelfde F6-gatekeeper-gedachte als 3%
 | Bullish | PrimaryDirection = "Long" |
 | Bearish | PrimaryDirection = "Short" |
 
+Daarnaast: een **timeframe-filter** (Alle/1D/4H/1H/15M), een **in-lijst zoekveld** (naam/symbool) en een
+**patroon-filter** *(v1.37)*. De patroon-filter is een dropdown (`PatternOptions` / `SelectedPattern`,
+model `PatternFilterOption`) die zich na elke scan vult met de patroontypes die in de resultaten voorkomen
+(key-patronen, Strength ≥ 60), elk met het aantal coins dat dat patroon heeft, gesorteerd op aantal. Selectie
+toont alleen coins met een key-patroon van dat type (`r.KeyPatterns.Any(p => p.Type == gekozen)`). De keuze
+blijft behouden zolang het patroon in een volgende scan nog voorkomt en is combineerbaar met de overige filters.
+`PatternResult.NameFor(PatternType)` levert de Nederlandse patroonnaam zonder instance.
+
 **Coin-kaart per resultaat:**
 - Logo · naam · symbool · TF-bias badges (1D/4H: Bullish/Bearish/Neutraal) · RSI-badges
 - Actuele prijs · 24u-wijziging (groen/rood) · TradabilityScore (0–100) met kleurcodering
