@@ -464,11 +464,13 @@ public class PatternDetectionService : IPatternDetectionService
             double diff = Math.Abs(last.value - prev.value) / prev.value;
             if (diff > 0.03) continue;
 
-            // Minimum 5% depth: the valley between the two lows must dip at least 5% below the higher low
+            // Minimum 5% bounce: the rally BETWEEN the two lows must rise at least 5% above the
+            // higher low. Without a real intervening peak the two "lows" are just one flat base,
+            // not a genuine double bottom. (Was incorrectly measuring the trough — bugfix v1.38.)
             double higherLow = Math.Max(prev.value, last.value);
-            double midMin    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Min(b => b.Open);  // body bottom
-            double depth     = (higherLow - midMin) / higherLow;
-            if (depth < 0.05) continue;
+            double midMax    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close);  // bounce peak (body top)
+            double bounce    = (midMax - higherLow) / higherLow;
+            if (bounce < 0.05) continue;
 
             // Confirm price has moved up from the double bottom
             double recovery = (currentPrice - last.value) / last.value;
@@ -1387,10 +1389,11 @@ public class PatternDetectionService : IPatternDetectionService
             double diff = Math.Abs(last.value - prev.value) / prev.value;
             if (diff > 0.03) continue;   // lows within 3 %
 
-            // Minimum depth: valley must be ≥ 5 % below the higher of the two lows
+            // Minimum 5% bounce between the two lows (intervening rally above the higher low),
+            // otherwise it is one flat base, not two distinct Adam/Eve bottoms. (Bugfix v1.38.)
             double higherLow = Math.Max(prev.value, last.value);
-            double midMin    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Min(b => b.Open);  // body bottom
-            if ((higherLow - midMin) / higherLow < 0.05) continue;
+            double midMax    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close);  // bounce peak (body top)
+            if ((midMax - higherLow) / higherLow < 0.05) continue;
 
             bool prevIsAdam = IsAdamBottom(bars, prev.idx);
             bool prevIsEve  = IsEveBottom(bars, prev.idx);

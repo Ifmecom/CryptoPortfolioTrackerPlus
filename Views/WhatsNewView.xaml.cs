@@ -56,6 +56,12 @@ public sealed partial class WhatsNewView : Page
             "als volle-breedte lijnen over de hele grafiek waar ze met de koers en de steun/weerstand-lijnen " +
             "versmolten. Zo is meteen duidelijk wáár het patroon zit.");
 
+        AddFeature("🐞", "Dubbele bodem werkt weer (bugfix)",
+            "De dubbele-bodem-detectie (en Adam & Eve) gebruikte een verkeerde diepte-controle die eiste dat de " +
+            "twee bodems ver uit elkaar lagen — tegenstrijdig met de eis dat ze juist dicht bij elkaar liggen — " +
+            "waardoor het patroon vrijwel nooit verscheen. Nu wordt de juiste maat gebruikt: de opleving tússen " +
+            "de twee bodems moet ≥ 5% zijn. Dubbele bodems worden daardoor weer betrouwbaar herkend.");
+
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
             "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +

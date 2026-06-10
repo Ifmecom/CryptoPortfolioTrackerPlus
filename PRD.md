@@ -1657,7 +1657,7 @@ Confidence:
 **Level 2 — OHLCV swing-point analyse** (op ruwe bar-data):
 - Volume Spike: laatste volume > 1.8× gemiddelde van 20 vorige bars
 - Uptrend / Downtrend: 3+ opeenvolgende HH+HL of LH+LL swing-punten
-- Double Bottom / Top: twee lows/highs binnen 2.5%, confirmed als recovery > 4%
+- Double Bottom / Top: twee lows/highs binnen 3%, ≥ 8 bars uiteen, confirmed als recovery > 4%. **Bugfix v1.38:** de dubbele-bodem-diepte meet nu de **opleving** (`Max(Close)`) tússen de twee bodems (≥ 5% boven de hoogste bodem) i.p.v. ten onrechte het laagste punt — die oude check sprak de 3%-gelijkheidseis tegen waardoor het patroon vrijwel nooit vuurde. Adam & Eve gebruikte dezelfde foutieve maat en is mee gecorrigeerd. (Double Top was al correct: `Min(Open)` = het dal tussen de toppen.)
 - Bull Flag / Bear Flag *(herzien v1.38)*: pool op de **wicks** (≥ 8%) met geverifieerde richting (high ná low voor bull, low ná high voor bear); flag-range < 6% (wicks); flag moet **consolideren** — `LinearSlope` van de flag-closes mag niet sterk mee-trenden (> +0.004 bull / < −0.004 bear → afgewezen); retrace < 50% van de pool. Pool wordt als diagonale trendlijn getekend; het vlaggetje als een begrensd vak (korte boven-/onderlijn over alleen de consolidatie-candles) + één volle-breedte breakout/breakdown-trigger.
 - Ascending / Descending / Symmetrical Triangle: bar-index regressie op swinghighs en swinglows
 - Consolidation: koersbereik < 8% over laatste 15 bars

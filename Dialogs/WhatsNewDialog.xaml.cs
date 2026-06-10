@@ -44,6 +44,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "Pool op de wicks + als diagonale lijn getekend; een doorgaande rally/daling telt niet meer als flag.");
 
+        AddFeature("🐞", "Dubbele bodem werkt weer",
+            "Een verkeerde diepte-controle blokkeerde de dubbele-bodem- en Adam & Eve-detectie. Nu telt de " +
+            "opleving tussen de twee bodems (≥ 5%) — dubbele bodems worden weer herkend.");
+
         AddVersionHeader("v1.37  —  Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 
         AddFeature("⛔", "Guardrails worden nu écht afgedwongen",
