@@ -46,6 +46,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "In Pattern Trading filter je nu op één patroon (bv. Bull Flag of Dubbele Bodem). De dropdown vult " +
             "zich met de patronen uit je laatste scan, met aantal coins per patroon.");
 
+        AddFeature("🧭", "Richtingsfilter in Trade Advies en Signalen",
+            "De scan-lijsten in Trade Advies en Signalen filter je nu op Long, Short of geen signaal.");
+
         AddVersionHeader("v1.36  —  Risk-managed trading · positiegrootte op risico");
 
         AddFeature("📐", "Positiegrootte op basis van risico",

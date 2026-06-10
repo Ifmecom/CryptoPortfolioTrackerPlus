@@ -33,6 +33,9 @@ public partial class TradeAnalysisViewModel : BaseViewModel
     [ObservableProperty] private IReadOnlyList<CoinAnalysisSummary>? allResults;
     [ObservableProperty] private DateTime? allResultsGeneratedAt;
 
+    // Richtingsfilter voor de "Analyseer alles"-lijst: "All" | "Long" | "Short" | "None".
+    [ObservableProperty] private string overviewDir = "All";
+
     // #1: fundamenteel kwaliteitsoordeel van de geanalyseerde coin
     [ObservableProperty] private string fundamentalDisplay = string.Empty;
     [ObservableProperty] private bool   hasFundamental;

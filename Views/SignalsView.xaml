@@ -89,6 +89,18 @@
                                       Width="20" Height="20" VerticalAlignment="Center"/>
                         <ProgressRing IsActive="{x:Bind _viewModel.IsEvaluating, Mode=OneWay}"
                                       Width="20" Height="20" VerticalAlignment="Center"/>
+
+                        <!-- Richtingsfilter -->
+                        <TextBlock Text="Richting:" VerticalAlignment="Center" Margin="8,0,0,0"
+                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        <ComboBox x:Name="DirectionFilterBox" MinWidth="130" VerticalAlignment="Center"
+                                  SelectedIndex="0" SelectionChanged="DirectionFilter_Changed"
+                                  ToolTipService.ToolTip="Toon alleen coins met een Long- of Short-signaal, of zonder richting">
+                            <ComboBoxItem Content="Alle richtingen" Tag="All"/>
+                            <ComboBoxItem Content="🟢 Long"         Tag="Long"/>
+                            <ComboBoxItem Content="🔴 Short"        Tag="Short"/>
+                            <ComboBoxItem Content="— Geen signaal"  Tag="None"/>
+                        </ComboBox>
                     </StackPanel>
 
                     <!-- Status message -->

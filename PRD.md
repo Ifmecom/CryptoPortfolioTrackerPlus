@@ -271,6 +271,10 @@ en een samenvattend verdict. Geen nieuwe databron — hergebruikt de bestaande k
 
 **Sortering:** alle kolommen klikbaar met pijl-indicator
 
+**Richtingsfilter *(v1.37)*:** een dropdown "Richting" (Alle/Long/Short/Geen signaal) in de toolbar. De VM houdt
+de volledige rijenlijst in `_allRows`; `DirectionFilter` filtert daaruit en `ApplySortToRows` past eerst de filter
+en daarna de kolomsortering toe op `Rows`. "Geen signaal" = richting ≠ Long en ≠ Short.
+
 ---
 
 ### 4.6 Trade Advies
@@ -292,6 +296,9 @@ en fundamentele kwaliteit naast elkaar staan.
 - Knop **"Analyseer alles"** → analyseert alle portfolio-coins concurrent (max 3 tegelijk)
 - Resultatenlijst gesorteerd: Long signals (sterkste eerste) → Short signals → geen signaal
 - Elke rij toont: logo · naam · richting · entry · SL · TP · R/R · databron
+- **Richtingsfilter *(v1.37)*:** dropdown "Richting" (Alle/Long/Short/Geen signaal) boven het Overzicht.
+  `TradeAnalysisViewModel.OverviewDir` stuurt het filter; de Overzicht-lijst (code-behind `RenderAllResults`)
+  filtert `AllResults` op richting en herrendert bij wijziging. De titelregel toont het actieve filter.
 
 **Paper Trade vanuit advies:**
 - Bij Long/Short-signaal: knop "Paper Trade" opent de `PaperTradeDialog` met exchange-stijl interface

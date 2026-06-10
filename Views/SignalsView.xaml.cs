@@ -28,6 +28,12 @@ public sealed partial class SignalsView : Page
         DataListView.Loaded += OnListViewLoaded;
     }
 
+    private void DirectionFilter_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (DirectionFilterBox.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            _viewModel.DirectionFilter = tag;
+    }
+
     private void OnListViewLoaded(object sender, RoutedEventArgs e)
     {
         _listScrollViewer = FindScrollViewer(DataListView);

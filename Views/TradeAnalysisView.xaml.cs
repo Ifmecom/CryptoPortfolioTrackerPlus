@@ -66,6 +66,12 @@ public sealed partial class TradeAnalysisView : Page
         _vm.PropertyChanged -= OnVmPropertyChanged;
     }
 
+    private void OverviewDir_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        if (OverviewDirBox.SelectedItem is ComboBoxItem item && item.Tag is string tag)
+            _vm.OverviewDir = tag;
+    }
+
     private void OnVmPropertyChanged(object? sender, PropertyChangedEventArgs e)
     {
         switch (e.PropertyName)
@@ -104,6 +110,16 @@ public sealed partial class TradeAnalysisView : Page
                     {
                         ShowOverviewPlaceholder();
                     }
+                });
+                break;
+
+            // Direction filter changed → re-render the overview (stay on the current tab)
+            case nameof(_vm.OverviewDir):
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (_vm.AllResults is null) return;
+                    OverviewPanel.Children.Clear();
+                    RenderAllResults(_vm.AllResults);
                 });
                 break;
 
@@ -171,17 +187,35 @@ public sealed partial class TradeAnalysisView : Page
     // Ranked "Analyseer alles" results
     // -----------------------------------------------------------------------
 
-    private void RenderAllResults(IReadOnlyList<CoinAnalysisSummary> results)
+    private void RenderAllResults(IReadOnlyList<CoinAnalysisSummary> allResults)
     {
+        // Richtingsfilter toepassen (VM.OverviewDir)
+        IEnumerable<CoinAnalysisSummary> view = _vm.OverviewDir switch
+        {
+            "Long"  => allResults.Where(r => r.Direction == "Long"),
+            "Short" => allResults.Where(r => r.Direction == "Short"),
+            "None"  => allResults.Where(r => r.Direction != "Long" && r.Direction != "Short"),
+            _       => allResults,
+        };
+        var results = view.ToList();
+
         // Section header row: title + timestamp
         var headerRow = new Grid();
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
         headerRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         headerRow.Margin = new Thickness(0, 4, 0, 12);
 
+        int signalCount = results.Count(r => r.Direction is "Long" or "Short");
+        string filterNote = _vm.OverviewDir switch
+        {
+            "Long"  => "  ·  filter: Long",
+            "Short" => "  ·  filter: Short",
+            "None"  => "  ·  filter: geen signaal",
+            _       => string.Empty,
+        };
         var titleBlock = new TextBlock
         {
-            Text       = $"Trade-signalen — {results.Count(r => r.Direction is "Long" or "Short")} signalen in {results.Count} coins",
+            Text       = $"Trade-signalen — {signalCount} signalen in {results.Count} coins{filterNote}",
             FontSize   = 15,
             FontWeight = FontWeights.SemiBold,
             VerticalAlignment = VerticalAlignment.Center,

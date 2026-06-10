@@ -31,6 +31,13 @@ public partial class SignalsViewModel : BaseViewModel
     [ObservableProperty] private string portfolioName = string.Empty;
     [ObservableProperty] private string statusMessage = string.Empty;
 
+    // Volledige (ongefilterde) rijenlijst — Rows is de gefilterde + gesorteerde weergave.
+    private List<CoinSignalRow> _allRows = new();
+
+    // Richtingsfilter: "All" | "Long" | "Short" | "None" (geen Long/Short-signaal).
+    [ObservableProperty] private string directionFilter = "All";
+    partial void OnDirectionFilterChanged(string value) => ApplySortToRows();
+
     // Skip DB+JSON reload on re-navigation; Refresh Analysis always forces a reload.
     private bool _isDataLoaded;
 
@@ -219,50 +226,60 @@ public partial class SignalsViewModel : BaseViewModel
 
     private void ApplySortToRows()
     {
-        if (Rows.Count == 0) return;
+        if (_allRows.Count == 0) { Rows = new ObservableCollection<CoinSignalRow>(); return; }
 
+        // 1. Richtingsfilter
+        IEnumerable<CoinSignalRow> filtered = DirectionFilter switch
+        {
+            "Long"  => _allRows.Where(r => r.Direction == "Long"),
+            "Short" => _allRows.Where(r => r.Direction == "Short"),
+            "None"  => _allRows.Where(r => r.Direction != "Long" && r.Direction != "Short"),
+            _       => _allRows,
+        };
+
+        // 2. Sortering
         IEnumerable<CoinSignalRow> sorted = SortAscending
             ? SortColumn switch
             {
-                "Rank"          => Rows.OrderBy(r => r.Rank),
-                "Name"          => Rows.OrderBy(r => r.Name),
-                "Macd"          => Rows.OrderBy(r => r.Macd),
-                "BollingerUpper"=> Rows.OrderBy(r => r.BollingerUpper),
-                "Atr"           => Rows.OrderBy(r => r.Atr),
-                "StochRsi"      => Rows.OrderBy(r => r.StochRsi),
-                "Sentiment"     => Rows.OrderBy(r => r.Sentiment),
-                "Regime"        => Rows.OrderBy(r => r.Regime),
-                "CombinedScore" => Rows.OrderBy(r => r.CombinedScore),
-                "Direction"     => Rows.OrderBy(r => r.Direction),
-                "EmaCross"      => Rows.OrderBy(r => r.EmaCross),
-                "RsiDaily"      => Rows.OrderBy(r => r.RsiDaily),
-                "Ma50DistPerc"  => Rows.OrderBy(r => r.Ma50DistPerc),
-                "Adx"           => Rows.OrderBy(r => r.Adx),
-                "BollingerPctB" => Rows.OrderBy(r => r.BollingerPctB),
-                "IsSqueeze"     => Rows.OrderBy(r => r.IsSqueeze ? 1.0 : 0.0),
-                "High52wPerc"   => Rows.OrderBy(r => r.High52wPerc),
-                _               => Rows.OrderBy(r => r.Rank),
+                "Rank"          => filtered.OrderBy(r => r.Rank),
+                "Name"          => filtered.OrderBy(r => r.Name),
+                "Macd"          => filtered.OrderBy(r => r.Macd),
+                "BollingerUpper"=> filtered.OrderBy(r => r.BollingerUpper),
+                "Atr"           => filtered.OrderBy(r => r.Atr),
+                "StochRsi"      => filtered.OrderBy(r => r.StochRsi),
+                "Sentiment"     => filtered.OrderBy(r => r.Sentiment),
+                "Regime"        => filtered.OrderBy(r => r.Regime),
+                "CombinedScore" => filtered.OrderBy(r => r.CombinedScore),
+                "Direction"     => filtered.OrderBy(r => r.Direction),
+                "EmaCross"      => filtered.OrderBy(r => r.EmaCross),
+                "RsiDaily"      => filtered.OrderBy(r => r.RsiDaily),
+                "Ma50DistPerc"  => filtered.OrderBy(r => r.Ma50DistPerc),
+                "Adx"           => filtered.OrderBy(r => r.Adx),
+                "BollingerPctB" => filtered.OrderBy(r => r.BollingerPctB),
+                "IsSqueeze"     => filtered.OrderBy(r => r.IsSqueeze ? 1.0 : 0.0),
+                "High52wPerc"   => filtered.OrderBy(r => r.High52wPerc),
+                _               => filtered.OrderBy(r => r.Rank),
             }
             : SortColumn switch
             {
-                "Rank"          => Rows.OrderByDescending(r => r.Rank),
-                "Name"          => Rows.OrderByDescending(r => r.Name),
-                "Macd"          => Rows.OrderByDescending(r => r.Macd),
-                "BollingerUpper"=> Rows.OrderByDescending(r => r.BollingerUpper),
-                "Atr"           => Rows.OrderByDescending(r => r.Atr),
-                "StochRsi"      => Rows.OrderByDescending(r => r.StochRsi),
-                "Sentiment"     => Rows.OrderByDescending(r => r.Sentiment),
-                "Regime"        => Rows.OrderByDescending(r => r.Regime),
-                "CombinedScore" => Rows.OrderByDescending(r => r.CombinedScore),
-                "Direction"     => Rows.OrderByDescending(r => r.Direction),
-                "EmaCross"      => Rows.OrderByDescending(r => r.EmaCross),
-                "RsiDaily"      => Rows.OrderByDescending(r => r.RsiDaily),
-                "Ma50DistPerc"  => Rows.OrderByDescending(r => r.Ma50DistPerc),
-                "Adx"           => Rows.OrderByDescending(r => r.Adx),
-                "BollingerPctB" => Rows.OrderByDescending(r => r.BollingerPctB),
-                "IsSqueeze"     => Rows.OrderByDescending(r => r.IsSqueeze ? 1.0 : 0.0),
-                "High52wPerc"   => Rows.OrderByDescending(r => r.High52wPerc),
-                _               => Rows.OrderByDescending(r => r.Rank),
+                "Rank"          => filtered.OrderByDescending(r => r.Rank),
+                "Name"          => filtered.OrderByDescending(r => r.Name),
+                "Macd"          => filtered.OrderByDescending(r => r.Macd),
+                "BollingerUpper"=> filtered.OrderByDescending(r => r.BollingerUpper),
+                "Atr"           => filtered.OrderByDescending(r => r.Atr),
+                "StochRsi"      => filtered.OrderByDescending(r => r.StochRsi),
+                "Sentiment"     => filtered.OrderByDescending(r => r.Sentiment),
+                "Regime"        => filtered.OrderByDescending(r => r.Regime),
+                "CombinedScore" => filtered.OrderByDescending(r => r.CombinedScore),
+                "Direction"     => filtered.OrderByDescending(r => r.Direction),
+                "EmaCross"      => filtered.OrderByDescending(r => r.EmaCross),
+                "RsiDaily"      => filtered.OrderByDescending(r => r.RsiDaily),
+                "Ma50DistPerc"  => filtered.OrderByDescending(r => r.Ma50DistPerc),
+                "Adx"           => filtered.OrderByDescending(r => r.Adx),
+                "BollingerPctB" => filtered.OrderByDescending(r => r.BollingerPctB),
+                "IsSqueeze"     => filtered.OrderByDescending(r => r.IsSqueeze ? 1.0 : 0.0),
+                "High52wPerc"   => filtered.OrderByDescending(r => r.High52wPerc),
+                _               => filtered.OrderByDescending(r => r.Rank),
             };
 
         Rows = new ObservableCollection<CoinSignalRow>(sorted);
@@ -304,17 +321,17 @@ public partial class SignalsViewModel : BaseViewModel
                                           t1h, t4h, tDay));
         }
 
-        Rows = new ObservableCollection<CoinSignalRow>(rowList);
+        _allRows = rowList;
 
-        // Re-apply current sort (default is by Rank when SortColumn=="Rank")
+        // Apply current direction filter + sort (default is by Rank when SortColumn=="Rank")
         ApplySortToRows();
 
         var ts = DateTime.Now.ToString("HH:mm:ss");
-        StatusMessage = Rows.Count == 0
+        StatusMessage = _allRows.Count == 0
             ? "No assets found."
-            : Rows.All(r => !r.HasSignal)
+            : _allRows.All(r => !r.HasSignal)
                 ? $"No signal data yet — press Evaluate Signals to run the engine.  ({ts})"
-                : $"Showing analysis for {Rows.Count} assets.  ({ts})";
+                : $"Showing analysis for {_allRows.Count} assets.  ({ts})";
         _isDataLoaded = true;
     }
 

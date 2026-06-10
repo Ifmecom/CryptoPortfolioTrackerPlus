@@ -136,12 +136,35 @@
             <Pivot Grid.Row="2" x:Name="ContentPivot" Margin="16,0,16,0">
 
                 <PivotItem Header="Overzicht">
-                    <ScrollViewer VerticalScrollMode="Auto"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollMode="Disabled"
-                                  Padding="10,8,10,24">
-                        <StackPanel x:Name="OverviewPanel" Spacing="0"/>
-                    </ScrollViewer>
+                    <Grid RowSpacing="4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="*"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Richtingsfilter -->
+                        <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6"
+                                    Margin="10,6,10,0" VerticalAlignment="Center">
+                            <TextBlock Text="Richting:" VerticalAlignment="Center"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                            <ComboBox x:Name="OverviewDirBox" MinWidth="130" SelectedIndex="0"
+                                      SelectionChanged="OverviewDir_Changed"
+                                      ToolTipService.ToolTip="Toon alleen Long- of Short-signalen, of coins zonder signaal">
+                                <ComboBoxItem Content="Alle richtingen" Tag="All"/>
+                                <ComboBoxItem Content="🟢 Long"         Tag="Long"/>
+                                <ComboBoxItem Content="🔴 Short"        Tag="Short"/>
+                                <ComboBoxItem Content="— Geen signaal"  Tag="None"/>
+                            </ComboBox>
+                        </StackPanel>
+
+                        <ScrollViewer Grid.Row="1"
+                                      VerticalScrollMode="Auto"
+                                      VerticalScrollBarVisibility="Auto"
+                                      HorizontalScrollMode="Disabled"
+                                      Padding="10,8,10,24">
+                            <StackPanel x:Name="OverviewPanel" Spacing="0"/>
+                        </ScrollViewer>
+                    </Grid>
                 </PivotItem>
 
                 <PivotItem Header="Analyse">

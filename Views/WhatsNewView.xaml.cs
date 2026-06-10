@@ -53,6 +53,11 @@ public sealed partial class WhatsNewView : Page
             "de patronen uit je laatste scan (sterkte ≥ 60) en toont per patroon hoeveel coins het hebben. " +
             "Combineerbaar met de categorie-, timeframe- en zoekfilters.");
 
+        AddFeature("🧭", "Richtingsfilter in Trade Advies en Signalen",
+            "Ook de scan-lijsten in Trade Advies (Overzicht) en Signalen hebben nu een filter: toon alleen Long, " +
+            "alleen Short of coins zonder signaal. Deze tabs werken niet met chart-patronen maar met richting/score, " +
+            "dus daar is het filteren op richting — consistent met de Bullish/Bearish-filter in Pattern Trading.");
+
         // ── v1.36 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.36", "Risk-managed trading · positiegrootte op risico");
 
