@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.36
+## CryptoPortfolioTracker Plus — v1.37
 
 | | |
 |---|---|
@@ -359,13 +359,26 @@ Bij elke vernieuwopdracht roept de ViewModel `AutoCloseTriggeredAsync()` aan. Or
 
 **Totaalregel:** som van alle gerealiseerde P&L voor de actieve filter.
 
-**Risico-dashboard *(v1.36)*:** de knop 'Risico' opent `RiskDashboardDialog`. `IRiskDashboardService` verzamelt de
-open (Filled) orders + gerealiseerde dag-P&L en bouwt via de pure `RiskDashboardCalculator` een portfolio-breed
-overzicht: aantal open posities vs `MaxOpenPositions`, totaal open risico (som van verlies-bij-SL) + % van kapitaal,
-grootste positie-risico, blootstelling, dag-P&L vs `DailyLossLimitPerc`, en kill-switch-status — met guardrail-alerts
-(LOW/MEDIUM/HIGH). De **kapitaalbasis is instelbaar** (`IRiskCapitalService`): virtueel paper-kapitaal
-(`Settings.PaperVirtualCapital`) of de werkelijke portfoliowaarde (`Settings.UseRealPortfolioForRisk`),
-consistent met de positiegrootte-berekening.
+**Risico-dashboard *(v1.36, scope-splitsing v1.37)*:** de knop 'Risico' opent `RiskDashboardDialog` met een
+**Paper/Live-schakelaar** (`RiskScope`). `IRiskDashboardService.BuildAsync(scope)` filtert de open (Filled) orders op
+`IsPaper` en bouwt via de pure `RiskDashboardCalculator` per bereik een overzicht: open posities vs `MaxOpenPositions`,
+totaal open risico (som van verlies-bij-SL) + % van kapitaal, grootste positie-risico, blootstelling, dag-P&L vs
+`DailyLossLimitPerc`, kill-switch-status en guardrail-alerts. **Kapitaalbasis per scope:** paper rekent tegen de
+gekozen basis (`IRiskCapitalService`: `Settings.PaperVirtualCapital` of echte portfoliowaarde via
+`Settings.UseRealPortfolioForRisk`); live rekent **altijd** tegen de echte portfoliowaarde
+(`IRiskCapitalService.GetRealPortfolioValueAsync`). Paper- en live-risico vermengen dus nooit.
+
+**Guardrail-handhaving *(v1.37)*:** `TradeService.PlacePaperAsync` controleert vóór elke order de guardrails via
+`IGuardrailService` (pure `GuardrailEvaluator`): een actieve **kill-switch**, het bereikte **max aantal open
+paper-posities** of een bereikte **dagelijkse verlieslimiet** (gerealiseerde paper-dag-P&L ≤ −limiet% × kapitaal)
+blokkeren de order met een `InvalidOperationException` ("⛔ Geblokkeerd door risk-guardrails: …") die alle
+aanroepende views als statusmelding tonen. Een limiet van 0 = niet ingesteld. Een falende check blokkeert nooit
+(fail-open, gelogd).
+
+**Trade-alerts via Telegram *(v1.37)*:** `INotifierService.SendAlertAsync` (best-effort, faalt stil) wordt
+aangeroepen bij: auto-fill van pending orders, auto-close op TP/SL (incl. P&L), statusovergangen van gevolgde
+setups (entry geraakt / TP1 / TP2 / SL) en — eenmaal per dag — het bereiken van de dagelijkse verlieslimiet.
+Vereist alleen de bestaande Telegram-configuratie (`IsTelegramEnabled` + token + chat-id).
 
 **Zie §6.1 voor P&L- en R-multiple-berekeningen.**
 

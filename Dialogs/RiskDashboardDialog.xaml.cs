@@ -6,6 +6,7 @@ using Microsoft.UI;
 using Microsoft.UI.Text;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Controls.Primitives;
 using Microsoft.UI.Xaml.Media;
 using Windows.UI;
 
@@ -18,6 +19,7 @@ public sealed partial class RiskDashboardDialog : ContentDialog
 {
     private readonly IRiskDashboardService _service;
     private readonly Settings _settings;
+    private RiskScope _scope = RiskScope.Paper;
 
     private static readonly SolidColorBrush Green   = new(Color.FromArgb(255, 60, 179, 113));
     private static readonly SolidColorBrush Orange  = new(Color.FromArgb(255, 255, 167, 38));
@@ -37,7 +39,13 @@ public sealed partial class RiskDashboardDialog : ContentDialog
         if (sender.ActualTheme != _settings.AppTheme)
             sender.RequestedTheme = _settings.AppTheme;
 
+        Reload();
+    }
+
+    private void Reload()
+    {
         ContentPanel.Children.Clear();
+        ContentPanel.Children.Add(BuildScopeToggle());
         ContentPanel.Children.Add(new ProgressRing { IsActive = true, Width = 26, Height = 26, HorizontalAlignment = HorizontalAlignment.Left });
         _ = RunAsync();
     }
@@ -46,19 +54,38 @@ public sealed partial class RiskDashboardDialog : ContentDialog
     {
         try
         {
-            var r = await _service.BuildAsync();
+            var r = await _service.BuildAsync(_scope);
             Build(r);
         }
         catch (Exception ex)
         {
             ContentPanel.Children.Clear();
+            ContentPanel.Children.Add(BuildScopeToggle());
             ContentPanel.Children.Add(new TextBlock { Text = $"Kon risico niet berekenen: {ex.Message}", Foreground = Red, TextWrapping = TextWrapping.Wrap, FontSize = 12 });
         }
+    }
+
+    /// <summary>Paper/Live-schakelaar — elk bereik heeft zijn eigen posities én kapitaalbasis.</summary>
+    private UIElement BuildScopeToggle()
+    {
+        var paperBtn = new ToggleButton { Content = "📝 Paper", IsChecked = _scope == RiskScope.Paper, Padding = new Thickness(14, 4, 14, 4) };
+        var liveBtn  = new ToggleButton { Content = "💰 Live",  IsChecked = _scope == RiskScope.Live,  Padding = new Thickness(14, 4, 14, 4) };
+        ToolTipService.SetToolTip(paperBtn, "Risico over je paper-posities, tegen de gekozen kapitaalbasis");
+        ToolTipService.SetToolTip(liveBtn,  "Risico over je live-posities, altijd tegen de echte portfoliowaarde");
+
+        paperBtn.Click += (_, _) => { if (_scope != RiskScope.Paper) { _scope = RiskScope.Paper; Reload(); } else paperBtn.IsChecked = true; };
+        liveBtn.Click  += (_, _) => { if (_scope != RiskScope.Live)  { _scope = RiskScope.Live;  Reload(); } else liveBtn.IsChecked = true; };
+
+        var sp = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
+        sp.Children.Add(paperBtn);
+        sp.Children.Add(liveBtn);
+        return sp;
     }
 
     private void Build(RiskDashboard r)
     {
         ContentPanel.Children.Clear();
+        ContentPanel.Children.Add(BuildScopeToggle());
 
         // ── Statusbanner ───────────────────────────────────────────────────────
         var (statusText, statusBrush) = r.Status switch

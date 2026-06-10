@@ -13,9 +13,9 @@ using Serilog.Core;
 namespace CryptoPortfolioTracker.Services;
 
 /// <summary>
-/// Verzamelt de open posities + gerealiseerde dag-P&amp;L uit de ExchangeOrders en bouwt via de pure
-/// <see cref="RiskDashboardCalculator"/> het risico-overzicht. Rekent tegen het virtuele paper-kapitaal,
-/// consistent met de PaperTradeDialog en de positiegrootte-berekening.
+/// Verzamelt de open posities + gerealiseerde dag-P&amp;L uit de ExchangeOrders (gescheiden naar
+/// paper of live) en bouwt via de pure <see cref="RiskDashboardCalculator"/> het risico-overzicht.
+/// Paper rekent tegen de gekozen kapitaalbasis (instelling); live altijd tegen de echte portfoliowaarde.
 /// </summary>
 public class RiskDashboardService : IRiskDashboardService
 {
@@ -33,10 +33,23 @@ public class RiskDashboardService : IRiskDashboardService
         _capital          = capital;
     }
 
-    public async Task<RiskDashboard> BuildAsync(CancellationToken ct = default)
+    public async Task<RiskDashboard> BuildAsync(RiskScope scope = RiskScope.Paper, CancellationToken ct = default)
     {
-        double capital = await _capital.GetCapitalAsync(ct);
-        string basis   = _capital.BasisLabel;
+        bool paper = scope == RiskScope.Paper;
+
+        // Paper volgt de gekozen kapitaalbasis; live rekent altijd tegen de echte portfoliowaarde.
+        double capital;
+        string basis;
+        if (paper)
+        {
+            capital = await _capital.GetCapitalAsync(ct);
+            basis   = _capital.BasisLabel;
+        }
+        else
+        {
+            capital = await _capital.GetRealPortfolioValueAsync(ct);
+            basis   = "echte portfoliowaarde";
+        }
 
         var ctx = _portfolioService.Context;
         if (ctx is null)
@@ -44,9 +57,9 @@ public class RiskDashboardService : IRiskDashboardService
                 _settings.MaxOpenPositions, _settings.DailyLossLimitPerc,
                 _settings.MaxPortfolioPercPerTrade, _settings.IsKillSwitchActive, basis);
 
-        // Open posities (gevuld, nog niet gesloten)
+        // Open posities (gevuld, nog niet gesloten) — gescheiden naar paper of live
         var open = await ctx.ExchangeOrders.AsNoTracking()
-            .Where(o => o.Status == OrderStatus.Filled)
+            .Where(o => o.Status == OrderStatus.Filled && o.IsPaper == paper)
             .ToListAsync(ct);
 
         // Live koersen per basis-symbool
@@ -68,7 +81,8 @@ public class RiskDashboardService : IRiskDashboardService
         // Gerealiseerde P&L van vandaag (UTC-dag)
         var todayUtc = DateTime.UtcNow.Date;
         var closedToday = await ctx.ExchangeOrders.AsNoTracking()
-            .Where(o => o.Status == OrderStatus.Closed && o.ClosedAt != null && o.ClosedAt >= todayUtc)
+            .Where(o => o.Status == OrderStatus.Closed && o.IsPaper == paper
+                     && o.ClosedAt != null && o.ClosedAt >= todayUtc)
             .ToListAsync(ct);
 
         double dayPnl = closedToday

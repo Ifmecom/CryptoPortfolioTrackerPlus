@@ -175,7 +175,7 @@
             <!-- Kill-switch waarschuwing -->
             <InfoBar x:Name="killSwitchBar" IsOpen="False" IsClosable="False" Severity="Error"
                      Title="Kill-switch actief"
-                     Message="Auto-trading is uitgeschakeld in Instellingen → Risk-guardrails. Deze trade is alleen ter simulatie."/>
+                     Message="Het plaatsen van nieuwe trades is geblokkeerd. Zet de kill-switch uit in Instellingen → Risk-guardrails om weer te kunnen handelen."/>
         </StackPanel>
 
         <!-- ── 6 · Leverage (Futures / Margin only) ──────────────────────── -->

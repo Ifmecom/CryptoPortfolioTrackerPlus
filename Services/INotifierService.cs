@@ -16,4 +16,11 @@ public interface INotifierService
     /// Returns true on success, false on failure.
     /// </summary>
     Task<bool> TestConnectionAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Stuurt een losse alert (HTML) naar Telegram — gebruikt voor trade-triggers
+    /// (entry gevuld, TP/SL geraakt) en guardrail-events. Faalt stil wanneer Telegram
+    /// uitgeschakeld of niet geconfigureerd is; gooit nooit een exception.
+    /// </summary>
+    Task SendAlertAsync(string htmlMessage, CancellationToken ct = default);
 }

@@ -15,6 +15,9 @@ public readonly record struct RiskPosition(string Symbol, double Entry, double S
 
 public enum RiskSeverity { Ok, Warning, Critical }
 
+/// <summary>Bereik van het risico-overzicht: alleen paper-posities of alleen live-posities.</summary>
+public enum RiskScope { Paper, Live }
+
 public record RiskAlert(RiskSeverity Severity, string Message);
 
 /// <summary>Portfolio-breed risico-overzicht met guardrail-status.</summary>

@@ -262,7 +262,7 @@
 
                                 <!-- Max % per trade -->
                                 <ct:SettingsCard Header="Max % portfolio per trade"
-                                    Description="Maximaal deel van de portefeuillewaarde dat per order geriskeerd mag worden."
+                                    Description="Standaard risico-% voor de positiegrootte; de trade-dialoog en het risico-dashboard waarschuwen bij overschrijding (geen harde blokkade)."
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE81E;}">
                                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                                         <Slider Value="{x:Bind _viewModel.MaxPortfolioPercPerTrade, Mode=TwoWay}"
@@ -276,7 +276,7 @@
 
                                 <!-- Max open positions -->
                                 <ct:SettingsCard Header="Max openstaande posities"
-                                    Description="De signal-engine weigert nieuwe trades als dit aantal bereikt is."
+                                    Description="Nieuwe paper trades worden geweigerd zodra dit aantal open posities is bereikt."
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE8FD;}">
                                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                                         <Slider Value="{x:Bind _viewModel.MaxOpenPositions, Mode=TwoWay}"
@@ -289,7 +289,7 @@
 
                                 <!-- Daily loss limit -->
                                 <ct:SettingsCard Header="Dagelijkse verlies-limiet"
-                                    Description="Als het dagverlies dit % van de portfolio bereikt, pauzeert de signal-engine 24 uur."
+                                    Description="Bereikt het gerealiseerde dagverlies dit % van het kapitaal, dan worden nieuwe paper trades geblokkeerd voor de rest van de dag (+ Telegram-alert)."
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE783;}">
                                     <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
                                         <Slider Value="{x:Bind _viewModel.DailyLossLimitPerc, Mode=TwoWay}"
@@ -303,7 +303,7 @@
 
                                 <!-- Kill-switch -->
                                 <ct:SettingsCard Header="Kill-switch"
-                                    Description="Zet alles direct op pauze — signal-engine en auto-trading worden volledig gestopt."
+                                    Description="Blokkeert direct het plaatsen van nieuwe (paper) trades, overal in de app."
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE7E8;}">
                                     <ToggleSwitch IsOn="{x:Bind _viewModel.IsKillSwitchActive, Mode=TwoWay}"
                                                   OnContent="ACTIEF" OffContent="Uit"/>

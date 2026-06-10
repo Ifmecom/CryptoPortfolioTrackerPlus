@@ -105,6 +105,28 @@ public class NotifierService : INotifierService
         }
     }
 
+    public async Task SendAlertAsync(string htmlMessage, CancellationToken ct = default)
+    {
+        if (!_settings.IsTelegramEnabled || string.IsNullOrWhiteSpace(htmlMessage)) return;
+
+        var client = GetClient();
+        if (client is null) return;
+
+        var chatId = _settings.TelegramChatId.Trim();
+        if (string.IsNullOrEmpty(chatId)) return;
+
+        try
+        {
+            await client.SendTextMessageAsync(chatId, htmlMessage, parseMode: ParseMode.Html, cancellationToken: ct);
+            Logger.Information("Telegram: alert verzonden");
+        }
+        catch (Exception ex)
+        {
+            // Alerts zijn best-effort — nooit het aanroepende proces laten falen.
+            Logger.Warning(ex, "Telegram: alert verzenden mislukt");
+        }
+    }
+
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------

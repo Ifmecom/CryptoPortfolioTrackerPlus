@@ -28,6 +28,20 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.37  —  Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
+
+        AddFeature("⛔", "Guardrails worden nu écht afgedwongen",
+            "Kill-switch, max open posities en de dagelijkse verlieslimiet blokkeren nu daadwerkelijk het " +
+            "plaatsen van nieuwe paper trades — overal in de app.");
+
+        AddFeature("🔔", "Telegram-alerts bij trade-triggers",
+            "Automatisch bericht bij entry-fill, TP/SL-hit (met P&L), setup-statuswissel en het bereiken " +
+            "van de dagelijkse verlieslimiet.");
+
+        AddFeature("📝💰", "Risico-dashboard: Paper en Live gescheiden",
+            "Schakelaar in het dashboard — paper tegen je gekozen kapitaalbasis, live altijd tegen je echte " +
+            "portfoliowaarde.");
+
         AddVersionHeader("v1.36  —  Risk-managed trading · positiegrootte op risico");
 
         AddFeature("📐", "Positiegrootte op basis van risico",

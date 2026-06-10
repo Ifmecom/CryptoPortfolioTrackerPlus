@@ -7,8 +7,9 @@ namespace CryptoPortfolioTracker.Services;
 public interface IRiskDashboardService
 {
     /// <summary>
-    /// Bouwt het portfolio-brede risico-overzicht uit de open (Filled) orders, de gerealiseerde
-    /// dag-P&amp;L en de risk-guardrail-instellingen.
+    /// Bouwt het risico-overzicht voor het gegeven bereik (paper óf live) uit de open (Filled)
+    /// orders, de gerealiseerde dag-P&amp;L en de risk-guardrail-instellingen.
+    /// Paper rekent tegen de gekozen kapitaalbasis; live altijd tegen de echte portfoliowaarde.
     /// </summary>
-    Task<RiskDashboard> BuildAsync(CancellationToken ct = default);
+    Task<RiskDashboard> BuildAsync(RiskScope scope = RiskScope.Paper, CancellationToken ct = default);
 }

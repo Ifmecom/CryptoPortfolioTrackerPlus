@@ -34,23 +34,28 @@ public class RiskCapitalService : IRiskCapitalService
         double paper = _settings.PaperVirtualCapital > 0 ? _settings.PaperVirtualCapital : 10_000.0;
         if (!_settings.UseRealPortfolioForRisk) return paper;
 
+        double real = await GetRealPortfolioValueAsync(ct);
+        return real > 0 ? real : paper;   // lege echte portfolio → val terug op paper
+    }
+
+    public async Task<double> GetRealPortfolioValueAsync(CancellationToken ct = default)
+    {
         try
         {
             var ctx = _portfolioService.Context;
-            if (ctx is null) return paper;
+            if (ctx is null) return 0;
 
             var coins = await ctx.Coins.Include(c => c.Assets)
                 .Where(c => c.IsAsset)
                 .AsNoTracking()
                 .ToListAsync(ct);
 
-            double total = coins.Sum(c => (c.Assets?.Sum(a => a.Qty) ?? 0) * c.Price);
-            return total > 0 ? total : paper;   // lege echte portfolio → val terug op paper
+            return coins.Sum(c => (c.Assets?.Sum(a => a.Qty) ?? 0) * c.Price);
         }
         catch (Exception ex)
         {
             Logger.Warning(ex, "RiskCapitalService: echte portfoliowaarde bepalen mislukt");
-            return paper;
+            return 0;
         }
     }
 }

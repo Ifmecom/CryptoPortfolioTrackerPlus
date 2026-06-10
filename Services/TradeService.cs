@@ -10,11 +10,21 @@ public class TradeService : ITradeService
 {
     private static readonly ILogger Logger = Log.Logger.ForContext(Constants.SourceContextPropertyName, nameof(TradeService).PadRight(22));
 
-    private readonly PortfolioService _portfolioService;
+    private readonly PortfolioService  _portfolioService;
+    private readonly IGuardrailService? _guardrails;
+    private readonly INotifierService?  _notifier;
 
-    public TradeService(PortfolioService portfolioService)
+    // Per-dag flag zodat de verlieslimiet-alert maar één keer per dag wordt verstuurd.
+    private static DateTime _lastDailyLossAlertDay = DateTime.MinValue;
+
+    public TradeService(
+        PortfolioService portfolioService,
+        IGuardrailService? guardrails = null,
+        INotifierService?  notifier   = null)
     {
         _portfolioService = portfolioService;
+        _guardrails       = guardrails;
+        _notifier         = notifier;
     }
 
     // -----------------------------------------------------------------------
@@ -28,6 +38,14 @@ public class TradeService : ITradeService
 
         if (coin.Price <= 0)
             throw new ArgumentException($"Coin '{coin.Name}' has no current price — cannot place paper order.");
+
+        // ── Risk-guardrails (kill-switch, max posities, dagverlieslimiet) ────
+        if (_guardrails is not null)
+        {
+            var verdict = await _guardrails.CheckNewTradeAsync();
+            if (verdict.IsBlocked)
+                throw new InvalidOperationException($"⛔ Geblokkeerd door risk-guardrails: {verdict.ReasonText}");
+        }
 
         // Entry price: limit orders use the specified limit price; market orders use current price.
         var entry = req.OrderType == OrderType.Limit && req.LimitPrice > 0
@@ -206,6 +224,11 @@ public class TradeService : ITradeService
             Logger.Information(
                 "TradeService AUTO-FILL: #{Id} {Symbol} {Side} entry={Entry} current={Price} → Filled",
                 order.Id, order.Symbol, order.Side, order.Entry, price);
+
+            if (_notifier is not null)
+                await _notifier.SendAlertAsync(
+                    $"✅ <b>Entry gevuld</b> — {order.Symbol} {order.Side}\n" +
+                    $"Limit {order.Entry:#,0.########} bereikt (koers {price:#,0.########}).");
         }
 
         if (filled.Count > 0)
@@ -292,12 +315,46 @@ public class TradeService : ITradeService
             Logger.Information(
                 "TradeService AUTO-CLOSE: #{Id} {Symbol} {Reason} PnL={Pnl:+0.00;-0.00} USDT",
                 order.Id, order.Symbol, reason, pnl);
+
+            if (_notifier is not null)
+                await _notifier.SendAlertAsync(
+                    $"{(pnl >= 0 ? "🎯" : "🛑")} <b>Positie gesloten</b> — {order.Symbol} {order.Side}\n" +
+                    $"{reason}\nP&amp;L: <b>{pnl:+0.00;-0.00} USDT</b>");
         }
 
         if (closed.Count > 0)
+        {
             await context.SaveChangesAsync();
+            await AlertIfDailyLossLimitCrossedAsync(context);
+        }
 
         return closed;
+    }
+
+    /// <summary>
+    /// Stuurt (eenmaal per dag) een alert wanneer de gerealiseerde paper-dag-P&amp;L
+    /// door de ingestelde dagelijkse verlieslimiet zakt.
+    /// </summary>
+    private async Task AlertIfDailyLossLimitCrossedAsync(Infrastructure.PortfolioContext context)
+    {
+        if (_notifier is null || _guardrails is null) return;
+        if (_lastDailyLossAlertDay == DateTime.UtcNow.Date) return;   // al gemeld vandaag
+
+        try
+        {
+            var verdict = await _guardrails.CheckNewTradeAsync();
+            var lossReason = verdict.Reasons.FirstOrDefault(r => r.Contains("verlieslimiet"));
+            if (lossReason is null) return;
+
+            _lastDailyLossAlertDay = DateTime.UtcNow.Date;
+            await _notifier.SendAlertAsync(
+                $"🚨 <b>Dagelijkse verlieslimiet bereikt</b>\n{lossReason}\n" +
+                "Nieuwe paper trades zijn geblokkeerd voor de rest van de dag.");
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "TradeService: dagverlies-alert mislukt");
+        }
     }
 
     public async Task UpdateNotesAsync(int orderId, string notes)

@@ -10,11 +10,13 @@ public class WatchedSetupService : IWatchedSetupService
 {
     private readonly PortfolioService?              _portfolioService;
     private readonly Infrastructure.PortfolioContext? _directCtx;
+    private readonly INotifierService?              _notifier;
     private readonly ILogger                        _log;
 
-    public WatchedSetupService(PortfolioService portfolioService)
+    public WatchedSetupService(PortfolioService portfolioService, INotifierService? notifier = null)
     {
         _portfolioService = portfolioService;
+        _notifier         = notifier;
         _log = Log.Logger.ForContext(
             Constants.SourceContextPropertyName,
             nameof(WatchedSetupService).PadRight(22));
@@ -179,6 +181,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.Tp2Hit     = true;
                 updated++;
                 _log.Information("WatchedSetup Won (TP2): {Coin} @ {Price}", setup.CoinName, price);
+                await AlertAsync($"🏆 <b>Setup gewonnen (TP2)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP2 {setup.Target2:#,0.########}.");
             }
             else if (hitTP1 && setup.Status != WatchedSetupStatus.Won)
             {
@@ -188,6 +191,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.ClosedAt   = DateTime.UtcNow;
                 updated++;
                 _log.Information("WatchedSetup Won (TP1): {Coin} @ {Price}", setup.CoinName, price);
+                await AlertAsync($"🎯 <b>Setup gewonnen (TP1)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP1 {setup.Target1:#,0.########}.");
             }
             else if (hitSL)
             {
@@ -197,6 +201,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.ClosedAt   = DateTime.UtcNow;
                 updated++;
                 _log.Information("WatchedSetup Lost: {Coin} @ {Price}", setup.CoinName, price);
+                await AlertAsync($"🛑 <b>Setup verloren (SL)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} raakte stop-loss {setup.StopLoss:#,0.########}.");
             }
             else if (entryHit && setup.Status == WatchedSetupStatus.Watching)
             {
@@ -205,6 +210,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.Status  = WatchedSetupStatus.Open;
                 updated++;
                 _log.Information("WatchedSetup Open (entry hit): {Coin} @ {Price}", setup.CoinName, price);
+                await AlertAsync($"📥 <b>Entry geraakt</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte de entry {setup.EntryPrice:#,0.########}; setup is nu In Trade.");
             }
         }
 
@@ -212,6 +218,14 @@ public class WatchedSetupService : IWatchedSetupService
             await Ctx.SaveChangesAsync();
 
         return updated;
+    }
+
+    /// <summary>Best-effort Telegram-alert; statusovergangen zijn eenmalig dus geen dedupe nodig.</summary>
+    private async Task AlertAsync(string htmlMessage)
+    {
+        if (_notifier is null) return;
+        try { await _notifier.SendAlertAsync(htmlMessage); }
+        catch { /* alerts mogen de statusupdate nooit laten falen */ }
     }
 
     // ── Stats ────────────────────────────────────────────────────────────────

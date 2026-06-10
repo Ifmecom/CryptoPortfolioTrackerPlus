@@ -27,6 +27,26 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.37 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.37", "Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
+
+        AddFeature("⛔", "Risk-guardrails worden nu écht afgedwongen",
+            "De kill-switch, het maximum aantal open posities en de dagelijkse verlieslimiet blokkeren nu " +
+            "daadwerkelijk het plaatsen van nieuwe paper trades — overal in de app (Trade Advies, Pattern Trading, " +
+            "3% Trading, Signalen). Voorheen werden deze instellingen alleen getoond. De Instellingen-teksten " +
+            "beschrijven nu exact wat elke grens doet.");
+
+        AddFeature("🔔", "Telegram-alerts bij trade-triggers",
+            "Je krijgt nu automatisch een Telegram-bericht wanneer een pending order wordt gevuld, een TP of SL " +
+            "wordt geraakt (met P&L), een gevolgde setup van status wisselt (entry geraakt / gewonnen / verloren) " +
+            "en wanneer de dagelijkse verlieslimiet wordt bereikt. Werkt met de bestaande Telegram-koppeling; " +
+            "geen extra configuratie nodig.");
+
+        AddFeature("📝💰", "Risico-dashboard gescheiden in Paper en Live",
+            "Het risico-dashboard heeft nu een Paper/Live-schakelaar: paper-posities worden tegen je (virtuele of " +
+            "gekozen) kapitaalbasis gerekend, live-posities altijd tegen je echte portfoliowaarde. Geen vermenging " +
+            "meer van paper-risico met echte blootstelling.");
+
         // ── v1.36 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.36", "Risk-managed trading · positiegrootte op risico");
 
