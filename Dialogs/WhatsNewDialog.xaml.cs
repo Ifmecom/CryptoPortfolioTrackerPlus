@@ -28,6 +28,19 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.38  —  Betere patroonherkenning · gefitte trendlijnen");
+
+        AddFeature("📐", "Trendlijnen die op de koers passen",
+            "Kanaal- en driehoekdetectie tekenen hun lijnen nu via regressie door alle swing-punten — niet meer " +
+            "schuin tussen eerste en laatste punt.");
+
+        AddFeature("🎯", "Minder valse patronen",
+            "Een R²-toets verwerpt patronen waarvan de swings niet echt op de trendlijn liggen. Swing-detectie " +
+            "gebruikt nu de candle-wicks + een volatiliteits-ruisfilter.");
+
+        AddFeature("🧹", "Eén patroon per grafiek",
+            "De grafiek toont het aangeklikte of sterkste patroon i.p.v. alle patronen over elkaar.");
+
         AddVersionHeader("v1.37  —  Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 
         AddFeature("⛔", "Guardrails worden nu écht afgedwongen",

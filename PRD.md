@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.37
+## CryptoPortfolioTracker Plus — v1.38
 
 | | |
 |---|---|
@@ -1659,17 +1659,30 @@ Confidence:
 - Uptrend / Downtrend: 3+ opeenvolgende HH+HL of LH+LL swing-punten
 - Double Bottom / Top: twee lows/highs binnen 2.5%, confirmed als recovery > 4%
 - Bull Flag / Bear Flag: pole > 5%, flagrange < 6%, retrace < 50% van pool
-- Ascending / Descending / Symmetrical Triangle: lineaire regressie-helling op swinghighs en swinglows
+- Ascending / Descending / Symmetrical Triangle: bar-index regressie op swinghighs en swinglows
 - Consolidation: koersbereik < 8% over laatste 15 bars
 - Support Bounce / Resistance Rejection: koers stuitert op steun/weerstand
 - Breakout / Breakdown: confirmed (0.5–4% voorbij niveau) of potentieel (−3% tot +0.5%)
 
-**Swing point detectie:**
+**Swing point detectie *(herzien v1.38)*:**
 ```
-lookback = 3
-isPivotHigh[i] = high[i] > max(high[i−3..i−1]) AND high[i] > max(high[i+1..i+3])
-isPivotLow[i]  = low[i]  < min(low[i−3..i−1])  AND low[i]  < min(low[i+1..i+3])
+lookback = 5
+pivotHigh[i] = bars[i].High is strikt hoogste High in [i−5 .. i+5]   (wick, niet body)
+pivotLow[i]  = bars[i].Low  is strikt laagste  Low  in [i−5 .. i+5]
+significantie = pivot moet de dichtstbijzijnde buur met ≥ 0.40 × ATR(14) overtreffen
 ```
+- Pivots op de **wicks** (`bars[i].High/Low`) i.p.v. de body, zodat markers/lijnen op de
+  zichtbare toppen/bodems landen. ATR-relatieve significantie schaalt mee met de volatiliteit
+  van de coin (vervangt de vaste 0.5%).
+
+**Trendlijn-fit & valse-patroon-filter *(v1.38)*:** kanaal-, driehoek- én wedge-detectie gebruiken
+`LinearRegressionByBarIdx` (helling = prijs/bar over de echte bar-index) en tekenen de **geprojecteerde
+regressielijn** naar de vensterranden — niet langer een rechte tussen het eerste en laatste swing-punt.
+Een **R²-fitdrempel** (`RSquaredByBarIdx`: kanaal/driehoek ≥ 0.70, wedge ≥ 0.55) verwerpt patronen
+waarvan de swings niet daadwerkelijk op de trendlijn liggen. De richting wordt bepaald via de totale
+fractionele beweging van elke lijn over het venster (kanaal ≥ 3%; driehoek: vlak < 2%, trend ≥ 3%).
+De grafiek (`CoinChartWindow`) tekent nog maar **één** patroon per timeframe: het aangeklikte, anders
+het sterkste (confirmed, dan hoogste Strength).
 
 ---
 

@@ -51,8 +51,12 @@ public class PatternDetectionService : IPatternDetectionService
         // Use last 120 candles max for all algorithms to keep things fast
         var data = bars.TakeLast(120).ToList();
 
-        var swingHighs = FindSwingHighs(data, lookback: 3);
-        var swingLows  = FindSwingLows(data,  lookback: 3);
+        // Swing significance scales with the coin's own volatility (≈0.4 ATR) so a pivot must
+        // be a real structural peak/trough, not noise. lookback 5 = fractal-style 5-bar pivot.
+        double atr    = AverageTrueRange(data, 14);
+        double minSig = atr * 0.40;
+        var swingHighs = FindSwingHighs(data, lookback: 5, minSig);
+        var swingLows  = FindSwingLows(data,  lookback: 5, minSig);
 
         TryAdd(results, DetectVolumeSpike(data, timeframeLabel));
         TryAdd(results, DetectTrend(data, swingHighs, swingLows, timeframeLabel, currentPrice));
@@ -699,22 +703,49 @@ public class PatternDetectionService : IPatternDetectionService
         var rl = swingLows .TakeLast(4).ToList();
         if (rh.Count < 3 || rl.Count < 3) return null;
 
-        double highSlope = LinearSlope(rh.Select(s => s.value).ToList());
-        double lowSlope  = LinearSlope(rl.Select(s => s.value).ToList());
+        // Overlapping window on the real time axis + bar-index regression for both lines
+        int winStart = Math.Max(rh.First().idx, rl.First().idx);
+        int winEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
+        if (winEnd - winStart < 10) return null;
 
-        double slopeTol = 0.0008; // virtually flat — handbook: |slope| < 0.0008 (F3)
+        var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
+        var (lowSlope,  lowInt)  = LinearRegressionByBarIdx(rl);
 
-        bool flatHighs   = Math.Abs(highSlope) < slopeTol;
-        bool risingLows  = lowSlope > slopeTol;
-        bool fallingHighs = highSlope < -slopeTol;
-        bool flatLows    = Math.Abs(lowSlope) < slopeTol;
-        bool fallingLows = lowSlope < -slopeTol;
-        bool risingHighs = highSlope > slopeTol;
+        // Goodness-of-fit guard: the swings must lie on their trendlines.
+        if (RSquaredByBarIdx(rh, highSlope, highInt) < 0.70 ||
+            RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
+
+        double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
+        if (meanPrice <= 0) return null;
+
+        // Classify each line by its total fractional move over the window (interpretable).
+        int    span        = winEnd - winStart;
+        double highMovePct = highSlope * span / meanPrice;
+        double lowMovePct  = lowSlope  * span / meanPrice;
+
+        const double flatTol  = 0.02;   // |move| < 2% over the window ⇒ "flat"
+        const double trendTol = 0.03;   // |move| ≥ 3% ⇒ clearly rising / falling
+
+        bool flatHighs    = Math.Abs(highMovePct) < flatTol;
+        bool flatLows     = Math.Abs(lowMovePct)  < flatTol;
+        bool risingLows   = lowMovePct  >  trendTol;
+        bool fallingHighs = highMovePct < -trendTol;
+
+        // Projected (fitted) trendlines for drawing — both share the window start/end bars.
+        double highAtStart = highInt + highSlope * winStart;
+        double highAtEnd   = highInt + highSlope * winEnd;
+        double lowAtStart  = lowInt  + lowSlope  * winStart;
+        double lowAtEnd    = lowInt  + lowSlope  * winEnd;
+        var trendlines = new List<PatternTrendline>
+        {
+            new() { StartTime = bars[winStart].Date, StartPrice = highAtStart, EndTime = bars[winEnd].Date, EndPrice = highAtEnd, Color = "#ef5350" },
+            new() { StartTime = bars[winStart].Date, StartPrice = lowAtStart,  EndTime = bars[winEnd].Date, EndPrice = lowAtEnd,  Color = "#26a69a" },
+        };
 
         // Ascending triangle: flat highs + rising lows → bullish bias
         if (flatHighs && risingLows)
         {
-            double resistance = rh.Average(h => h.value);
+            double resistance = (highAtStart + highAtEnd) / 2.0;
             double distPct = (resistance - currentPrice) / currentPrice * 100;
             return new PatternResult
             {
@@ -727,21 +758,14 @@ public class PatternDetectionService : IPatternDetectionService
                             + $"Breakout boven {FormatP(resistance)} geeft statistisch een sterk bullish signaal.",
                 KeyLevel    = resistance,
                 DistancePct = distPct,
-                Annotation  = new PatternAnnotation
-                {
-                    Trendlines = new()
-                    {
-                        new PatternTrendline { StartTime = bars[rh.First().idx].Date, StartPrice = rh.First().value, EndTime = bars[rh.Last().idx].Date, EndPrice = rh.Last().value, Color = "#ef5350" },
-                        new PatternTrendline { StartTime = bars[rl.First().idx].Date, StartPrice = rl.First().value, EndTime = bars[rl.Last().idx].Date,  EndPrice = rl.Last().value,  Color = "#26a69a" },
-                    },
-                },
+                Annotation  = new PatternAnnotation { Trendlines = trendlines },
             };
         }
 
         // Descending triangle: falling highs + flat lows → bearish bias
         if (fallingHighs && flatLows)
         {
-            double support = rl.Average(l => l.value);
+            double support = (lowAtStart + lowAtEnd) / 2.0;
             double distPct = (currentPrice - support) / currentPrice * 100;
             return new PatternResult
             {
@@ -754,18 +778,11 @@ public class PatternDetectionService : IPatternDetectionService
                             + $"Breakdown onder {FormatP(support)} bevestigt bearish continuatie.",
                 KeyLevel    = support,
                 DistancePct = distPct,
-                Annotation  = new PatternAnnotation
-                {
-                    Trendlines = new()
-                    {
-                        new PatternTrendline { StartTime = bars[rh.First().idx].Date, StartPrice = rh.First().value, EndTime = bars[rh.Last().idx].Date, EndPrice = rh.Last().value, Color = "#ef5350" },
-                        new PatternTrendline { StartTime = bars[rl.First().idx].Date, StartPrice = rl.First().value, EndTime = bars[rl.Last().idx].Date,  EndPrice = rl.Last().value,  Color = "#26a69a" },
-                    },
-                },
+                Annotation  = new PatternAnnotation { Trendlines = trendlines },
             };
         }
 
-        // Symmetrical triangle: converging high + lows → neutral, watch direction
+        // Symmetrical triangle: converging highs + lows → neutral, watch direction
         if (fallingHighs && risingLows)
             return new PatternResult
             {
@@ -775,14 +792,7 @@ public class PatternDetectionService : IPatternDetectionService
                 IsConfirmed = false,
                 Strength    = 60,
                 Description = "Symmetrische driehoek: convergende highs en lows. Richting nog onbepaald — wacht op een directional breakout met volume voor een handelssignaal.",
-                Annotation  = new PatternAnnotation
-                {
-                    Trendlines = new()
-                    {
-                        new PatternTrendline { StartTime = bars[rh.First().idx].Date, StartPrice = rh.First().value, EndTime = bars[rh.Last().idx].Date, EndPrice = rh.Last().value, Color = "#ef5350" },
-                        new PatternTrendline { StartTime = bars[rl.First().idx].Date, StartPrice = rl.First().value, EndTime = bars[rl.Last().idx].Date,  EndPrice = rl.Last().value,  Color = "#26a69a" },
-                    },
-                },
+                Annotation  = new PatternAnnotation { Trendlines = trendlines },
             };
 
         return null;
@@ -1098,6 +1108,10 @@ public class PatternDetectionService : IPatternDetectionService
         // ── Regression lines using actual bar indices ─────────────────────────
         var (highSlope, highIntercept) = LinearRegressionByBarIdx(rhW);
         var (lowSlope,  lowIntercept)  = LinearRegressionByBarIdx(rlW);
+
+        // Goodness-of-fit guard (wedges are choppier than channels → slightly looser 0.55).
+        if (RSquaredByBarIdx(rhW, highSlope, highIntercept) < 0.55 ||
+            RSquaredByBarIdx(rlW, lowSlope,  lowIntercept)  < 0.55) return null;
 
         // Project each regression line to the window edges
         double highAtStart = highIntercept + highSlope * winStart;
@@ -1418,49 +1432,65 @@ public class PatternDetectionService : IPatternDetectionService
         var rl = swingLows .TakeLast(4).ToList();
         if (rh.Count < 3 || rl.Count < 3) return null;
 
-        double highSlope = LinearSlope(rh.Select(s => s.value).ToList());
-        double lowSlope  = LinearSlope(rl.Select(s => s.value).ToList());
+        // Overlapping window on the real time axis
+        int winStart = Math.Max(rh.First().idx, rl.First().idx);
+        int winEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
+        if (winEnd - winStart < 10) return null;   // exclude micro-channels
 
-        const double minSlope    = 0.0008;  // same threshold as triangle
-        const double parallelTol = 0.50;    // slopes within 50 % of each other
+        // Bar-index regression for both trendlines (slope = price/bar)
+        var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
+        var (lowSlope,  lowInt)  = LinearRegressionByBarIdx(rl);
 
-        bool ascending  = highSlope >  minSlope && lowSlope >  minSlope;
-        bool descending = highSlope < -minSlope && lowSlope < -minSlope;
+        // Goodness-of-fit: the swings must genuinely lie on their trendlines, otherwise the
+        // "channel" is just noise that happens to drift. This is the key false-positive filter.
+        if (RSquaredByBarIdx(rh, highSlope, highInt) < 0.70 ||
+            RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
+
+        double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
+        if (meanPrice <= 0) return null;
+
+        // Total fractional move of each line over the window — interpretable threshold (≥3%).
+        int    span         = winEnd - winStart;
+        double highMovePct  = highSlope * span / meanPrice;
+        double lowMovePct   = lowSlope  * span / meanPrice;
+
+        bool ascending  = highMovePct >  0.03 && lowMovePct >  0.03;
+        bool descending = highMovePct < -0.03 && lowMovePct < -0.03;
         if (!ascending && !descending) return null;
 
-        // Not a wedge: exclude patterns where the gap narrows by ≥ 30% (same threshold as DetectWedge)
-        {
-            int cWinStart = Math.Max(rh.First().idx, rl.First().idx);
-            int cWinEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
-            if (cWinEnd > cWinStart)
-            {
-                var (rhS, rhI) = LinearRegressionByBarIdx(rh);
-                var (rlS, rlI) = LinearRegressionByBarIdx(rl);
-                double gs = (rhI + rhS * cWinStart) - (rlI + rlS * cWinStart);
-                double ge = (rhI + rhS * cWinEnd)   - (rlI + rlS * cWinEnd);
-                if (gs > 0 && ge < gs * 0.70) return null; // converging → it's a wedge
-            }
-        }
-
-        // Must be roughly parallel (slopes within 50 % of each other)
+        // Roughly parallel (slopes within 50 % of each other)
         double slopeDiff = Math.Abs(highSlope - lowSlope);
         double slopeMax  = Math.Max(Math.Abs(highSlope), Math.Abs(lowSlope));
-        if (slopeMax <= 0 || slopeDiff / slopeMax > parallelTol) return null;
+        if (slopeMax <= 0 || slopeDiff / slopeMax > 0.50) return null;
+
+        // Project the fitted lines to the window edges — these are the prices we draw.
+        double highAtStart = highInt + highSlope * winStart;
+        double highAtEnd   = highInt + highSlope * winEnd;
+        double lowAtStart  = lowInt  + lowSlope  * winStart;
+        double lowAtEnd    = lowInt  + lowSlope  * winEnd;
+        if (highAtStart <= lowAtStart || highAtEnd <= lowAtEnd) return null;
+
+        // Not a wedge: a channel keeps a roughly constant width (gap doesn't narrow ≥30%).
+        double gapStart = highAtStart - lowAtStart;
+        double gapEnd   = highAtEnd   - lowAtEnd;
+        if (gapStart > 0 && gapEnd < gapStart * 0.70) return null;
 
         // Channel width must be meaningful: 4–30 % of price
-        double channelHigh  = rh.Last().value;
-        double channelLow   = rl.Last().value;
+        double channelHigh  = highAtEnd;
+        double channelLow   = lowAtEnd;
         double channelWidth = (channelHigh - channelLow) / channelHigh;
         if (channelWidth < 0.04 || channelWidth > 0.30) return null;
 
-        // Minimum 10-bar span so micro-channels are excluded
-        int spanBars = Math.Max(rh.Last().idx - rh.First().idx, rl.Last().idx - rl.First().idx);
-        if (spanBars < 10) return null;
-
-        // Is price near the lower channel wall (bounce zone) or upper wall (reversal risk)?
         double midChannel = (channelHigh + channelLow) / 2;
         bool   nearLower  = currentPrice <= midChannel;
         bool   nearUpper  = currentPrice >  midChannel;
+
+        // Fitted trendlines for drawing (both share the window start/end bars).
+        var trendlines = new List<PatternTrendline>
+        {
+            new() { StartTime = bars[winStart].Date, StartPrice = highAtStart, EndTime = bars[winEnd].Date, EndPrice = highAtEnd, Color = "#ef5350" },
+            new() { StartTime = bars[winStart].Date, StartPrice = lowAtStart,  EndTime = bars[winEnd].Date, EndPrice = lowAtEnd,  Color = "#26a69a" },
+        };
 
         if (ascending)
             return new PatternResult
@@ -1476,14 +1506,7 @@ public class PatternDetectionService : IPatternDetectionService
                                : $"Prijs in het midden/top van het kanaal. Kanaalbodem ~{FormatP(channelLow)} is het key steunsupport."),
                 KeyLevel    = channelLow,
                 DistancePct = (currentPrice - channelLow) / currentPrice * 100,
-                Annotation  = new PatternAnnotation
-                {
-                    Trendlines = new()
-                    {
-                        new PatternTrendline { StartTime = bars[rh.First().idx].Date, StartPrice = rh.First().value, EndTime = bars[rh.Last().idx].Date, EndPrice = rh.Last().value, Color = "#ef5350" },
-                        new PatternTrendline { StartTime = bars[rl.First().idx].Date, StartPrice = rl.First().value, EndTime = bars[rl.Last().idx].Date, EndPrice = rl.Last().value, Color = "#26a69a" },
-                    },
-                },
+                Annotation  = new PatternAnnotation { Trendlines = trendlines },
             };
 
         // Descending channel
@@ -1501,14 +1524,7 @@ public class PatternDetectionService : IPatternDetectionService
                            : $"Prijs in het midden/bodem van het kanaal. Kanaalplafond ~{FormatP(channelHigh)} is de key weerstand."),
             KeyLevel    = channelHigh,
             DistancePct = (channelHigh - currentPrice) / currentPrice * 100,
-            Annotation  = new PatternAnnotation
-            {
-                Trendlines = new()
-                {
-                    new PatternTrendline { StartTime = bars[rh.First().idx].Date, StartPrice = rh.First().value, EndTime = bars[rh.Last().idx].Date, EndPrice = rh.Last().value, Color = "#ef5350" },
-                    new PatternTrendline { StartTime = bars[rl.First().idx].Date, StartPrice = rl.First().value, EndTime = bars[rl.Last().idx].Date, EndPrice = rl.Last().value, Color = "#26a69a" },
-                },
-            },
+            Annotation  = new PatternAnnotation { Trendlines = trendlines },
         };
     }
 
@@ -1517,57 +1533,55 @@ public class PatternDetectionService : IPatternDetectionService
     // =========================================================================
 
     private static List<(int idx, double value)> FindSwingHighs(
-        List<OhlcvBar> bars, int lookback)
+        List<OhlcvBar> bars, int lookback, double minSignificance)
     {
         var result = new List<(int, double)>();
         // Extend loop to bars.Count so the current (last) candle can qualify as a swing.
         // For bars near the end we use a one-sided right-window (afterCount ≤ lookback).
-        // Top boundary = candle body top: Max(Open, Close) — no wicks, works for both
-        // bullish (Close > Open) and bearish (Open > Close) candles.
+        // Pivot price = candle WICK high (bars[i].High) so swing points land exactly on the
+        // peaks the user sees on the chart — not on the body top, which sits a wick away.
         for (int i = lookback; i < bars.Count; i++)
         {
-            double h           = Math.Max(bars[i].Open, bars[i].Close);
+            double h           = bars[i].High;
             bool   isHigh      = true;
             double maxNeighbor = 0;
             int    afterCount  = Math.Min(lookback, bars.Count - 1 - i); // 0 for the last bar
             for (int j = i - lookback; j <= i + afterCount; j++)
             {
                 if (j == i) continue;
-                double neighborTop = Math.Max(bars[j].Open, bars[j].Close);
+                double neighborTop = bars[j].High;
                 if (neighborTop >= h) { isHigh = false; break; }
                 maxNeighbor = Math.Max(maxNeighbor, neighborTop);
             }
-            // Significance filter: swing high must be ≥ 0.5% above its nearest neighbor.
-            // This eliminates micro-swings that are statistical noise rather than
-            // meaningful market structure pivots (handbook §2.1).
-            if (isHigh && maxNeighbor > 0 && h >= maxNeighbor * 1.005)
+            // Significance filter (ATR-relative): the peak must clear its highest neighbour by
+            // at least ~0.4 ATR. Scaling with the coin's own volatility filters micro-swings
+            // far better than a fixed 0.5% would across coins of very different volatility.
+            if (isHigh && maxNeighbor > 0 && h - maxNeighbor >= minSignificance)
                 result.Add((i, h));
         }
         return result;
     }
 
     private static List<(int idx, double value)> FindSwingLows(
-        List<OhlcvBar> bars, int lookback)
+        List<OhlcvBar> bars, int lookback, double minSignificance)
     {
         var result = new List<(int, double)>();
-        // Extend loop to bars.Count so the current (last) candle can qualify as a swing.
-        // Bottom boundary = candle body bottom: Min(Open, Close) — no wicks, works for
-        // both bullish (Open < Close) and bearish (Open > Close) candles.
+        // Pivot price = candle WICK low (bars[i].Low) — see FindSwingHighs for the rationale.
         for (int i = lookback; i < bars.Count; i++)
         {
-            double l           = Math.Min(bars[i].Open, bars[i].Close);
+            double l           = bars[i].Low;
             bool   isLow       = true;
             double minNeighbor = double.MaxValue;
             int    afterCount  = Math.Min(lookback, bars.Count - 1 - i); // 0 for the last bar
             for (int j = i - lookback; j <= i + afterCount; j++)
             {
                 if (j == i) continue;
-                double neighborBottom = Math.Min(bars[j].Open, bars[j].Close);
+                double neighborBottom = bars[j].Low;
                 if (neighborBottom <= l) { isLow = false; break; }
                 minNeighbor = Math.Min(minNeighbor, neighborBottom);
             }
-            // Significance filter: swing low must be ≥ 0.5% below its nearest neighbor.
-            if (isLow && minNeighbor < double.MaxValue && l <= minNeighbor * 0.995)
+            // Significance filter (ATR-relative): trough must clear its lowest neighbour by ~0.4 ATR.
+            if (isLow && minNeighbor < double.MaxValue && minNeighbor - l >= minSignificance)
                 result.Add((i, l));
         }
         return result;
@@ -1632,6 +1646,52 @@ public class PatternDetectionService : IPatternDetectionService
         double slope     = (n * sumXY - sumX * sumY) / denom;
         double intercept = (sumY - slope * sumX) / n;
         return (slope, intercept);
+    }
+
+    /// <summary>
+    /// Goodness-of-fit (R², 0–1) of a set of swing points around the fitted bar-index line.
+    /// A high R² means the swings genuinely lie on the trendline — the core guard against
+    /// drawing a line through points that don't actually form a trend.
+    /// </summary>
+    private static double RSquaredByBarIdx(
+        List<(int idx, double value)> points, double slope, double intercept)
+    {
+        int n = points.Count;
+        if (n < 2) return 0;
+
+        double meanY = points.Average(p => p.value);
+        double ssTot = 0, ssRes = 0;
+        foreach (var (idx, val) in points)
+        {
+            double predicted = intercept + slope * idx;
+            ssRes += (val - predicted) * (val - predicted);
+            ssTot += (val - meanY)     * (val - meanY);
+        }
+        if (ssTot < 1e-12) return 1.0;             // all points equal → a flat line fits perfectly
+        return Math.Max(0.0, 1.0 - ssRes / ssTot);
+    }
+
+    /// <summary>
+    /// Average True Range over the last <paramref name="period"/> bars (absolute price units).
+    /// Used to make swing-significance scale with each coin's own volatility.
+    /// </summary>
+    private static double AverageTrueRange(List<OhlcvBar> bars, int period = 14)
+    {
+        if (bars.Count < 2) return 0;
+
+        int    start = Math.Max(1, bars.Count - period);
+        double sum   = 0;
+        int    count = 0;
+        for (int i = start; i < bars.Count; i++)
+        {
+            double prevClose = bars[i - 1].Close;
+            double tr = Math.Max(bars[i].High - bars[i].Low,
+                        Math.Max(Math.Abs(bars[i].High - prevClose),
+                                 Math.Abs(bars[i].Low  - prevClose)));
+            sum += tr;
+            count++;
+        }
+        return count > 0 ? sum / count : 0;
     }
 
     /// <summary>

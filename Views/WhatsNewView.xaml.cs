@@ -27,6 +27,29 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.38 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.38", "Betere patroonherkenning · gefitte trendlijnen");
+
+        AddFeature("📐", "Trendlijnen die écht op de koers passen",
+            "De kanaal- en driehoekdetectie tekenen hun trendlijnen nu via een lineaire regressie door álle " +
+            "swing-punten (zoals de wedge-detectie al deed), in plaats van een rechte lijn tussen het eerste en " +
+            "laatste punt. Daardoor volgen de lijnen de werkelijke vorm van het patroon in plaats van er schuin " +
+            "doorheen te lopen.");
+
+        AddFeature("🎯", "Minder valse patronen (goodness-of-fit)",
+            "Een patroon wordt nu alleen gemeld als de swing-punten ook echt op de trendlijn liggen (R²-toets). " +
+            "Ruisige koersbewegingen die toevallig een beetje stijgen of dalen worden niet langer als 'kanaal' " +
+            "of 'driehoek' bestempeld.");
+
+        AddFeature("🕯️", "Nauwkeurigere swing-detectie",
+            "Pieken en dalen worden nu op de candle-wicks bepaald (de zichtbare highs/lows) in plaats van op de " +
+            "candle-body, met een ruisfilter dat meeschaalt met de volatiliteit van de coin (ATR) en een ruimere " +
+            "5-bars pivot. Markers en lijnen landen daardoor precies op de toppen en bodems die je ziet.");
+
+        AddFeature("🧹", "Eén patroon per grafiek — geen lijnenbrij",
+            "De grafiek toont nu het aangeklikte patroon, of anders het sterkste patroon van dat timeframe — " +
+            "niet meer alle patronen tegelijk over elkaar heen.");
+
         // ── v1.37 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.37", "Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 

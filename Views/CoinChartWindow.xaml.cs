@@ -106,19 +106,25 @@ public sealed partial class CoinChartWindow : Window
             _     => _analysis.DailyBars,
         };
 
-        // Teken álle geometrische patronen van het actieve timeframe (markers/lijnen/trendlijnen),
-        // ongeacht of de grafiek via het grafiek-icoon of via een patroon-badge is geopend.
-        // Een eventueel aangeklikt highlight-patroon zit hier vanzelf bij; indicator-patronen
-        // (RSI/MACD/EMA/squeeze…) hebben geen annotatie en vallen weg.
+        // Toon precies één patroon-overlay voor het actieve timeframe: het aangeklikte patroon
+        // (als de badge is gebruikt en het bij dit timeframe hoort), anders het sterkste
+        // geometrische patroon van dit timeframe. Eén patroon tekenen voorkomt overlappende,
+        // tegenstrijdige lijnen. Indicator-patronen (RSI/MACD/EMA…) hebben geen annotatie.
         var tfPatterns = _analysis.Patterns
             .Where(p => p.Timeframe == timeframe && p.Annotation is not null && !p.Annotation.IsEmpty)
             .ToList();
 
-        PatternAnnotation? annotation = MergeAnnotations(tfPatterns);
+        PatternResult? chosen =
+            (_highlight is not null && _highlight.Timeframe == timeframe
+                && _highlight.Annotation is not null && !_highlight.Annotation.IsEmpty)
+            ? _highlight
+            : tfPatterns
+                .OrderByDescending(p => p.IsConfirmed)
+                .ThenByDescending(p => p.Strength)
+                .FirstOrDefault();
 
-        string patternLabel = tfPatterns.Count > 0
-            ? "  ·  " + string.Join(", ", tfPatterns.Select(p => p.DisplayName).Distinct())
-            : string.Empty;
+        PatternAnnotation? annotation = chosen?.Annotation;
+        string patternLabel = chosen is not null ? $"  ·  {chosen.DisplayName}" : string.Empty;
 
         BarCountLabel.Text = bars.Count > 0
             ? $"{bars.Count} candles  ·  Bron: {_analysis.DataSource}{patternLabel}"
@@ -128,23 +134,6 @@ public sealed partial class CoinChartWindow : Window
         ChartView.NavigateToString(html);
 
         await System.Threading.Tasks.Task.CompletedTask;
-    }
-
-    /// <summary>Voegt de annotaties van meerdere patronen samen tot één overlay voor de grafiek.</summary>
-    private static PatternAnnotation? MergeAnnotations(List<PatternResult> patterns)
-    {
-        if (patterns.Count == 0) return null;
-
-        var merged = new PatternAnnotation();
-        foreach (var p in patterns)
-        {
-            var a = p.Annotation;
-            if (a is null) continue;
-            merged.Markers.AddRange(a.Markers);
-            merged.HLines.AddRange(a.HLines);
-            merged.Trendlines.AddRange(a.Trendlines);
-        }
-        return merged.IsEmpty ? null : merged;
     }
 
     private void UpdateButtonStates()
