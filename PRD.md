@@ -1658,7 +1658,7 @@ Confidence:
 - Volume Spike: laatste volume > 1.8× gemiddelde van 20 vorige bars
 - Uptrend / Downtrend: 3+ opeenvolgende HH+HL of LH+LL swing-punten
 - Double Bottom / Top: twee lows/highs binnen 2.5%, confirmed als recovery > 4%
-- Bull Flag / Bear Flag *(herzien v1.38)*: pool op de **wicks** (≥ 8%) met geverifieerde richting (high ná low voor bull, low ná high voor bear); flag-range < 6% (wicks); flag moet **consolideren** — `LinearSlope` van de flag-closes mag niet sterk mee-trenden (> +0.004 bull / < −0.004 bear → afgewezen); retrace < 50% van de pool. Pool wordt als diagonale trendlijn getekend.
+- Bull Flag / Bear Flag *(herzien v1.38)*: pool op de **wicks** (≥ 8%) met geverifieerde richting (high ná low voor bull, low ná high voor bear); flag-range < 6% (wicks); flag moet **consolideren** — `LinearSlope` van de flag-closes mag niet sterk mee-trenden (> +0.004 bull / < −0.004 bear → afgewezen); retrace < 50% van de pool. Pool wordt als diagonale trendlijn getekend; het vlaggetje als een begrensd vak (korte boven-/onderlijn over alleen de consolidatie-candles) + één volle-breedte breakout/breakdown-trigger.
 - Ascending / Descending / Symmetrical Triangle: bar-index regressie op swinghighs en swinglows
 - Consolidation: koersbereik < 8% over laatste 15 bars
 - Support Bounce / Resistance Rejection: koers stuitert op steun/weerstand

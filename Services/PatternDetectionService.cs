@@ -639,20 +639,32 @@ public class PatternDetectionService : IPatternDetectionService
             DistancePct = (flagHigh - currentPrice) / currentPrice * 100,
             Annotation  = new PatternAnnotation
             {
-                // Pole as a diagonal line from its wick-low to its wick-high.
                 Trendlines = new()
                 {
+                    // Pole: diagonale lijn van wick-low naar wick-high.
                     new PatternTrendline
                     {
                         StartTime  = poleBars[loIdx].Date, StartPrice = poleLow,
                         EndTime    = poleBars[hiIdx].Date, EndPrice   = poleHigh,
                         Color      = "#26a69a",
                     },
+                    // Vlag-vak: korte boven- en onderlijn over alléén de consolidatie-candles,
+                    // zodat het vlaggetje zichtbaar is als een begrensd vak aan het eind van de pool.
+                    new PatternTrendline
+                    {
+                        StartTime = flag.First().Date, StartPrice = flagHigh,
+                        EndTime   = flag.Last().Date,  EndPrice   = flagHigh, Color = "#f59e0b",
+                    },
+                    new PatternTrendline
+                    {
+                        StartTime = flag.First().Date, StartPrice = flagLow,
+                        EndTime   = flag.Last().Date,  EndPrice   = flagLow,  Color = "#f59e0b",
+                    },
                 },
+                // Breakout-trigger als één volle-breedte lijn.
                 HLines = new()
                 {
                     new PatternHLine { Price = flagHigh, Color = "#26a69a", Title = "Breakout" },
-                    new PatternHLine { Price = flagLow,  Color = "#f59e0b", Title = "Flag Low" },
                 },
             },
         };
@@ -707,20 +719,31 @@ public class PatternDetectionService : IPatternDetectionService
             DistancePct = (currentPrice - flagLow) / currentPrice * 100,
             Annotation  = new PatternAnnotation
             {
-                // Pole as a diagonal line from its wick-high to its wick-low.
                 Trendlines = new()
                 {
+                    // Pole: diagonale lijn van wick-high naar wick-low.
                     new PatternTrendline
                     {
                         StartTime  = poleBars[hiIdx].Date, StartPrice = poleHigh,
                         EndTime    = poleBars[loIdx].Date, EndPrice   = poleLow,
                         Color      = "#ef5350",
                     },
+                    // Vlag-vak: korte boven- en onderlijn over alléén de consolidatie-candles.
+                    new PatternTrendline
+                    {
+                        StartTime = flag.First().Date, StartPrice = flagHigh,
+                        EndTime   = flag.Last().Date,  EndPrice   = flagHigh, Color = "#f59e0b",
+                    },
+                    new PatternTrendline
+                    {
+                        StartTime = flag.First().Date, StartPrice = flagLow,
+                        EndTime   = flag.Last().Date,  EndPrice   = flagLow,  Color = "#f59e0b",
+                    },
                 },
+                // Breakdown-trigger als één volle-breedte lijn.
                 HLines = new()
                 {
-                    new PatternHLine { Price = flagHigh, Color = "#f59e0b", Title = "Flag High" },
-                    new PatternHLine { Price = flagLow,  Color = "#ef5350", Title = "Breakdown" },
+                    new PatternHLine { Price = flagLow, Color = "#ef5350", Title = "Breakdown" },
                 },
             },
         };

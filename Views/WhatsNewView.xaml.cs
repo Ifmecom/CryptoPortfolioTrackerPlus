@@ -52,8 +52,10 @@ public sealed partial class WhatsNewView : Page
 
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
-            "bodem naar top. Belangrijker: een vlaggetje moet nu écht consolideren — een koers die gewoon blijft " +
-            "doorstijgen (of -dalen) wordt niet langer als flag bestempeld. De pool-richting wordt geverifieerd.");
+            "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +
+            "getekend (i.p.v. lijnen over de hele grafiek), zodat het duidelijk zichtbaar is. Belangrijker: een " +
+            "vlaggetje moet nu écht consolideren — een koers die gewoon blijft doorstijgen (of -dalen) wordt niet " +
+            "langer als flag bestempeld, en de pool-richting wordt geverifieerd.");
 
         // ── v1.37 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.37", "Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
