@@ -50,6 +50,12 @@ public sealed partial class WhatsNewView : Page
             "De grafiek toont nu het aangeklikte patroon, of anders het sterkste patroon van dat timeframe — " +
             "niet meer alle patronen tegelijk over elkaar heen.");
 
+        AddFeature("📦", "Patroonlijnen begrensd tot het patroon zelf",
+            "Alle patronen tekenen hun structuur nu als korte segmenten over de bijbehorende candles — neklijnen " +
+            "(dubbele top/bodem, Head & Shoulders, Adam & Eve), de cup-rand en de flag-grenzen lopen niet langer " +
+            "als volle-breedte lijnen over de hele grafiek waar ze met de koers en de steun/weerstand-lijnen " +
+            "versmolten. Zo is meteen duidelijk wáár het patroon zit.");
+
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
             "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +

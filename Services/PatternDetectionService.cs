@@ -503,9 +503,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[prev.idx].Date, Price = prev.value, Label = "B1", AboveBar = false },
                         new PatternPoint { Time = bars[last.idx].Date, Price = last.value, Label = "B2", AboveBar = false },
                     },
-                    HLines = new()
+                    // Neklijn als begrensd segment over het patroon (eerste bodem → huidige candle).
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = neckline, Color = "#26a69a", Title = "Neklijn" },
+                        new PatternTrendline { StartTime = bars[prev.idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#26a69a" },
                     },
                 },
             };
@@ -579,9 +580,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[prev.idx].Date, Price = prev.value, Label = "T1", AboveBar = true },
                         new PatternPoint { Time = bars[last.idx].Date, Price = last.value, Label = "T2", AboveBar = true },
                     },
-                    HLines = new()
+                    // Neklijn als begrensd segment over het patroon (eerste top → huidige candle).
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = neckline, Color = "#ef5350", Title = "Neklijn" },
+                        new PatternTrendline { StartTime = bars[prev.idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#ef5350" },
                     },
                 },
             };
@@ -1040,9 +1042,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[rh[i].idx].Date,     Price = rh[i].value,     Label = "H",  AboveBar = true },
                         new PatternPoint { Time = bars[rh[i + 1].idx].Date, Price = rh[i + 1].value, Label = "RS", AboveBar = true },
                     },
-                    HLines = new()
+                    // Neklijn als begrensd segment over het patroon (linkerschouder → huidige candle).
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = neckline, Color = "#ef5350", Title = "Neklijn" },
+                        new PatternTrendline { StartTime = bars[rh[i - 1].idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#ef5350" },
                     },
                 },
             };
@@ -1125,9 +1128,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[rl[i].idx].Date,     Price = rl[i].value,     Label = "H",  AboveBar = false },
                         new PatternPoint { Time = bars[rl[i + 1].idx].Date, Price = rl[i + 1].value, Label = "RS", AboveBar = false },
                     },
-                    HLines = new()
+                    // Neklijn als begrensd segment over het patroon (linkerschouder → huidige candle).
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = neckline, Color = "#26a69a", Title = "Neklijn" },
+                        new PatternTrendline { StartTime = bars[rl[i - 1].idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#26a69a" },
                     },
                 },
             };
@@ -1346,9 +1350,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[cupEndIdx].Date,   Price = cupRight, Label = "R",  AboveBar = false },
                         new PatternPoint { Time = bars[n - 1].Date,       Price = handleH,  Label = "↑",  AboveBar = true  },
                     },
-                    HLines = new()
+                    // Breakout-niveau (cup-rand) als begrensd segment over de cup → huidige candle.
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = handleH, Color = "#26a69a", Title = "Breakout" },
+                        new PatternTrendline { StartTime = bars[cupStartIdx].Date, StartPrice = handleH, EndTime = bars[n - 1].Date, EndPrice = handleH, Color = "#26a69a" },
                     },
                 },
             };
@@ -1431,9 +1436,10 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[prev.idx].Date, Price = prev.value, Label = firstLabel,  AboveBar = false },
                         new PatternPoint { Time = bars[last.idx].Date, Price = last.value, Label = secondLabel, AboveBar = false },
                     },
-                    HLines = new()
+                    // Neklijn als begrensd segment over het patroon (eerste bodem → huidige candle).
+                    Trendlines = new()
                     {
-                        new PatternHLine { Price = neckline, Color = "#26a69a", Title = "Neklijn" },
+                        new PatternTrendline { StartTime = bars[prev.idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#26a69a" },
                     },
                 },
             };

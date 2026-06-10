@@ -1684,6 +1684,12 @@ fractionele beweging van elke lijn over het venster (kanaal ≥ 3%; driehoek: vl
 De grafiek (`CoinChartWindow`) tekent nog maar **één** patroon per timeframe: het aangeklikte, anders
 het sterkste (confirmed, dan hoogste Strength).
 
+**Begrensde patroon-annotaties *(v1.38)*:** alle patronen tekenen hun structuur als **begrensde
+trendlijn-segmenten** over de bijbehorende candles i.p.v. volle-breedte `HLines`. Neklijnen (Double
+Bottom/Top, Head & Shoulders, Inverse H&S, Adam & Eve) lopen van het eerste structuurpunt tot de huidige
+candle; de cup-rand (Cup & Handle) over de cup; de flag-grenzen als klein vak over de consolidatie. Alleen
+de bull/bear-flag houden één volle-breedte `HLine` als breakout/breakdown-trigger.
+
 ---
 
 ### 6.8 Setup Tracker berekeningen *(v1.31)*
