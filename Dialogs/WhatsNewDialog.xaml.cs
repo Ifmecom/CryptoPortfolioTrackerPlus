@@ -49,6 +49,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
         AddFeature("🧭", "Richtingsfilter in Trade Advies en Signalen",
             "De scan-lijsten in Trade Advies en Signalen filter je nu op Long, Short of geen signaal.");
 
+        AddFeature("📈", "Patronen altijd zichtbaar op de grafiek",
+            "De grafiek tekent nu alle geometrische patronen van het actieve timeframe — ook zonder op een " +
+            "badge te klikken en bij het wisselen van timeframe.");
+
         AddVersionHeader("v1.36  —  Risk-managed trading · positiegrootte op risico");
 
         AddFeature("📐", "Positiegrootte op basis van risico",

@@ -58,6 +58,13 @@ public sealed partial class WhatsNewView : Page
             "alleen Short of coins zonder signaal. Deze tabs werken niet met chart-patronen maar met richting/score, " +
             "dus daar is het filteren op richting — consistent met de Bullish/Bearish-filter in Pattern Trading.");
 
+        AddFeature("📈", "Patronen altijd zichtbaar op de grafiek",
+            "De grafiekweergave tekent nu álle geometrische patronen van het actieve timeframe (markers, neklijnen, " +
+            "trendlijnen) — ook als je de grafiek via het grafiek-icoon opent in plaats van een patroon-badge, en " +
+            "ook als je van timeframe wisselt. Voorheen verscheen een patroon alleen na het klikken op de badge. " +
+            "Let op: alleen geometrische patronen (Bull Flag, Dubbele Top/Bodem, driehoeken, kanalen, wedges, " +
+            "H&S, Cup & Handle) hebben een tekening; indicator-signalen (RSI/MACD/EMA) niet.");
+
         // ── v1.36 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.36", "Risk-managed trading · positiegrootte op risico");
 

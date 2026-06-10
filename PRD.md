@@ -652,6 +652,13 @@ blijft behouden zolang het patroon in een volgende scan nog voorkomt en is combi
 - Annuleerbaar via ingebouwde CancellationToken
 - Tijdstempel "Laatste analyse: HH:mm"
 
+**Grafiekweergave (`CoinChartWindow`):** candlestick-grafiek (WebView2 + Lightweight Charts) met support/resistance
+en patroon-overlays. Te openen via het **grafiek-icoon** (zonder highlight) of via een **patroon-badge** (zet het
+start-timeframe op dat patroon). **Sinds v1.37** tekent de grafiek voor het actieve timeframe **alle** geometrische
+patronen samengevoegd (`MergeAnnotations` over `_analysis.Patterns` met niet-lege `Annotation`), ongeacht het
+entry-point en ook bij het wisselen van timeframe. Alleen Level 2/3-patronen dragen een annotatie; Level 1
+indicator-signalen (RSI/MACD/EMA/squeeze) hebben er geen en verschijnen dus niet als overlay.
+
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)
 
