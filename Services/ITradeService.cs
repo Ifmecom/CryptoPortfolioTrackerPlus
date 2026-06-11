@@ -40,6 +40,10 @@ public interface ITradeService
     /// <summary>Persist a free-text note on an existing order.</summary>
     Task UpdateNotesAsync(int orderId, string notes);
 
-    /// <summary>Update the SL, TP1 and TP2 price levels on an existing open order.</summary>
-    Task UpdateOrderLevelsAsync(int orderId, double stopLoss, double takeProfit, double takeProfit2);
+    /// <summary>
+    /// Update the SL, TP1 and TP2 price levels on an existing order. For a filled (open) position
+    /// pass <paramref name="currentPrice"/> so levels are validated against the live price
+    /// (allows trailing the stop into profit); pending orders validate against the planned entry.
+    /// </summary>
+    Task UpdateOrderLevelsAsync(int orderId, double stopLoss, double takeProfit, double takeProfit2, double currentPrice = 0);
 }

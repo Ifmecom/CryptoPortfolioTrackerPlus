@@ -487,7 +487,14 @@ double NewTakeProfit
 double NewTakeProfit2
 ```
 
-**Service-methode:** `ITradeService.UpdateOrderLevelsAsync(orderId, sl, tp1, tp2)` — past `StopLoss`, `TakeProfit` en `TakeProfit2` aan in de database.
+**Service-methode:** `ITradeService.UpdateOrderLevelsAsync(orderId, sl, tp1, tp2, currentPrice)` — past `StopLoss`, `TakeProfit` en `TakeProfit2` aan in de database.
+
+**Validatie bij bewerken *(bugfix v1.38)*:** een **gevulde (open) positie** wordt gevalideerd via
+`TradeSetupValidator.ValidateForOpenPosition` t.o.v. de **huidige koers** (de VM geeft `row.CurrentPrice` mee),
+zodat de stop naar winst getrokken mag worden (een short-stop mág onder de entry zakken zolang hij boven de
+huidige koers blijft; spiegelbeeld voor long). Een **Pending** order blijft via `Validate` t.o.v. de geplande
+entry gecontroleerd. Voorheen werd alles tegen de entry gevalideerd, waardoor het borgen van winst op een
+lopende trade ten onrechte werd geweigerd.
 
 ---
 

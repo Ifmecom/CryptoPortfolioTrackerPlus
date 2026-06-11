@@ -138,6 +138,69 @@ public static class TradeSetupValidator
         return ValidationResult.Ok();
     }
 
+    /// <summary>
+    /// Valideert SL/TP-niveaus voor een <b>reeds geopende</b> positie t.o.v. de <b>huidige koers</b>
+    /// i.p.v. de entry. Voor een lopende trade hoeft de stop niet langer aan de entry-kant te liggen —
+    /// je mag hem naar winst trekken (bv. een short-stop ónder de entry maar bóven de huidige koers).
+    ///
+    /// Regels (zodat elk niveau een nog-niet-geraakte order blijft):
+    ///   Long  (Buy):  SL &lt; huidige koers,  TP &gt; huidige koers,  TP2 &gt; TP1
+    ///   Short (Sell): SL &gt; huidige koers,  TP &lt; huidige koers,  TP2 &lt; TP1
+    /// Een waarde van 0 betekent "niet ingesteld" en wordt overgeslagen.
+    /// </summary>
+    public static ValidationResult ValidateForOpenPosition(
+        OrderSide side,
+        double    currentPrice,
+        double    stopLoss,
+        double    takeProfit,
+        double    takeProfit2 = 0)
+    {
+        if (currentPrice <= 0)
+            return ValidationResult.Fail("Huidige koers onbekend — kan de niveaus niet valideren.");
+
+        bool isLong = side == OrderSide.Buy;
+
+        // ── Stop Loss — moet aan de verlieskant van de huidige koers liggen ─────
+        if (stopLoss > 0)
+        {
+            if (isLong && stopLoss >= currentPrice)
+                return ValidationResult.Fail(
+                    $"Long stop-loss ({Fmt(stopLoss)}) moet ONDER de huidige koers ({Fmt(currentPrice)}) liggen, " +
+                    $"anders sluit de positie direct.");
+
+            if (!isLong && stopLoss <= currentPrice)
+                return ValidationResult.Fail(
+                    $"Short stop-loss ({Fmt(stopLoss)}) moet BOVEN de huidige koers ({Fmt(currentPrice)}) liggen, " +
+                    $"anders sluit de positie direct.");
+        }
+
+        // ── Take Profit 1 — moet aan de winstkant van de huidige koers liggen ───
+        if (takeProfit > 0)
+        {
+            if (isLong && takeProfit <= currentPrice)
+                return ValidationResult.Fail(
+                    $"Long take-profit ({Fmt(takeProfit)}) moet BOVEN de huidige koers ({Fmt(currentPrice)}) liggen.");
+
+            if (!isLong && takeProfit >= currentPrice)
+                return ValidationResult.Fail(
+                    $"Short take-profit ({Fmt(takeProfit)}) moet ONDER de huidige koers ({Fmt(currentPrice)}) liggen.");
+        }
+
+        // ── Take Profit 2 (alleen gevalideerd als ook TP1 gezet is) ───────────
+        if (takeProfit2 > 0 && takeProfit > 0)
+        {
+            if (isLong && takeProfit2 <= takeProfit)
+                return ValidationResult.Fail(
+                    $"TP2 ({Fmt(takeProfit2)}) moet BOVEN TP1 ({Fmt(takeProfit)}) liggen voor een Long.");
+
+            if (!isLong && takeProfit2 >= takeProfit)
+                return ValidationResult.Fail(
+                    $"TP2 ({Fmt(takeProfit2)}) moet ONDER TP1 ({Fmt(takeProfit)}) liggen voor een Short.");
+        }
+
+        return ValidationResult.Ok();
+    }
+
     // ── Private helpers ────────────────────────────────────────────────────────
 
     private static string Fmt(double price) => price switch

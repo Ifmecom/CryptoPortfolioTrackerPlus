@@ -66,6 +66,14 @@ public sealed partial class WhatsNewView : Page
             "Heeft een coin meer patronen dan de zes zichtbare badges, dan toont het '+N'-vakje nu bij mouseover " +
             "een overzicht van de overige patronen — met timeframe, naam, sterkte en of het patroon bevestigd is.");
 
+        AddFeature("🔒", "Stop-loss naar winst trekken op een lopende trade (bugfix)",
+            "Je kunt nu de stop-loss van een open positie naar winst verplaatsen. Voorheen werd dat geweigerd " +
+            "omdat de stop tegen de oorspronkelijke entry werd gevalideerd (bv. een short-stop moest boven de " +
+            "entry blijven). Voor een lopende trade wordt de stop nu getoetst aan de huidige koers — een short-" +
+            "stop mag dus onder de entry zakken zolang hij boven de koers blijft, en omgekeerd voor een long. " +
+            "Zo borg je winst bij een onverwachte ommekeer. (Nog niet gevulde limietorders blijven tegen de " +
+            "geplande entry gevalideerd.)");
+
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
             "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +

@@ -370,7 +370,7 @@ public class TradeService : ITradeService
         Logger.Information("Order #{Id} notes updated", orderId);
     }
 
-    public async Task UpdateOrderLevelsAsync(int orderId, double stopLoss, double takeProfit, double takeProfit2)
+    public async Task UpdateOrderLevelsAsync(int orderId, double stopLoss, double takeProfit, double takeProfit2, double currentPrice = 0)
     {
         var context = _portfolioService.Context;
         if (context is null) return;
@@ -378,8 +378,12 @@ public class TradeService : ITradeService
         var order = await context.ExchangeOrders.FindAsync(orderId);
         if (order is null) return;
 
-        // Guard: validate new levels against the original entry price.
-        var validation = TradeSetupValidator.Validate(order.Side, order.Entry, stopLoss, takeProfit, takeProfit2);
+        // Een reeds gevulde (open) positie valideren we t.o.v. de HUIDIGE koers: zo mag de stop
+        // naar winst worden getrokken (bv. een short-stop onder de entry). Een nog niet gevulde
+        // (Pending) order blijft t.o.v. de geplande entry gevalideerd (setup-modus).
+        var validation = (order.Status == OrderStatus.Filled && currentPrice > 0)
+            ? TradeSetupValidator.ValidateForOpenPosition(order.Side, currentPrice, stopLoss, takeProfit, takeProfit2)
+            : TradeSetupValidator.Validate(order.Side, order.Entry, stopLoss, takeProfit, takeProfit2);
         if (!validation.IsValid)
             throw new ArgumentException(validation.Error);
 

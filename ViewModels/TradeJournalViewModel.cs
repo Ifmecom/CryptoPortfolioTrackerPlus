@@ -227,7 +227,7 @@ public partial class TradeJournalViewModel : BaseViewModel
     {
         try
         {
-            await _tradeService.UpdateOrderLevelsAsync(row.Id, sl, tp1, tp2);
+            await _tradeService.UpdateOrderLevelsAsync(row.Id, sl, tp1, tp2, row.CurrentPrice);
             await LoadRowsAsync();
             StatusMessage = $"Trade {row.Symbol} bijgewerkt — SL/TP aangepast.";
         }

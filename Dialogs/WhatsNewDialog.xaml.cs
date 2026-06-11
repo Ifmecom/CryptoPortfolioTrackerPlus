@@ -48,6 +48,10 @@ public sealed partial class WhatsNewDialog : ContentDialog
             "Een verkeerde diepte-controle blokkeerde de dubbele-bodem- en Adam & Eve-detectie. Nu telt de " +
             "opleving tussen de twee bodems (≥ 5%) — dubbele bodems worden weer herkend.");
 
+        AddFeature("🔒", "Stop-loss naar winst trekken op een lopende trade",
+            "Op een open positie wordt de stop nu aan de huidige koers getoetst i.p.v. de entry — je mag de " +
+            "stop dus naar winst verplaatsen om winst te borgen.");
+
         AddVersionHeader("v1.37  —  Guardrails afgedwongen · Telegram trade-alerts · paper/live gescheiden");
 
         AddFeature("⛔", "Guardrails worden nu écht afgedwongen",
