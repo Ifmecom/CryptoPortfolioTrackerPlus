@@ -496,6 +496,11 @@ huidige koers blijft; spiegelbeeld voor long). Een **Pending** order blijft via 
 entry gecontroleerd. Voorheen werd alles tegen de entry gevalideerd, waardoor het borgen van winst op een
 lopende trade ten onrechte werd geweigerd.
 
+**Risicovrij-weergave *(v1.38)*:** `EditTradeDialog.RecalcSummary` toont, zodra de stop op/voorbij break-even
+staat (long: SL ≥ entry, short: SL ≤ entry), **'Risicovrij ✓'** i.p.v. een R/R-ratio en herlabelt 'Max risico'
+naar **'Geborgde winst'** (+USDT = `|entry − SL| × qty`). Bij exact break-even toont het 'Break-even'. Dit
+voorkomt het misleidende positieve risico-getal dat de oude `Math.Abs(entry − SL)`-berekening gaf.
+
 ---
 
 ### 4.8 Statistieken

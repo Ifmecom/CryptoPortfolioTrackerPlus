@@ -230,7 +230,7 @@
 
                 <!-- R/R -->
                 <StackPanel Grid.Column="0" HorizontalAlignment="Center" Spacing="3">
-                    <TextBlock Text="Nieuw R/R" FontSize="10"
+                    <TextBlock x:Name="lblRR" Text="Nieuw R/R" FontSize="10"
                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock x:Name="txtRR" Text="—" FontSize="14" FontWeight="SemiBold"
@@ -243,7 +243,7 @@
 
                 <!-- Max risico -->
                 <StackPanel Grid.Column="2" HorizontalAlignment="Center" Spacing="3">
-                    <TextBlock Text="Max risico" FontSize="10"
+                    <TextBlock x:Name="lblMaxRisk" Text="Max risico" FontSize="10"
                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                HorizontalAlignment="Center"/>
                     <TextBlock x:Name="txtMaxRisk" Text="—" FontSize="14" FontWeight="SemiBold"

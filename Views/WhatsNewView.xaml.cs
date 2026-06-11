@@ -74,6 +74,11 @@ public sealed partial class WhatsNewView : Page
             "Zo borg je winst bij een onverwachte ommekeer. (Nog niet gevulde limietorders blijven tegen de " +
             "geplande entry gevalideerd.)");
 
+        AddFeature("🟢", "'Risicovrij' in de bewerk-dialoog",
+            "Staat je stop-loss op of voorbij break-even, dan toont de bewerk-dialoog nu 'Risicovrij ✓' en de " +
+            "geborgde winst (+USDT) i.p.v. een misleidend risico-getal en R/R — want er staat geen risico meer " +
+            "op het spel.");
+
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
             "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +

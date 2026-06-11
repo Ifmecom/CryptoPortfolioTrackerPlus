@@ -197,29 +197,62 @@ public sealed partial class EditTradeDialog : ContentDialog
         SetPctLabel(txtNewTP1Pct, tp1, entry, isLoss: false);
         SetPctLabel(txtNewTP2Pct, SafeValue(nbTP2, 0), entry, isLoss: false);
 
-        // R/R ratio
-        if (sl > 0 && tp1 > 0 && entry > 0)
+        // Risicovrij? De stop staat op of voorbij break-even (winst geborgd):
+        //   Long  → SL ≥ entry,  Short → SL ≤ entry. Dan is er geen risico meer.
+        bool riskFree = sl > 0 && entry > 0 && (_isLong ? sl >= entry : sl <= entry);
+
+        if (riskFree)
         {
-            var risk   = Math.Abs(entry - sl);
-            var reward = Math.Abs(tp1 - entry);
-            if (risk > 0)
+            // R/R is dan niet zinvol → toon de status.
+            lblRR.Text       = "Status";
+            txtRR.Text       = "Risicovrij ✓";
+            txtRR.Foreground = GreenBrush;
+
+            // "Max risico" wordt de geborgde winst (gegarandeerd bij een stop-out).
+            double lockedUsdt = Math.Abs(entry - sl) * _order.Qty;
+            if (lockedUsdt > 0)
             {
-                var rr = reward / risk;
-                txtRR.Text       = $"{rr:F2} : 1";
-                txtRR.Foreground = rr >= 1.5 ? GreenBrush : rr >= 1.0 ? OrangeBrush : RedBrush;
+                lblMaxRisk.Text       = "Geborgde winst";
+                txtMaxRisk.Text       = $"+{lockedUsdt:N2} USDT";
+                txtMaxRisk.Foreground = GreenBrush;
+            }
+            else
+            {
+                lblMaxRisk.Text       = "Max risico";
+                txtMaxRisk.Text       = "Break-even";
+                txtMaxRisk.Foreground = NeutralBrush;
+            }
+        }
+        else
+        {
+            // Normale risico-weergave — herstel de labels.
+            lblRR.Text      = "Nieuw R/R";
+            lblMaxRisk.Text = "Max risico";
+
+            // R/R ratio
+            if (sl > 0 && tp1 > 0 && entry > 0)
+            {
+                var risk   = Math.Abs(entry - sl);
+                var reward = Math.Abs(tp1 - entry);
+                if (risk > 0)
+                {
+                    var rr = reward / risk;
+                    txtRR.Text       = $"{rr:F2} : 1";
+                    txtRR.Foreground = rr >= 1.5 ? GreenBrush : rr >= 1.0 ? OrangeBrush : RedBrush;
+                }
+                else { txtRR.Text = "—"; txtRR.Foreground = NeutralBrush; }
             }
             else { txtRR.Text = "—"; txtRR.Foreground = NeutralBrush; }
-        }
-        else { txtRR.Text = "—"; txtRR.Foreground = NeutralBrush; }
 
-        // Max risico (in USDT, based on current qty)
-        if (sl > 0 && entry > 0 && _order.Qty > 0)
-        {
-            var riskUsdt = Math.Abs(entry - sl) * _order.Qty;
-            txtMaxRisk.Text       = $"{riskUsdt:N2} USDT";
-            txtMaxRisk.Foreground = riskUsdt > 0 ? RedBrush : NeutralBrush;
+            // Max risico (in USDT, based on current qty)
+            if (sl > 0 && entry > 0 && _order.Qty > 0)
+            {
+                var riskUsdt = Math.Abs(entry - sl) * _order.Qty;
+                txtMaxRisk.Text       = $"{riskUsdt:N2} USDT";
+                txtMaxRisk.Foreground = riskUsdt > 0 ? RedBrush : NeutralBrush;
+            }
+            else { txtMaxRisk.Text = "—"; txtMaxRisk.Foreground = NeutralBrush; }
         }
-        else { txtMaxRisk.Text = "—"; txtMaxRisk.Foreground = NeutralBrush; }
 
         // SL afstand van entry
         if (sl > 0 && entry > 0)
