@@ -18,8 +18,23 @@ public class PatternResult
     public string Timeframe { get; set; } = string.Empty;
 
     /// <summary>True when the pattern is complete and confirmed;
-    /// false = early / tentative detection.</summary>
+    /// false = early / tentative detection. Afgeleid van <see cref="Status"/> voor breakout-patronen.</summary>
     public bool IsConfirmed { get; set; }
+
+    /// <summary>
+    /// Levenscyclus-status (drie-staten-model, handboek §5): In formatie → Voorlopig → Bevestigd.
+    /// Voor breakout-patronen centraal bepaald in <see cref="Services.PatternDetectionService"/> op basis
+    /// van het sleutelniveau (Voorlopig = live koers erbuiten, Bevestigd = slotkoers erbuiten + marge).
+    /// </summary>
+    public PatternStatus Status { get; set; } = PatternStatus.Confirmed;
+
+    /// <summary>Nederlandse weergave van de status voor de UI.</summary>
+    public string StatusLabel => Status switch
+    {
+        PatternStatus.Confirmed => "Bevestigd",
+        PatternStatus.Tentative => "Voorlopig",
+        _                       => "In formatie",
+    };
 
     /// <summary>Pattern clarity / strength on a 0–100 scale.</summary>
     public int Strength { get; set; }

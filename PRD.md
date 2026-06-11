@@ -1687,6 +1687,13 @@ significantie = pivot moet de dichtstbijzijnde buur met ≥ 0.40 × ATR(14) over
   zichtbare toppen/bodems landen. ATR-relatieve significantie schaalt mee met de volatiliteit
   van de coin (vervangt de vaste 0.5%).
 
+**Drie-staten-bevestiging *(v1.38, spec-review)*:** `PatternStatus` (Forming/Tentative/Confirmed) wordt
+centraal in `DetectFromBars` bepaald (`ApplyStatus` → `EvalStatus`) voor alle breakout-patronen:
+**Bevestigd** = slotkoers (`bars[^1].Close`) voorbij het sleutelniveau + marge (driehoek/kanaal ≥1%,
+neklijn/wedge/flag ≥0,5%, breakout/breakdown ≥1,5%); **Voorlopig** = live koers erbuiten; anders **In formatie**.
+`PatternResult.IsConfirmed` is hiervan afgeleid (fixt het F7-probleem: bevestiging op slotkoers i.p.v. live koers).
+`StatusLabel` wordt getoond in de badge-tooltip, de "+N"-overflow-tooltip en het grafieklabel.
+
 **Detectie-kwaliteitsgates *(v1.38, spec-review)*:** kanaal/driehoek/wedge vereisen náást de R²-fit nu ook
 **≥2 echte aanrakingen** per lijn (`CountTouches`, swing binnen 1% van de regressielijn) en een
 **ATR-grootteband** (gap `≥0,5×ATR`, `≤15×ATR`) bovenop de prijs-%-band. De **staleness-check**

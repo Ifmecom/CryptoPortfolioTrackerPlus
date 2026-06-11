@@ -56,6 +56,18 @@ public enum PatternCategory
     Warning,
 }
 
+// ── Levenscyclus-status van een patroon (drie-staten-model, handboek §5) ─────
+
+public enum PatternStatus
+{
+    /// <summary>Structuur is geldig, maar de prijs heeft het sleutelniveau nog niet bereikt.</summary>
+    Forming,
+    /// <summary>De live koers staat voorbij het sleutelniveau, maar geen afgesloten candle bevestigt het.</summary>
+    Tentative,
+    /// <summary>Een slotkoers (bars[^1].Close) sloot voorbij het sleutelniveau met de vereiste marge.</summary>
+    Confirmed,
+}
+
 // ── UI filter options ───────────────────────────────────────────────────────
 
 public enum PatternFilter

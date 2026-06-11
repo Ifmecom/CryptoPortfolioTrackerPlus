@@ -124,7 +124,7 @@ public sealed partial class CoinChartWindow : Window
                 .FirstOrDefault();
 
         PatternAnnotation? annotation = chosen?.Annotation;
-        string patternLabel = chosen is not null ? $"  ·  {chosen.DisplayName}" : string.Empty;
+        string patternLabel = chosen is not null ? $"  ·  {chosen.DisplayName} ({chosen.StatusLabel})" : string.Empty;
 
         BarCountLabel.Text = bars.Count > 0
             ? $"{bars.Count} candles  ·  Bron: {_analysis.DataSource}{patternLabel}"

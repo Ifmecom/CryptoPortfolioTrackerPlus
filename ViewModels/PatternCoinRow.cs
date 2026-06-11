@@ -179,7 +179,7 @@ public class PatternCoinRow
         OverflowToolTip = overflow.Count == 0
             ? string.Empty
             : "Overige patronen:\n" + string.Join("\n", overflow.Select(p =>
-                $"• {p.Timeframe,-3} {p.DisplayName} · sterkte {p.Strength}{(p.IsConfirmed ? " ✓ bevestigd" : "")}"));
+                $"• {p.Timeframe,-3} {p.DisplayName} · sterkte {p.Strength} · {p.StatusLabel}"));
 
         // Setup reasoning — max 4 bullets
         ReasoningBullets = analysis.Setup?.Reasoning.Take(4).ToList()
@@ -220,6 +220,7 @@ public class PatternBadge
     public SolidColorBrush     Background { get; }
     public string              ToolTip    { get; }
     public bool                Confirmed  { get; }
+    public PatternStatus       Status     { get; }
 
     /// <summary>Underlying pattern — passed to <see cref="Views.CoinChartWindow"/> for annotation.</summary>
     public PatternResult       Pattern    { get; }
@@ -233,8 +234,9 @@ public class PatternBadge
         Analysis  = analysis;
         Label     = pattern.DisplayName;
         Timeframe = pattern.Timeframe;
-        ToolTip   = pattern.Description;
+        ToolTip   = $"[{pattern.StatusLabel}] {pattern.Description}";
         Confirmed = pattern.IsConfirmed;
+        Status    = pattern.Status;
 
         Background = pattern.Category switch
         {

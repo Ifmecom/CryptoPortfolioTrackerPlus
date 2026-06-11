@@ -79,6 +79,11 @@ public class PatternDetectionService : IPatternDetectionService
             TryAdd(results, DetectCupAndHandle(data, timeframeLabel, currentPrice));
         }
 
+        // Drie-staten-bevestiging (handboek §5): centraal bepaald op basis van sleutelniveau +
+        // slotkoers, zodat álle breakout-patronen consistent In formatie → Voorlopig → Bevestigd zijn.
+        double lastClose = data[^1].Close;
+        foreach (var r in results) ApplyStatus(r, currentPrice, lastClose);
+
         return results;
     }
 
@@ -1846,5 +1851,66 @@ public class PatternDetectionService : IPatternDetectionService
     private static void TryAdd(List<PatternResult> list, PatternResult? result)
     {
         if (result is not null) list.Add(result);
+    }
+
+    // =========================================================================
+    // Drie-staten-bevestiging (handboek §5)
+    // =========================================================================
+
+    /// <summary>
+    /// Vereiste doorbraakmarge per breakout-patroon (handboek §5.2). Null = geen breakout-patroon
+    /// (kanaal/trend/consolidatie/indicator) → die volgen het oude IsConfirmed-gedrag.
+    /// </summary>
+    private static double? BreakoutMarginPct(PatternType t) => t switch
+    {
+        PatternType.AscendingTriangle or PatternType.DescendingTriangle      => 0.010,
+        PatternType.RisingWedge or PatternType.FallingWedge                  => 0.005,
+        PatternType.HeadAndShoulders or PatternType.InverseHeadAndShoulders  => 0.005,
+        PatternType.DoubleBottom or PatternType.DoubleTop                    => 0.005,
+        PatternType.CupAndHandle                                            => 0.005,
+        PatternType.BullFlag or PatternType.BearFlag                        => 0.005,
+        PatternType.AdamAndEve                                              => 0.005,
+        PatternType.BreakoutAboveResistance or PatternType.BreakdownBelowSupport => 0.015,
+        _ => null,
+    };
+
+    /// <summary>
+    /// Bepaalt de drie-staten-status: Bevestigd als de SLOTKOERS het sleutelniveau met de marge
+    /// doorbreekt; Voorlopig als alleen de LIVE koers erbuiten staat; anders In formatie.
+    /// </summary>
+    private static PatternStatus EvalStatus(
+        PatternCategory category, double keyLevel, double marginPct, double currentPrice, double lastClose)
+    {
+        if (keyLevel <= 0) return PatternStatus.Forming;
+        bool bullish = category == PatternCategory.Bullish;
+
+        double confirmLevel = bullish ? keyLevel * (1 + marginPct) : keyLevel * (1 - marginPct);
+        bool closedBeyond = bullish ? lastClose    >= confirmLevel : lastClose    <= confirmLevel;
+        bool liveBeyond   = bullish ? currentPrice >= keyLevel     : currentPrice <= keyLevel;
+
+        if (closedBeyond) return PatternStatus.Confirmed;
+        if (liveBeyond)   return PatternStatus.Tentative;
+        return PatternStatus.Forming;
+    }
+
+    /// <summary>
+    /// Zet <see cref="PatternResult.Status"/> (+ houdt <see cref="PatternResult.IsConfirmed"/> consistent).
+    /// Breakout-patronen krijgen de drie-staten-logica op slotkoers; overige patronen behouden hun
+    /// bestaande IsConfirmed-betekenis (Bevestigd/In formatie).
+    /// </summary>
+    private static void ApplyStatus(PatternResult r, double currentPrice, double lastClose)
+    {
+        var margin   = BreakoutMarginPct(r.Type);
+        double keyLevel = r.KeyLevel ?? 0;
+        if (margin is double m && keyLevel > 0 && r.Category != PatternCategory.Neutral)
+        {
+            r.Status      = EvalStatus(r.Category, keyLevel, m, currentPrice, lastClose);
+            r.IsConfirmed = r.Status == PatternStatus.Confirmed;
+        }
+        else
+        {
+            // Niet-breakout (kanaal, trend, consolidatie, sym-driehoek, indicator): map 1-op-1.
+            r.Status = r.IsConfirmed ? PatternStatus.Confirmed : PatternStatus.Forming;
+        }
     }
 }

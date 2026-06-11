@@ -31,7 +31,7 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 | **Interne-schending-filter** (§3.2: >30% bars buiten de lijn → verwerpen) | ❌ | Niet geïmplementeerd. Een rommelige structuur die toevallig een goede R² heeft, wordt niet afgewezen op interne doorbraken. |
 | **Maximale patroonleeftijd** (§4.3) | ❌ | Geen max-age; alleen `HasRecentSwing` (laatste swing ≤20 bars). Een 100 bars oud kanaal kan nog gerapporteerd worden. |
 | **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ✅ (Fase A) | `IsPatternStale` nu in double bottom/top, H&S, Inv. H&S, wedge, kanaal, asc/desc-driehoek, bull/bear-flag en cup&handle. (Breakout/Breakdown nog open.) |
-| **Drie-staten-bevestiging** (§5, F7) | ❌ | Spec v2.1: In formatie → **Voorlopig** (live koers raakt niveau) → **Bevestigd** (slotkoers `bars[^1].Close` erbuiten + marge). Code heeft nu alleen één `IsConfirmed`-vlag op de live koers → tri-state introduceren. |
+| **Drie-staten-bevestiging** (§5, F7) | ✅ (Fase B) | `PatternStatus` (Forming/Tentative/Confirmed) centraal bepaald in `DetectFromBars` (`ApplyStatus`/`EvalStatus`): Bevestigd op `bars[^1].Close` + marge, Voorlopig op live koers. `IsConfirmed` afgeleid. Status in badge-tooltip, overflow-tooltip en grafieklabel. |
 | **Volume-bevestiging bij breakout** (§5.1) | ❌ | Volume wordt alleen in `DetectVolumeSpike` gebruikt. Breakout-bevestiging kijkt niet naar volume (kan wel — Binance-klines hebben volume). |
 | **Continue invalidatie** (§6) | ❌ ontbreekt als concept | Detectie is stateless: elke scan opnieuw. Een patroon "invalideert" alleen impliciet doordat het de volgende scan niet meer gedetecteerd wordt. Er is geen expliciete invalidatie-/levensduurstatus per patroon. |
 | **Tekenen: begrensde segmenten** (§7) | ✅ (v1.38) | Alle patronen tekenen begrensde trendlijn-segmenten; grafiek toont 1 patroon per timeframe. |
@@ -78,10 +78,10 @@ RSI/MACD/EMA/BB-squeeze/ADX: ✅ conform §9. Dit zijn momentane indicatorsignal
 
 ## 3. Prioriteiten om de detectie betrouwbaar te maken
 
-**P1 — Drie-staten-bevestiging (§5, F7).** Introduceer een tri-state (In formatie / Voorlopig / Bevestigd)
-i.p.v. de enkele `IsConfirmed`-bool: **Voorlopig** = live `currentPrice` voorbij het niveau, **Bevestigd** =
-`bars[^1].Close` erbuiten + marge (driehoek/kanaal ≥1%, neklijn/wedge/flag ≥0,5%). Toon beide labels.
-Grootste bron van flikkerende/onterechte "bevestigd". *Raakt PatternResult + alle detectoren + de UI-badges.*
+**P1 — Drie-staten-bevestiging (§5, F7).** ✅ **Gedaan (Fase B).** `PatternStatus` (Forming/Tentative/Confirmed)
+centraal bepaald: Bevestigd = `bars[^1].Close` voorbij sleutelniveau + marge (driehoek/kanaal ≥1%,
+neklijn/wedge/flag ≥0,5%, breakout/breakdown ≥1,5%); Voorlopig = live koers erbuiten. Status getoond in
+badge-tooltip, overflow-tooltip en grafieklabel. Fixt het F7-probleem (bevestiging op slotkoers i.p.v. live).
 
 **P2 — Staleness breed toepassen (F6).** ✅ **Gedaan (Fase A).** `IsPatternStale` toegevoegd aan kanaal,
 driehoek, wedge, H&S, Inv. H&S, bull/bear-flag en cup&handle. Resteert: breakout/breakdown-detector.
@@ -105,5 +105,12 @@ De Double-Bottom-diepte (§10.4) was al correct in het handboek — de code is d
 
 ---
 
-*Spec vastgelegd in handboek v2.1. Volgende stap: implementatie P1 (drie-staten-bevestiging) of P2
-(staleness breed) — klein te beginnen, met tests.*
+**Fase A + B geïmplementeerd.** P1–P4 zijn gedaan; de "Bevestiging"-kolommen in §2 (die ⚠️ "via live
+koers" tonen) zijn daarmee achterhaald — bevestiging loopt nu centraal via het drie-staten-model.
+Resteert nog: P5 (driehoek/kanaal bevestiging/invalidatie verfijnen), P6 (sym-driehoek apex),
+P7 (continue invalidatie met geheugen), en de open detail-items (breakout/breakdown staleness,
+Support Bounce/Resistance Rejection-review).
+
+---
+
+*Spec vastgelegd in handboek v2.1; Fase A + B (P1–P4) geïmplementeerd met tests.*

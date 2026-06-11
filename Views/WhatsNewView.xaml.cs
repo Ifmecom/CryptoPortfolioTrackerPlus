@@ -47,6 +47,12 @@ public sealed partial class WhatsNewView : Page
             "Bovendien worden al-uitgespeelde patronen (koers >8% voorbij het sleutelniveau) nu breed " +
             "verborgen, niet alleen bij dubbele bodems/toppen. Gebaseerd op het bijgewerkte Patroon-handboek v2.1.");
 
+        AddFeature("🚦", "Patroonstatus: In formatie · Voorlopig · Bevestigd",
+            "Elk breakout-patroon toont nu een duidelijke status: 'In formatie' (koers nog niet bij het niveau), " +
+            "'Voorlopig' (live koers tikt het niveau aan) of 'Bevestigd' (een afgesloten candle sluit erbuiten). " +
+            "Belangrijk: 'Bevestigd' vereist nu een slotkoers — niet langer een live koers die binnen de candle weer " +
+            "kan omslaan. Je ziet de status in de patroon-tooltip, de '+N'-tooltip en op de grafiek.");
+
         AddFeature("🕯️", "Nauwkeurigere swing-detectie",
             "Pieken en dalen worden nu op de candle-wicks bepaald (de zichtbare highs/lows) in plaats van op de " +
             "candle-body, met een ruisfilter dat meeschaalt met de volatiliteit van de coin (ATR) en een ruimere " +
