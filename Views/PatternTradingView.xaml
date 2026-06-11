@@ -579,10 +579,11 @@
                                             </DataTemplate>
                                         </ItemsControl.ItemTemplate>
                                     </ItemsControl>
-                                    <!-- Overflow chip -->
+                                    <!-- Overflow chip — mouseover toont de overige patronen -->
                                     <Border CornerRadius="4" Padding="6,2"
                                             Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}"
-                                            Visibility="{x:Bind OverflowVis}">
+                                            Visibility="{x:Bind OverflowVis}"
+                                            ToolTipService.ToolTip="{x:Bind OverflowToolTip}">
                                         <TextBlock Text="{x:Bind OverflowText}"
                                                    FontSize="10" FontWeight="SemiBold"
                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>

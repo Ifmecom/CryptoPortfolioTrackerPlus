@@ -62,6 +62,10 @@ public sealed partial class WhatsNewView : Page
             "waardoor het patroon vrijwel nooit verscheen. Nu wordt de juiste maat gebruikt: de opleving tússen " +
             "de twee bodems moet ≥ 5% zijn. Dubbele bodems worden daardoor weer betrouwbaar herkend.");
 
+        AddFeature("🔢", "Mouseover op de '+N'-patroonchip",
+            "Heeft een coin meer patronen dan de zes zichtbare badges, dan toont het '+N'-vakje nu bij mouseover " +
+            "een overzicht van de overige patronen — met timeframe, naam, sterkte en of het patroon bevestigd is.");
+
         AddFeature("🚩", "Scherpere bull- en bear-flags",
             "De flag-detectie meet de pool nu op de zichtbare wicks en tekent de pool als een diagonale lijn van " +
             "bodem naar top. Het vlaggetje zelf wordt nu als een klein begrensd vak over de consolidatie-candles " +

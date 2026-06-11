@@ -639,7 +639,7 @@ blijft behouden zolang het patroon in een volgende scan nog voorkomt en is combi
 **Coin-kaart per resultaat:**
 - Logo · naam · symbool · TF-bias badges (1D/4H: Bullish/Bearish/Neutraal) · RSI-badges
 - Actuele prijs · 24u-wijziging (groen/rood) · TradabilityScore (0–100) met kleurcodering
-- Patroon-badges (max 6, Strength ≥ 55, bullish voor bearish, groen/rood/oranje)
+- Patroon-badges (max 6, Strength ≥ 55, bullish voor bearish, groen/rood/oranje); de **"+N"-overflow-chip** toont bij mouseover (`OverflowToolTip`) de overige patronen met timeframe, naam, sterkte en bevestigingsstatus
 - ⚡ Bijna Breakout indicator (indien van toepassing)
 - Setup-kaart (alleen als Score ≥ 40): Entry · Stop · TP1 · TP2 · R/R · Confidence · Entry-notitie
 - Redeneer-bullets (max 4, uit de analyse)

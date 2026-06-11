@@ -94,6 +94,9 @@ public class PatternCoinRow
     public string     OverflowText   => $"+{OverflowCount}";
     public Visibility OverflowVis    => HasOverflow ? Visibility.Visible : Visibility.Collapsed;
 
+    /// <summary>Multi-line overzicht van de patronen áchter de "+N"-chip (voor de mouseover-tooltip).</summary>
+    public string     OverflowToolTip { get; }
+
     // ── Near-breakout indicator ─────────────────────────────────────────────
     public bool   IsNearBreakout    => Analysis.IsNearBreakout;
     public string BreakoutIndicator => IsNearBreakout ? "⚡ Bijna Breakout" : "";
@@ -169,7 +172,14 @@ public class PatternCoinRow
             .ToList();
 
         PatternBadges  = qualifying.Take(6).Select(p => new PatternBadge(p, analysis)).ToList();
-        OverflowCount  = Math.Max(0, qualifying.Count - 6);
+
+        // Overflow: de patronen die niet als badge passen — opgesomd in de mouseover-tooltip.
+        var overflow   = qualifying.Skip(6).ToList();
+        OverflowCount  = overflow.Count;
+        OverflowToolTip = overflow.Count == 0
+            ? string.Empty
+            : "Overige patronen:\n" + string.Join("\n", overflow.Select(p =>
+                $"• {p.Timeframe,-3} {p.DisplayName} · sterkte {p.Strength}{(p.IsConfirmed ? " ✓ bevestigd" : "")}"));
 
         // Setup reasoning — max 4 bullets
         ReasoningBullets = analysis.Setup?.Reasoning.Take(4).ToList()
