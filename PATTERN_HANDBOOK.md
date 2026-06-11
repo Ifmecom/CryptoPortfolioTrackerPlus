@@ -1,5 +1,9 @@
 # Patroon Handboek — CryptoPortfolioTracker Plus
-**Versie 2.0 · Mei 2026**
+**Versie 2.1 · spec-review v1.38**
+
+> **v2.1-wijzigingen (spec-review):** swing-detectie op wicks + lookback 5 + 0,4×ATR (§2.1); R²-fit
+> **én** ≥2 aanrakingen binnen 1% (§3.1); ATR-band **én** prijs-%-band gecombineerd (§3.3); expliciet
+> **drie-staten-model** In formatie → Voorlopig → Bevestigd (§5); tekenen op wicks/regressie (§7).
 
 Dit document is de **authoritative reference** voor alle patroondetectie in `PatternDetectionService.cs`.
 Een patroon mag alleen worden gerapporteerd als **alle** validatiecriteria zijn voldaan.
@@ -59,15 +63,21 @@ Een patroon bestaat **alleen** als voldaan is aan:
 ### 2.1 Definitie
 
 Een **swing high** op bar `i` is geldig wanneer:
-- `bars[i].High` strikt hoger is dan alle bars `j` in `[i - lookback … i + lookback]`, `j ≠ i`
-- `bars[i].High` is minimaal **0.5%** hoger dan de hoogste naburige bar (`maxNeighbor`)
-- Lookback = **3 bars** (minimale isolatie: 3 bars aan elke kant)
+- `bars[i].High` (de **wick**, niet de body) strikt hoger is dan alle bars `j` in `[i - lookback … i + lookback]`, `j ≠ i`
+- `bars[i].High` is minimaal **0,4 × ATR(14)** hoger dan de hoogste naburige bar (`maxNeighbor`)
+- Lookback = **5 bars** (5-bars fractal: 5 bars isolatie aan elke kant)
 
 Een **swing low** op bar `i` is geldig wanneer:
-- `bars[i].Low` strikt lager is dan alle bars `j` in `[i - lookback … i + lookback]`, `j ≠ i`
-- `bars[i].Low` is minimaal **0.5%** lager dan de laagste naburige bar (`minNeighbor`)
+- `bars[i].Low` (de **wick**) strikt lager is dan alle bars `j` in `[i - lookback … i + lookback]`, `j ≠ i`
+- `bars[i].Low` is minimaal **0,4 × ATR(14)** lager dan de laagste naburige bar (`minNeighbor`)
 
-De 0.5%-significantiedrempel elimineert micro-swings die alleen ruis zijn en nooit een handelbare structuur vormen.
+De **ATR-relatieve significantiedrempel** (≈0,4 × ATR over de laatste 14 bars) schaalt mee met de
+volatiliteit van de coin en elimineert micro-swings die alleen ruis zijn — beter dan een vaste 0,5%,
+die op volatiele coins te los en op rustige coins te streng is.
+
+> **Wijziging v1.38:** swings op wicks (`High`/`Low`, niet de body), lookback **3 → 5**, en
+> significantie van vaste **0,5% → 0,4 × ATR(14)**. Markers en trendlijnen landen daardoor op de
+> zichtbare pieken/bodems.
 
 ### 2.2 Werkvenster
 
@@ -86,20 +96,31 @@ Voor wedgen en kanalen wordt de helling berekend via **lineaire regressie op wer
 | `1D`  | Dagelijks | Swing-structuur, trenddirectie |
 | `4H`  | 4 uur     | Intraday momentum, triangle/wedge |
 | `1H`  | 1 uur     | Korte-termijn entry-timing |
+| `15M` | 15 min    | Scalping/zeer korte termijn — meer ruis, lager gewicht |
 
 ---
 
 ## 3. Kwaliteitsfilters
 
-### 3.1 Verplichte minimum-aanrakingen
+### 3.1 Verplichte minimum-aanrakingen + fit
 
-| Patroontype | Min. aanrakingen bovenlijn | Min. aanrakingen onderlijn |
-|-------------|--------------------------|--------------------------|
-| Driehoek (alle types) | 2 | 2 |
-| Wig (rising/falling) | 2 | 2 |
-| Kanaal (ascending/descending) | 2 | 2 |
-| H&S / Inv. H&S | 3 (LS + H + RS) | 2 (beide troughs) |
-| Double Bottom / Top | — | 2 bodems / 2 toppen |
+Een trendlijn-patroon (driehoek/wig/kanaal) is alleen geldig als **beide** voorwaarden gelden:
+
+1. **Goodness-of-fit (R²):** de swing-punten liggen aantoonbaar op de regressielijn —
+   R² ≥ **0,70** (kanaal/driehoek) of ≥ **0,55** (wig, choppier van aard).
+2. **Echte aanrakingen:** minimaal **2 swing-punten per lijn** liggen binnen **1%** van de
+   geprojecteerde regressielijn. Een lijn die wiskundig past maar geen schone raakpunten heeft
+   (een uitschieter trekt de fit) wordt verworpen.
+
+| Patroontype | Min. aanrakingen bovenlijn | Min. aanrakingen onderlijn | R²-drempel |
+|-------------|--------------------------|--------------------------|-----------|
+| Driehoek (alle types) | 2 (binnen 1%) | 2 (binnen 1%) | 0,70 |
+| Wig (rising/falling) | 2 (binnen 1%) | 2 (binnen 1%) | 0,55 |
+| Kanaal (ascending/descending) | 2 (binnen 1%) | 2 (binnen 1%) | 0,70 |
+| H&S / Inv. H&S | 3 (LS + H + RS) | 2 (beide troughs) | n.v.t. (markers) |
+| Double Bottom / Top | — | 2 bodems / 2 toppen | n.v.t. (markers) |
+
+> **Beslissing (spec-review):** R² **én** aanrakingen-binnen-1% zijn allebei vereist — niet één van beide.
 
 ### 3.2 Verwerpingscriteria
 
@@ -112,13 +133,22 @@ Verwerp het patroon wanneer:
 - Asymmetrie is extreem: bij H&S zijn schouders > 25% van elkaar verwijderd in hoogte
 - Patroon is al langer dan **80 bars** oud zonder breakout → patroon vervalt (structuurverval)
 
-### 3.3 ATR-proportionaliteit
+### 3.3 Minimale & maximale patroongrootte — ATR **én** prijs-%
 
-Een patroon is pas relevant als de hoogte (afstand van bovenlijn tot onderlijn) proportioneel is aan de recente volatiliteit:
-- **Minimum patroonhoogte**: `≥ 0.5 × ATR(14)`
-- **Maximum patroonhoogte** (voor wedge/triangle): `≤ 15 × ATR(14)`
+Een patroon moet **beide** banden doorstaan; de **strengste grens wint**:
 
-Patronen die te klein zijn t.o.v. de ATR zijn ruis. Patronen die veel te groot zijn, zijn geen compressiepatronen.
+1. **ATR-band** (volatiliteits-bewust): hoogte `≥ 0,5 × ATR(14)` en (voor wig/driehoek) `≤ 15 × ATR(14)`.
+2. **Prijs-%-band** (vorm-bewust): de bestaande percentagegrenzen per patroon, bv. kanaal **4–30%**,
+   wig **3–35%**, flag-range **≤6%**.
+
+Voorbeeld: een coin met ATR 4% → ondergrens = max(0,5×4% = 2%, kanaal-min 4%) = **4%**. Een kanaal van
+3% hoog valt af. Bij een rustige coin (ATR 1%) wint juist de ATR-ondergrens niet, maar de %-grens — zo is
+de strengste van de twee altijd bindend.
+
+Patronen die te klein zijn t.o.v. de ATR zijn ruis; patronen die veel te groot zijn, zijn geen
+compressiepatronen.
+
+> **Beslissing (spec-review):** ATR-band én prijs-%-band combineren — niet één van beide.
 
 ---
 
@@ -156,17 +186,28 @@ Na deze leeftijd zonder bevestiging: patroon verwijderd uit rapportage.
 
 ---
 
-## 5. Breakout confirmatie
+## 5. Patroonstatus & bevestiging — drie-staten-model
 
-### 5.1 Vereisten voor bevestiging
+Elk patroon met een sleutelniveau (neklijn, breakout-grens, kanaalwand, flag-grens) doorloopt
+**drie expliciete staten**. Beide labels worden apart getoond zodat je het verschil ziet tussen
+"de koers tikt het niveau aan" en "een candle sluit er overtuigend buiten".
 
-Een breakout is **alleen** bevestigd als:
-1. Een **slotkoers** (`Close`, niet een intrabar-wick) buiten de structuur sluit
-2. De slotkoers de grens overschrijdt met meer dan normale wick-variatie
-3. Bij voorkeur begeleid door volumetoename t.o.v. het 20-periodes gemiddelde
-4. Bij voorkeur gevolgd door continuatie (hertest van het niveau houden)
+| Status | Voorwaarde | Bron |
+|--------|-----------|------|
+| **In formatie** | Structuur is geldig, maar de prijs heeft het sleutelniveau nog niet bereikt | — |
+| **Voorlopig** | De **live koers** (`currentPrice`) staat voorbij het sleutelniveau, maar er is nog geen afgesloten candle die het bevestigt | `currentPrice` |
+| **Bevestigd** | Een **slotkoers** (`bars[^1].Close`) sluit voorbij het sleutelniveau met de vereiste marge (§5.2) | `bars[^1].Close` |
 
-**Gebruik nooit `currentPrice` (live prijs) als bevestiging.** Gebruik `bars[^1].Close`.
+**Regels:**
+- Gebruik voor **Bevestigd** uitsluitend `bars[^1].Close` — **nooit** de live `currentPrice` (zie F7).
+  De live koers mag alléén tot **Voorlopig** leiden.
+- Een bevestiging is sterker bij volumetoename t.o.v. het 20-periodes gemiddelde (bonus, geen eis op
+  timeframes zonder volume) en bij continuatie/geslaagde hertest (§5.3).
+- De per-patroon "Bevestiging"-regels in §10–§11 definiëren het **Bevestigd**-niveau; **Voorlopig**
+  gebruikt hetzelfde niveau maar dan op de live koers.
+
+> **Beslissing (spec-review):** twee-staps expliciet. 'Voorlopig' = live koers raakt het niveau;
+> 'Bevestigd' = afgesloten candle erbuiten met marge. Dit vervangt het oude enkele `IsConfirmed`-vlag.
 
 ### 5.2 Minimale doorbraakmarges per patroon
 
@@ -228,10 +269,15 @@ Een patroon wordt **onmiddellijk** invalide als:
 
 ### 7.2 Wat niet tekenen
 
-- Niet elke wick volgen met een trendlijn — gebruik **body-respecterende** lijnen als wicks inconsistent zijn
-- Geen clutter: maximaal 2 trendlijnen per patroon + 1 horizontale lijn
+- Geen clutter: de grafiek toont **één patroon per timeframe** (het aangeklikte, anders het sterkste);
+  per patroon maximaal 2 trendlijnen + begrensde structuursegmenten
 - Geen patronen over elkaar heen tekenen van verschillende timeframes in dezelfde grafiek
-- Geen trendlijnen extrapoleren ver voorbij het patroon
+- Geen trendlijnen extrapoleren ver voorbij het patroon — structuurlijnen (neklijn, flag-grens,
+  kanaalwand) worden als **begrensde segmenten** over de patroon-candles getekend, niet over de hele grafiek
+
+> **Wijziging v1.38:** swings/structuur staan op de **wicks** (`High`/`Low`); trendlijnen worden via de
+> geprojecteerde **regressielijn** getekend (zie §7.3), niet body-respecterend. De oude "body-respecterende
+> lijn"-richtlijn is daarmee vervallen.
 
 ### 7.3 Trendlijn starttijdstip
 
@@ -807,8 +853,8 @@ Beide trendlijnen dalen, maar de **bovenlijn** daalt sneller dan de onderlijn. O
 ## 13. Veelgemaakte fouten
 
 ### F1 — Swing-punten niet significant genoeg
-**Probleem:** Lookback van 3 bars zonder significantiedrempel geeft micro-swings van 0.1% die geen handelbare structuur vormen.
-**Oplossing:** Swing high/low moet minimaal **0.5%** hogere resp. lager zijn dan de naburige bar in het lookback-venster.
+**Probleem:** Een kleine lookback zonder volatiliteits-bewuste drempel geeft micro-swings die geen handelbare structuur vormen.
+**Oplossing (v1.38):** lookback **5 bars** (5-bars fractal) op de **wicks**, en een significantiedrempel van **0,4 × ATR(14)** — schaalt mee met de volatiliteit i.p.v. een vaste 0,5%.
 
 ### F2 — Regressie op array-indices in plaats van bar-indices
 **Probleem:** Als swing-punten ongelijk verdeeld zijn in de tijd (bars 10, 35, 80), behandelt array-index regressie ze als 0, 1, 2 — een vertekende helling.
@@ -844,15 +890,15 @@ Beide trendlijnen dalen, maar de **bovenlijn** daalt sneller dan de onderlijn. O
 
 ### F10 — Patronen zonder aanrakingsvalidatie
 **Probleem:** Regressielijn detecteren is niet hetzelfde als een trendlijn waartegen de prijs daadwerkelijk bounced.
-**Oplossing:** Minimaal **2 werkelijke aanrakingen** per trendlijn vereisen (swing-punt op of binnen 1% van de regressielijn).
+**Oplossing (spec-review):** R²-fit (§3.1) **én** minimaal **2 werkelijke aanrakingen** per trendlijn (swing-punt binnen 1% van de regressielijn). Beide zijn vereist — een hoge R² met één uitschieter is niet genoeg.
 
 ### F11 — Patroon te klein t.o.v. volatiliteit
 **Probleem:** Een wedge van 2% hoogte op een coin met ATR van 5% is geen meaningful patroon.
-**Oplossing:** Patroonhoogte ≥ 0.5 × ATR(14).
+**Oplossing (spec-review):** patroonhoogte moet **zowel** ≥ 0,5 × ATR(14) **als** de prijs-%-ondergrens halen — de strengste grens wint (§3.3).
 
 ### F12 — Te tolerante swing-detectie voor Level 3 patronen
 **Probleem:** H&S en wig gedetecteerd op micro-swings die alleen ruis zijn op een 4H chart.
-**Oplossing:** Level 3 patronen gebruiken dezelfde lookback=3, maar de 0.5% significantiedrempel filtert automatisch ruis weg.
+**Oplossing (v1.38):** lookback **5 bars** + de **0,4 × ATR**-significantiedrempel filtert ruis automatisch weg, op alle levels.
 
 ---
 
@@ -889,4 +935,4 @@ De volgende detectiemethoden zijn buiten scope van de huidige versie maar vormen
 
 ---
 
-*Versie 2.0 — Mei 2026 — bijgewerkt na institutionele kwaliteitsreview*
+*Versie 2.1 — spec-review v1.38: wick-swings, R²+aanrakingen, ATR+%-grootte, drie-staten-bevestiging*

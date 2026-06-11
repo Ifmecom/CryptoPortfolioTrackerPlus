@@ -12,6 +12,12 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 > aanrakings-/ATR-proportionaliteitsvalidatie, en (3) geen continue invalidatie — een patroon wordt
 > elke scan opnieuw "vers" gedetecteerd zonder geheugen.
 
+> **Spec vastgelegd (handboek v2.1).** De drie kernbeslissingen uit de spec-review zijn nu in
+> `PATTERN_HANDBOOK.md` verwerkt: ① drie-staten-bevestiging (In formatie → **Voorlopig** = live koers raakt
+> niveau → **Bevestigd** = slotkoers erbuiten); ② minimale grootte = ATR-band **én** prijs-%-band (strengste
+> wint); ③ trendlijnen vereisen R² **én** ≥2 aanrakingen binnen 1%. Dit document is vanaf nu de
+> **implementatie-werklijst** om de code op die spec te brengen.
+
 ---
 
 ## 1. Systeembrede regels (handboek → code)
@@ -20,12 +26,12 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 |---|---|---|
 | **Swing-detectie** (§2.1) | ⚠️ afwijkend van handboektekst | Code v1.38: wicks, **lookback 5**, significantie **0,4×ATR**. Handboek §2.1/F1/F12 zegt nog lookback 3 + 0,5%. → handboek bijwerken. |
 | **Bar-index regressie** (§2.3, F2) | ✅ | Kanaal/driehoek/wedge gebruiken `LinearRegressionByBarIdx` + geprojecteerde lijnen. |
-| **Aanrakingsvalidatie ≥2 binnen 1%** (§3.1, F10) | ⚠️ vervangen door R² | We gebruiken een R²-fitdrempel (kanaal/driehoek ≥0,70, wedge ≥0,55) i.p.v. expliciete "2 swings binnen 1% van de lijn". Functioneel verwant, maar niet identiek aan de spec. |
-| **ATR-proportionaliteit hoogte** (§3.3, F11) | ❌ | Patronen gebruiken prijs-% (kanaal 4–30%, wedge 3–35%), niet `≥0,5×ATR` / `≤15×ATR`. Op laag-volatiele coins kan een te klein "patroon" toch door. |
+| **Aanrakingsvalidatie: R² én ≥2 binnen 1%** (§3.1, F10) | ⚠️ alleen R² | Spec v2.1 eist **beide**: R² (≥0,70 / wedge ≥0,55) **én** ≥2 swings binnen 1% van de lijn. Code heeft nu alleen de R²-helft → aanrakingscheck toevoegen. |
+| **Grootte: ATR-band én prijs-%-band** (§3.3, F11) | ❌ ATR-deel | Spec v2.1: hoogte moet zowel `≥0,5×ATR(14)` als de prijs-%-ondergrens halen (strengste wint). Code heeft nu alleen de prijs-%-band → ATR-band toevoegen. |
 | **Interne-schending-filter** (§3.2: >30% bars buiten de lijn → verwerpen) | ❌ | Niet geïmplementeerd. Een rommelige structuur die toevallig een goede R² heeft, wordt niet afgewezen op interne doorbraken. |
 | **Maximale patroonleeftijd** (§4.3) | ❌ | Geen max-age; alleen `HasRecentSwing` (laatste swing ≤20 bars). Een 100 bars oud kanaal kan nog gerapporteerd worden. |
 | **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ⚠️ alleen 2 patronen | `IsPatternStale` wordt **alleen** door Double Bottom & Double Top aangeroepen. Ontbreekt bij H&S, Inv. H&S, wedge, kanaal, driehoek, flags, breakout/breakdown, cup&handle. |
-| **Bevestiging op slotkoers, niet live** (§5.1, F7) | ❌ geschonden | Detectoren bepalen `IsConfirmed` met de **live `currentPrice`** (= `coin.Price`), niet `bars[^1].Close`. Dit is exact de fout die F7 beschrijft — nu aanwezig in de code. |
+| **Drie-staten-bevestiging** (§5, F7) | ❌ | Spec v2.1: In formatie → **Voorlopig** (live koers raakt niveau) → **Bevestigd** (slotkoers `bars[^1].Close` erbuiten + marge). Code heeft nu alleen één `IsConfirmed`-vlag op de live koers → tri-state introduceren. |
 | **Volume-bevestiging bij breakout** (§5.1) | ❌ | Volume wordt alleen in `DetectVolumeSpike` gebruikt. Breakout-bevestiging kijkt niet naar volume (kan wel — Binance-klines hebben volume). |
 | **Continue invalidatie** (§6) | ❌ ontbreekt als concept | Detectie is stateless: elke scan opnieuw. Een patroon "invalideert" alleen impliciet doordat het de volgende scan niet meer gedetecteerd wordt. Er is geen expliciete invalidatie-/levensduurstatus per patroon. |
 | **Tekenen: begrensde segmenten** (§7) | ✅ (v1.38) | Alle patronen tekenen begrensde trendlijn-segmenten; grafiek toont 1 patroon per timeframe. |
@@ -72,18 +78,20 @@ RSI/MACD/EMA/BB-squeeze/ADX: ✅ conform §9. Dit zijn momentane indicatorsignal
 
 ## 3. Prioriteiten om de detectie betrouwbaar te maken
 
-**P1 — Bevestiging op slotkoers (F7).** Vervang `currentPrice` door `bars[^1].Close` in alle
-`IsConfirmed`-checks (wedge, H&S, Inv. H&S, double bottom/top, cup&handle, adam&eve). Grootste bron
-van flikkerende/onterechte "bevestigd"-labels. *Klein, hoog effect.*
+**P1 — Drie-staten-bevestiging (§5, F7).** Introduceer een tri-state (In formatie / Voorlopig / Bevestigd)
+i.p.v. de enkele `IsConfirmed`-bool: **Voorlopig** = live `currentPrice` voorbij het niveau, **Bevestigd** =
+`bars[^1].Close` erbuiten + marge (driehoek/kanaal ≥1%, neklijn/wedge/flag ≥0,5%). Toon beide labels.
+Grootste bron van flikkerende/onterechte "bevestigd". *Raakt PatternResult + alle detectoren + de UI-badges.*
 
 **P2 — Staleness breed toepassen (F6).** Roep `IsPatternStale` aan in álle reversal/breakout-detectoren,
 niet alleen double bottom/top. Voorkomt het tonen van al-uitgespeelde patronen.
 
-**P3 — ATR-proportionaliteit (§3.3, F11).** Vervang/combineer de prijs-%-grenzen met `≥0,5×ATR(14)`
-(en een bovengrens) zodat micro-patronen op laag-volatiele coins wegvallen. ATR is al beschikbaar.
+**P3 — Grootte: ATR-band én prijs-%-band (§3.3, F11).** Voeg de ATR-band (`≥0,5×ATR`, en `≤15×ATR` voor
+wig/driehoek) toe naast de bestaande prijs-%-grenzen; strengste wint. ATR is al beschikbaar in `DetectFromBars`.
 
-**P4 — Echte aanrakingsvalidatie (§3.1, F10).** Naast R²: eis ≥2 swings binnen ~1% van de regressielijn
-per trendlijn. Sluit "regressielijn zonder echte bounces" uit.
+**P4 — Aanrakingsvalidatie: R² én ≥2 binnen 1% (§3.1, F10).** Voeg náást de R²-gate een check toe dat
+≥2 swings per lijn binnen ~1% van de geprojecteerde regressielijn liggen. Sluit "regressielijn zonder echte
+bounces" uit.
 
 **P5 — Bevestiging/invalidatie voor driehoeken & kanalen (§5/§6).** Driehoek-bevestiging op een
 slotkoers-breakout (≥1%) i.p.v. alleen afstand; kanaal-invalidatie op een sluiting buiten de wand (≥1%).
@@ -94,10 +102,11 @@ prijs de apex bereikt zonder breakout.
 **P7 — Continue invalidatie (concept).** Optioneel/groot: een patroon-geheugen zodat een eerder
 gedetecteerd patroon expliciet "geïnvalideerd" of "bevestigd" kan worden i.p.v. puur stateless her-scan.
 
-**Doc-onderhoud:** handboek §2.1, §2.4 (15M toevoegen), §7.2, F1, F12 bijwerken naar v1.38
-(wicks, lookback 5, 0,4×ATR, R²-gate). De Double-Bottom-diepte (§10.4) was al correct in het handboek —
-de code is daar nu mee in lijn gebracht.
+**Doc-onderhoud:** ✅ gedaan — handboek is bijgewerkt naar **v2.1** (§2.1 wicks/lookback 5/0,4×ATR;
+§2.4 15M; §3.1 R²+aanrakingen; §3.3 ATR+%; §5 drie-staten-bevestiging; §7.2 wicks/regressie; F1/F10/F11/F12).
+De Double-Bottom-diepte (§10.4) was al correct in het handboek — de code is daar mee in lijn gebracht.
 
 ---
 
-*Opgesteld na code↔handboek-review. Volgende stap: P1–P2 implementeren (klein, hoogste effect) met tests.*
+*Spec vastgelegd in handboek v2.1. Volgende stap: implementatie P1 (drie-staten-bevestiging) of P2
+(staleness breed) — klein te beginnen, met tests.*
