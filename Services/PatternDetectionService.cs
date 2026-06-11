@@ -64,18 +64,18 @@ public class PatternDetectionService : IPatternDetectionService
         TryAdd(results, DetectDoubleTop(data, swingHighs, timeframeLabel, currentPrice));
         TryAdd(results, DetectBullFlag(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectBearFlag(data, timeframeLabel, currentPrice));
-        TryAdd(results, DetectTriangle(data, swingHighs, swingLows, timeframeLabel, currentPrice));
+        TryAdd(results, DetectTriangle(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
         TryAdd(results, DetectConsolidation(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectBreakoutBreakdown(data, swingHighs, swingLows, timeframeLabel, currentPrice));
         TryAdd(results, DetectAdamAndEve(data, swingLows, timeframeLabel, currentPrice));
-        TryAdd(results, DetectChannel(data, swingHighs, swingLows, timeframeLabel, currentPrice));
+        TryAdd(results, DetectChannel(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
 
         // Level 3 — complex classical patterns (require more data)
         if (data.Count >= 50)
         {
             TryAdd(results, DetectHeadAndShoulders(data, swingHighs, swingLows, timeframeLabel, currentPrice));
             TryAdd(results, DetectInverseHeadAndShoulders(data, swingHighs, swingLows, timeframeLabel, currentPrice));
-            TryAdd(results, DetectWedge(data, swingHighs, swingLows, timeframeLabel, currentPrice));
+            TryAdd(results, DetectWedge(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
             TryAdd(results, DetectCupAndHandle(data, timeframeLabel, currentPrice));
         }
 
@@ -630,6 +630,9 @@ public class PatternDetectionService : IPatternDetectionService
         double retrace = (poleHigh - flagLow) / (poleHigh - poleLow);
         if (retrace > 0.5) return null;
 
+        // Staleness (§3.2/F6): prijs al >8% boven de vlag-breakout → uitgespeeld.
+        if (IsPatternStale(currentPrice, flagHigh, PatternCategory.Bullish)) return null;
+
         return new PatternResult
         {
             Type        = PatternType.BullFlag,
@@ -710,6 +713,9 @@ public class PatternDetectionService : IPatternDetectionService
         double retrace = (flagHigh - poleLow) / (poleHigh - poleLow);
         if (retrace > 0.5) return null;
 
+        // Staleness (§3.2/F6): prijs al >8% onder de vlag-breakdown → uitgespeeld.
+        if (IsPatternStale(currentPrice, flagLow, PatternCategory.Bearish)) return null;
+
         return new PatternResult
         {
             Type        = PatternType.BearFlag,
@@ -758,7 +764,7 @@ public class PatternDetectionService : IPatternDetectionService
         List<OhlcvBar> bars,
         List<(int idx, double value)> swingHighs,
         List<(int idx, double value)> swingLows,
-        string tfl, double currentPrice)
+        string tfl, double currentPrice, double atr)
     {
         // Need at least 3 recent swing highs and lows, and both must be current
         if (!HasRecentSwing(swingHighs, bars.Count) || !HasRecentSwing(swingLows, bars.Count)) return null;
@@ -775,12 +781,18 @@ public class PatternDetectionService : IPatternDetectionService
         var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
         var (lowSlope,  lowInt)  = LinearRegressionByBarIdx(rl);
 
-        // Goodness-of-fit guard: the swings must lie on their trendlines.
+        // Goodness-of-fit + echte aanrakingen (handboek §3.1).
         if (RSquaredByBarIdx(rh, highSlope, highInt) < 0.70 ||
             RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
+        if (CountTouches(rh, highSlope, highInt) < 2 ||
+            CountTouches(rl, lowSlope,  lowInt)  < 2) return null;
 
         double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
         if (meanPrice <= 0) return null;
+
+        // Grootte: de gap aan de brede kant (winStart) moet ≥0,5×ATR zijn (§3.3) — anders ruis.
+        double startGap = (highInt + highSlope * winStart) - (lowInt + lowSlope * winStart);
+        if (atr > 0 && startGap < 0.5 * atr) return null;
 
         // Classify each line by its total fractional move over the window (interpretable).
         int    span        = winEnd - winStart;
@@ -810,6 +822,7 @@ public class PatternDetectionService : IPatternDetectionService
         if (flatHighs && risingLows)
         {
             double resistance = (highAtStart + highAtEnd) / 2.0;
+            if (IsPatternStale(currentPrice, resistance, PatternCategory.Bullish)) return null;
             double distPct = (resistance - currentPrice) / currentPrice * 100;
             return new PatternResult
             {
@@ -830,6 +843,7 @@ public class PatternDetectionService : IPatternDetectionService
         if (fallingHighs && flatLows)
         {
             double support = (lowAtStart + lowAtEnd) / 2.0;
+            if (IsPatternStale(currentPrice, support, PatternCategory.Bearish)) return null;
             double distPct = (currentPrice - support) / currentPrice * 100;
             return new PatternResult
             {
@@ -1020,6 +1034,9 @@ public class PatternDetectionService : IPatternDetectionService
                 .Min();
             double neckline = Math.Max(t1, t2);
 
+            // Staleness (§3.2/F6): prijs al >8% onder de neklijn → patroon uitgespeeld.
+            if (IsPatternStale(currentPrice, neckline, PatternCategory.Bearish)) continue;
+
             bool confirmed = currentPrice < neckline * 0.995; // broke neckline
             double distPct = (currentPrice - neckline) / neckline * 100;
 
@@ -1106,6 +1123,9 @@ public class PatternDetectionService : IPatternDetectionService
                 .Max();
             double neckline = Math.Min(p1, p2);
 
+            // Staleness (§3.2/F6): prijs al >8% boven de neklijn → patroon uitgespeeld.
+            if (IsPatternStale(currentPrice, neckline, PatternCategory.Bullish)) continue;
+
             bool confirmed = currentPrice > neckline * 1.005;
             double distPct = (neckline - currentPrice) / currentPrice * 100;
 
@@ -1154,7 +1174,7 @@ public class PatternDetectionService : IPatternDetectionService
         List<OhlcvBar> bars,
         List<(int idx, double value)> swingHighs,
         List<(int idx, double value)> swingLows,
-        string tfl, double currentPrice)
+        string tfl, double currentPrice, double atr)
     {
         if (!HasRecentSwing(swingHighs, bars.Count) || !HasRecentSwing(swingLows, bars.Count)) return null;
 
@@ -1175,9 +1195,11 @@ public class PatternDetectionService : IPatternDetectionService
         var (highSlope, highIntercept) = LinearRegressionByBarIdx(rhW);
         var (lowSlope,  lowIntercept)  = LinearRegressionByBarIdx(rlW);
 
-        // Goodness-of-fit guard (wedges are choppier than channels → slightly looser 0.55).
+        // Goodness-of-fit + echte aanrakingen (handboek §3.1; wedges choppier → R² ≥ 0,55).
         if (RSquaredByBarIdx(rhW, highSlope, highIntercept) < 0.55 ||
             RSquaredByBarIdx(rlW, lowSlope,  lowIntercept)  < 0.55) return null;
+        if (CountTouches(rhW, highSlope, highIntercept) < 2 ||
+            CountTouches(rlW, lowSlope,  lowIntercept)  < 2) return null;
 
         // Project each regression line to the window edges
         double highAtStart = highIntercept + highSlope * winStart;
@@ -1211,9 +1233,10 @@ public class PatternDetectionService : IPatternDetectionService
         double steepestNorm  = Math.Max(Math.Abs(highSlope), Math.Abs(lowSlope)) / meanPrice;
         if (steepestNorm < 0.0003) return null;
 
-        // ── Sanity: total wedge height 3–35% of price ────────────────────────
+        // ── Grootte: prijs-%-band (3–35%) ÉN ATR-band (≥0,5×ATR, ≤15×ATR) — strengste wint (§3.3) ─
         double wedgeRangePct = gapStart / ((highAtStart + lowAtStart) / 2.0);
         if (wedgeRangePct < 0.03 || wedgeRangePct > 0.35) return null;
+        if (atr > 0 && (gapStart < 0.5 * atr || gapStart > 15.0 * atr)) return null;
 
         // ── Drawing: both lines share the same start bar and end bar ─────────
         // Using the projected regression prices (not raw swing-point values)
@@ -1226,6 +1249,7 @@ public class PatternDetectionService : IPatternDetectionService
         if (bothFalling)
         {
             double breakout = highAtEnd;
+            if (IsPatternStale(currentPrice, breakout, PatternCategory.Bullish)) return null;
             return new PatternResult
             {
                 Type        = PatternType.FallingWedge,
@@ -1250,6 +1274,7 @@ public class PatternDetectionService : IPatternDetectionService
 
         // Rising wedge
         double breakdown = lowAtEnd;
+        if (IsPatternStale(currentPrice, breakdown, PatternCategory.Bearish)) return null;
         return new PatternResult
         {
             Type        = PatternType.RisingWedge,
@@ -1319,6 +1344,9 @@ public class PatternDetectionService : IPatternDetectionService
 
             // Handle must be below the right rim (not pushing above breakout level yet)
             if (handleL > cupRight) continue;
+
+            // Staleness (§3.2/F6): prijs al >8% boven de breakout → uitgespeeld.
+            if (IsPatternStale(currentPrice, handleH, PatternCategory.Bullish)) continue;
 
             // Valid cup found — build result
             bool   confirmed  = currentPrice > handleH * 1.005;
@@ -1493,7 +1521,7 @@ public class PatternDetectionService : IPatternDetectionService
         List<OhlcvBar> bars,
         List<(int idx, double value)> swingHighs,
         List<(int idx, double value)> swingLows,
-        string tfl, double currentPrice)
+        string tfl, double currentPrice, double atr)
     {
         if (!HasRecentSwing(swingHighs, bars.Count) || !HasRecentSwing(swingLows, bars.Count)) return null;
 
@@ -1510,10 +1538,12 @@ public class PatternDetectionService : IPatternDetectionService
         var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
         var (lowSlope,  lowInt)  = LinearRegressionByBarIdx(rl);
 
-        // Goodness-of-fit: the swings must genuinely lie on their trendlines, otherwise the
-        // "channel" is just noise that happens to drift. This is the key false-positive filter.
+        // Goodness-of-fit + echte aanrakingen (handboek §3.1): de swings moeten op de trendlijn
+        // liggen (R² ≥ 0,70) én er moeten ≥2 swings binnen 1% van de lijn liggen per trendlijn.
         if (RSquaredByBarIdx(rh, highSlope, highInt) < 0.70 ||
             RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
+        if (CountTouches(rh, highSlope, highInt) < 2 ||
+            CountTouches(rl, lowSlope,  lowInt)  < 2) return null;
 
         double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
         if (meanPrice <= 0) return null;
@@ -1544,15 +1574,22 @@ public class PatternDetectionService : IPatternDetectionService
         double gapEnd   = highAtEnd   - lowAtEnd;
         if (gapStart > 0 && gapEnd < gapStart * 0.70) return null;
 
-        // Channel width must be meaningful: 4–30 % of price
+        // Grootte: prijs-%-band (4–30%) ÉN ATR-band (≥0,5×ATR, ≤15×ATR) — strengste wint (§3.3).
         double channelHigh  = highAtEnd;
         double channelLow   = lowAtEnd;
-        double channelWidth = (channelHigh - channelLow) / channelHigh;
+        double gap          = channelHigh - channelLow;
+        double channelWidth = gap / channelHigh;
         if (channelWidth < 0.04 || channelWidth > 0.30) return null;
+        if (atr > 0 && (gap < 0.5 * atr || gap > 15.0 * atr)) return null;
 
         double midChannel = (channelHigh + channelLow) / 2;
         bool   nearLower  = currentPrice <= midChannel;
         bool   nearUpper  = currentPrice >  midChannel;
+
+        // Staleness (§3.2/F6): prijs al >8% voorbij de relevante kanaalwand → uitgespeeld.
+        double keyWall = ascending ? channelLow : channelHigh;
+        if (IsPatternStale(currentPrice, keyWall,
+                ascending ? PatternCategory.Bullish : PatternCategory.Bearish)) return null;
 
         // Fitted trendlines for drawing (both share the window start/end bars).
         var trendlines = new List<PatternTrendline>
@@ -1738,6 +1775,24 @@ public class PatternDetectionService : IPatternDetectionService
         }
         if (ssTot < 1e-12) return 1.0;             // all points equal → a flat line fits perfectly
         return Math.Max(0.0, 1.0 - ssRes / ssTot);
+    }
+
+    /// <summary>
+    /// Telt hoeveel swing-punten binnen <paramref name="tolPct"/> (bv. 0,01 = 1%) van de
+    /// geprojecteerde regressielijn liggen — een "echte aanraking". Handboek §3.1/F10 eist
+    /// minimaal 2 aanrakingen per trendlijn náást de R²-fit.
+    /// </summary>
+    private static int CountTouches(
+        List<(int idx, double value)> points, double slope, double intercept, double tolPct = 0.01)
+    {
+        int touches = 0;
+        foreach (var (idx, val) in points)
+        {
+            double predicted = intercept + slope * idx;
+            if (Math.Abs(predicted) < 1e-12) continue;
+            if (Math.Abs(val - predicted) / Math.Abs(predicted) <= tolPct) touches++;
+        }
+        return touches;
     }
 
     /// <summary>

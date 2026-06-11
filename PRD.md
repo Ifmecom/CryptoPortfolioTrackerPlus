@@ -1687,6 +1687,12 @@ significantie = pivot moet de dichtstbijzijnde buur met ≥ 0.40 × ATR(14) over
   zichtbare toppen/bodems landen. ATR-relatieve significantie schaalt mee met de volatiliteit
   van de coin (vervangt de vaste 0.5%).
 
+**Detectie-kwaliteitsgates *(v1.38, spec-review)*:** kanaal/driehoek/wedge vereisen náást de R²-fit nu ook
+**≥2 echte aanrakingen** per lijn (`CountTouches`, swing binnen 1% van de regressielijn) en een
+**ATR-grootteband** (gap `≥0,5×ATR`, `≤15×ATR`) bovenop de prijs-%-band. De **staleness-check**
+(`IsPatternStale`, >8% voorbij sleutelniveau) draait nu breed: double bottom/top, H&S, Inv. H&S, wedge,
+kanaal, asc/desc-driehoek, bull/bear-flag en cup&handle. Conform `PATTERN_HANDBOOK.md` v2.1 (§3.1, §3.3, §3.2/F6).
+
 **Trendlijn-fit & valse-patroon-filter *(v1.38)*:** kanaal-, driehoek- én wedge-detectie gebruiken
 `LinearRegressionByBarIdx` (helling = prijs/bar over de echte bar-index) en tekenen de **geprojecteerde
 regressielijn** naar de vensterranden — niet langer een rechte tussen het eerste en laatste swing-punt.

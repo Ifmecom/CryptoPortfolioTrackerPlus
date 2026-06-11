@@ -41,6 +41,12 @@ public sealed partial class WhatsNewView : Page
             "Ruisige koersbewegingen die toevallig een beetje stijgen of dalen worden niet langer als 'kanaal' " +
             "of 'driehoek' bestempeld.");
 
+        AddFeature("🧪", "Strengere patroonvalidatie (spec-review)",
+            "Kanaal/driehoek/wedge eisen nu náást de R²-fit ook ≥2 echte aanrakingen per trendlijn én een " +
+            "minimale grootte t.o.v. de volatiliteit (ATR) — micro-patronen op rustige coins vallen weg. " +
+            "Bovendien worden al-uitgespeelde patronen (koers >8% voorbij het sleutelniveau) nu breed " +
+            "verborgen, niet alleen bij dubbele bodems/toppen. Gebaseerd op het bijgewerkte Patroon-handboek v2.1.");
+
         AddFeature("🕯️", "Nauwkeurigere swing-detectie",
             "Pieken en dalen worden nu op de candle-wicks bepaald (de zichtbare highs/lows) in plaats van op de " +
             "candle-body, met een ruisfilter dat meeschaalt met de volatiliteit van de coin (ATR) en een ruimere " +

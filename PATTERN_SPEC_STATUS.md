@@ -26,11 +26,11 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 |---|---|---|
 | **Swing-detectie** (§2.1) | ⚠️ afwijkend van handboektekst | Code v1.38: wicks, **lookback 5**, significantie **0,4×ATR**. Handboek §2.1/F1/F12 zegt nog lookback 3 + 0,5%. → handboek bijwerken. |
 | **Bar-index regressie** (§2.3, F2) | ✅ | Kanaal/driehoek/wedge gebruiken `LinearRegressionByBarIdx` + geprojecteerde lijnen. |
-| **Aanrakingsvalidatie: R² én ≥2 binnen 1%** (§3.1, F10) | ⚠️ alleen R² | Spec v2.1 eist **beide**: R² (≥0,70 / wedge ≥0,55) **én** ≥2 swings binnen 1% van de lijn. Code heeft nu alleen de R²-helft → aanrakingscheck toevoegen. |
-| **Grootte: ATR-band én prijs-%-band** (§3.3, F11) | ❌ ATR-deel | Spec v2.1: hoogte moet zowel `≥0,5×ATR(14)` als de prijs-%-ondergrens halen (strengste wint). Code heeft nu alleen de prijs-%-band → ATR-band toevoegen. |
+| **Aanrakingsvalidatie: R² én ≥2 binnen 1%** (§3.1, F10) | ✅ (Fase A) | `CountTouches` ≥2 per lijn binnen 1% náást de R²-gate — actief in kanaal/driehoek/wedge. |
+| **Grootte: ATR-band én prijs-%-band** (§3.3, F11) | ✅ (Fase A) | Kanaal/wedge: gap `≥0,5×ATR` en `≤15×ATR` náást de prijs-%-band; driehoek: start-gap `≥0,5×ATR`. |
 | **Interne-schending-filter** (§3.2: >30% bars buiten de lijn → verwerpen) | ❌ | Niet geïmplementeerd. Een rommelige structuur die toevallig een goede R² heeft, wordt niet afgewezen op interne doorbraken. |
 | **Maximale patroonleeftijd** (§4.3) | ❌ | Geen max-age; alleen `HasRecentSwing` (laatste swing ≤20 bars). Een 100 bars oud kanaal kan nog gerapporteerd worden. |
-| **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ⚠️ alleen 2 patronen | `IsPatternStale` wordt **alleen** door Double Bottom & Double Top aangeroepen. Ontbreekt bij H&S, Inv. H&S, wedge, kanaal, driehoek, flags, breakout/breakdown, cup&handle. |
+| **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ✅ (Fase A) | `IsPatternStale` nu in double bottom/top, H&S, Inv. H&S, wedge, kanaal, asc/desc-driehoek, bull/bear-flag en cup&handle. (Breakout/Breakdown nog open.) |
 | **Drie-staten-bevestiging** (§5, F7) | ❌ | Spec v2.1: In formatie → **Voorlopig** (live koers raakt niveau) → **Bevestigd** (slotkoers `bars[^1].Close` erbuiten + marge). Code heeft nu alleen één `IsConfirmed`-vlag op de live koers → tri-state introduceren. |
 | **Volume-bevestiging bij breakout** (§5.1) | ❌ | Volume wordt alleen in `DetectVolumeSpike` gebruikt. Breakout-bevestiging kijkt niet naar volume (kan wel — Binance-klines hebben volume). |
 | **Continue invalidatie** (§6) | ❌ ontbreekt als concept | Detectie is stateless: elke scan opnieuw. Een patroon "invalideert" alleen impliciet doordat het de volgende scan niet meer gedetecteerd wordt. Er is geen expliciete invalidatie-/levensduurstatus per patroon. |
@@ -83,15 +83,12 @@ i.p.v. de enkele `IsConfirmed`-bool: **Voorlopig** = live `currentPrice` voorbij
 `bars[^1].Close` erbuiten + marge (driehoek/kanaal ≥1%, neklijn/wedge/flag ≥0,5%). Toon beide labels.
 Grootste bron van flikkerende/onterechte "bevestigd". *Raakt PatternResult + alle detectoren + de UI-badges.*
 
-**P2 — Staleness breed toepassen (F6).** Roep `IsPatternStale` aan in álle reversal/breakout-detectoren,
-niet alleen double bottom/top. Voorkomt het tonen van al-uitgespeelde patronen.
+**P2 — Staleness breed toepassen (F6).** ✅ **Gedaan (Fase A).** `IsPatternStale` toegevoegd aan kanaal,
+driehoek, wedge, H&S, Inv. H&S, bull/bear-flag en cup&handle. Resteert: breakout/breakdown-detector.
 
-**P3 — Grootte: ATR-band én prijs-%-band (§3.3, F11).** Voeg de ATR-band (`≥0,5×ATR`, en `≤15×ATR` voor
-wig/driehoek) toe naast de bestaande prijs-%-grenzen; strengste wint. ATR is al beschikbaar in `DetectFromBars`.
+**P3 — Grootte: ATR-band én prijs-%-band (§3.3, F11).** ✅ **Gedaan (Fase A)** voor kanaal/driehoek/wedge.
 
-**P4 — Aanrakingsvalidatie: R² én ≥2 binnen 1% (§3.1, F10).** Voeg náást de R²-gate een check toe dat
-≥2 swings per lijn binnen ~1% van de geprojecteerde regressielijn liggen. Sluit "regressielijn zonder echte
-bounces" uit.
+**P4 — Aanrakingsvalidatie: R² én ≥2 binnen 1% (§3.1, F10).** ✅ **Gedaan (Fase A)** via `CountTouches`.
 
 **P5 — Bevestiging/invalidatie voor driehoeken & kanalen (§5/§6).** Driehoek-bevestiging op een
 slotkoers-breakout (≥1%) i.p.v. alleen afstand; kanaal-invalidatie op een sluiting buiten de wand (≥1%).
