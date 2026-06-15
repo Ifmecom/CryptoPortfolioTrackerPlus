@@ -58,7 +58,12 @@ public sealed partial class WhatsNewView : Page
         AddFeature("🚩", "Bull/Bear flag: koersdoel erbij",
             "Bull- en bear-flags tonen nu naast de pool, het vlag-vak en het breakout-/breakdown-niveau ook een " +
             "koersdoel — de pool-lengte geprojecteerd vanaf de top van de vlag (bull) resp. de bodem (bear). " +
-            "Staat als 'Doel'-lijn op de grafiek en in de patroonbeschrijving.");
+            "Staat als 'Tmax'-lijn op de grafiek en in de patroonbeschrijving.");
+
+        AddFeature("🏷️", "Consistente doel-naamgeving",
+            "Koersdoelen heten nu overal hetzelfde: 'Tmax' voor het uiteindelijke (measured-move) doel en " +
+            "'T1'/'T2' voor tussendoelen. Bij Cup & Handle is dat T1 (handle-diepte) en Tmax (cup-diepte). " +
+            "De triggerlijn heet 'Neklijn' waar van toepassing, anders 'Breakout'/'Breakdown'.");
 
         AddFeature("🏆", "Cup & Handle: neklijn + koersdoelen T1/T2",
             "Bij een Cup & Handle tekent de grafiek nu de neklijn (breakout-niveau) duidelijk, plus twee " +

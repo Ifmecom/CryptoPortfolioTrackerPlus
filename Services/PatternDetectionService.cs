@@ -670,7 +670,7 @@ public class PatternDetectionService : IPatternDetectionService
             Strength    = 72,
             Description = $"Bull flag: sterke opwaartse pool (+{poleGain * 100:F1}%) gevolgd door consolidatie. "
                         + $"Breakout boven {FormatP(flagHigh)} activeert het patroon. "
-                        + $"Koersdoel {FormatP(target)} (pool-lengte vanaf de vlag-top).",
+                        + $"Koersdoel Tmax {FormatP(target)} (pool-lengte vanaf de vlag-top).",
             KeyLevel    = flagHigh,
             DistancePct = (flagHigh - currentPrice) / currentPrice * 100,
             Annotation  = new PatternAnnotation
@@ -701,7 +701,7 @@ public class PatternDetectionService : IPatternDetectionService
                 HLines = new()
                 {
                     new PatternHLine { Price = flagHigh, Color = "#26a69a", Title = "Breakout" },
-                    new PatternHLine { Price = target,   Color = "#1e88e5", Title = "Doel" },
+                    new PatternHLine { Price = target,   Color = "#1e88e5", Title = "Tmax" },
                 },
             },
         };
@@ -759,7 +759,7 @@ public class PatternDetectionService : IPatternDetectionService
             Strength    = 72,
             Description = $"Bear flag: scherpe daling (-{poleLoss * 100:F1}%) gevolgd door consolidatie. "
                         + $"Breakdown onder {FormatP(flagLow)} bevestigt vervolg neerwaarts. "
-                        + $"Koersdoel {FormatP(target)} (pool-lengte vanaf de vlag-bodem).",
+                        + $"Koersdoel Tmax {FormatP(target)} (pool-lengte vanaf de vlag-bodem).",
             KeyLevel    = flagLow,
             DistancePct = (currentPrice - flagLow) / currentPrice * 100,
             Annotation  = new PatternAnnotation
@@ -789,7 +789,7 @@ public class PatternDetectionService : IPatternDetectionService
                 HLines = new()
                 {
                     new PatternHLine { Price = flagLow, Color = "#ef5350", Title = "Breakdown" },
-                    new PatternHLine { Price = target,  Color = "#1e88e5", Title = "Doel" },
+                    new PatternHLine { Price = target,  Color = "#1e88e5", Title = "Tmax" },
                 },
             },
         };
@@ -1422,7 +1422,7 @@ public class PatternDetectionService : IPatternDetectionService
                             + (confirmed
                                ? $"Uitbraak boven de neklijn {FormatP(handleH)} bevestigd — bullish continuatie."
                                : $"Uitbraak boven de neklijn {FormatP(handleH)} activeert het patroon.")
-                            + $" Doelen: T1 {FormatP(t1)} (handle-diepte), T2 {FormatP(t2)} (cup-diepte).",
+                            + $" Doelen: T1 {FormatP(t1)} (handle-diepte), Tmax {FormatP(t2)} (cup-diepte).",
                 KeyLevel    = handleH,
                 DistancePct = (handleH - currentPrice) / currentPrice * 100,
                 Annotation  = new PatternAnnotation
@@ -1438,7 +1438,7 @@ public class PatternDetectionService : IPatternDetectionService
                     {
                         new PatternHLine { Price = handleH, Color = "#f59e0b", Title = "Neklijn" },
                         new PatternHLine { Price = t1,      Color = "#26a69a", Title = "T1" },
-                        new PatternHLine { Price = t2,      Color = "#1e88e5", Title = "T2" },
+                        new PatternHLine { Price = t2,      Color = "#1e88e5", Title = "Tmax" },
                     },
                 },
             };

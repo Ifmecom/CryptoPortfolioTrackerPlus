@@ -152,7 +152,7 @@ public sealed partial class CoinChartWindow : Window
         {
             PatternType.CupAndHandle =>
                 "🔵 L = cup-linkerrand · B = cup-bodem · R = cup-rechterrand · 🟠 ↑ = handle/breakout.  " +
-                "Lijnen: oranje = neklijn (breakout-niveau), groen = T1 (handle-diepte), blauw = T2 (cup-diepte) — koersdoelen ná uitbraak.",
+                "Lijnen: oranje = neklijn (breakout-niveau), groen = T1 (handle-diepte), blauw = Tmax (cup-diepte) — koersdoelen ná uitbraak.",
             PatternType.DoubleBottom =>
                 "🔵 B1, B2 = de twee bodems · oranje lijn = neklijn (slotkoers erboven = bevestiging).",
             PatternType.DoubleTop =>
@@ -164,9 +164,9 @@ public sealed partial class CoinChartWindow : Window
             PatternType.InverseHeadAndShoulders =>
                 "🔵 LS = linkerschouder · H = hoofd · RS = rechterschouder (omgekeerd) · lijn = neklijn (breakout erboven = bevestiging).",
             PatternType.BullFlag =>
-                "Groene diagonale lijn = pool (sterke stijging) · oranje vak = vlag (consolidatie) · groene lijn = breakout-niveau · blauwe lijn = Doel (pool-lengte vanaf de vlag-top).",
+                "Groene diagonale lijn = pool (sterke stijging) · oranje vak = vlag (consolidatie) · groene lijn = breakout-niveau · blauwe lijn = Tmax (pool-lengte vanaf de vlag-top).",
             PatternType.BearFlag =>
-                "Rode diagonale lijn = pool (sterke daling) · oranje vak = vlag (consolidatie) · rode lijn = breakdown-niveau · blauwe lijn = Doel (pool-lengte vanaf de vlag-bodem).",
+                "Rode diagonale lijn = pool (sterke daling) · oranje vak = vlag (consolidatie) · rode lijn = breakdown-niveau · blauwe lijn = Tmax (pool-lengte vanaf de vlag-bodem).",
             PatternType.AscendingChannel or PatternType.DescendingChannel =>
                 "Twee parallelle trendlijnen = kanaalwanden — rood = weerstand (bovenlijn), groen = steun (onderlijn).",
             PatternType.AscendingTriangle or PatternType.DescendingTriangle or PatternType.SymmetricalTriangle =>

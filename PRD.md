@@ -674,7 +674,10 @@ indicator-signalen (RSI/MACD/EMA/squeeze) hebben er geen en verschijnen dus niet
 **Legenda + C&H-doelen *(v1.38)*:** de grafiek toont bovenin een **legenda** (`UpdateLegend`) die per getoond
 patroon de symbolen uitlegt (gekleurde markers L/B/R, schouders, bodems; lijnen = neklijn/targets/trendlijnen).
 **Cup & Handle** tekent nu expliciet de **neklijn** (breakout = `handleHigh`) plus twee koersdoelen:
-**T1** = `handleHigh + handle-diepte` en **T2** = `handleHigh + cup-diepte` (measured move).
+**T1** = `handleHigh + handle-diepte` en **Tmax** = `handleHigh + cup-diepte` (measured move).
+
+**Doel-naamgeving (consistent, v1.38):** **Neklijn** waar van toepassing, anders **Breakout/Breakdown**;
+tussendoelen **T1/T2**; het maximale (measured-move) doel **Tmax**. Flags hebben één doel → Tmax.
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

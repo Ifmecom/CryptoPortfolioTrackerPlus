@@ -285,6 +285,19 @@ Een patroon wordt **onmiddellijk** invalide als:
 
 De getekende start- en eindprijzen zijn altijd de **geprojecteerde regressiewaarden** op het gemeenschappelijke start/eindbar — nooit de ruwe swing-punt-prijzen, tenzij die exact op de regressielijn liggen.
 
+### 7.4 Naamgeving van niveaus *(v1.38)*
+
+Consistent over alle patronen:
+
+| Label | Betekenis |
+|-------|-----------|
+| **Neklijn** | Het sleutel-/triggerniveau bij patronen die een neklijn kennen (dubbele top/bodem, (Inv.) H&S, Adam & Eve, Cup & Handle) |
+| **Breakout / Breakdown** | Het triggerniveau bij patronen **zonder** neklijn (flags, kanaal, driehoek, breakout/breakdown) |
+| **T1, T2, …** | Tussendoelen (nabije, gedeeltelijke koersdoelen) |
+| **Tmax** | Het **uiteindelijke** koersdoel (de volledige measured move) |
+
+Voorbeeld Cup & Handle: T1 = handle-diepte, **Tmax** = cup-diepte. Flags hebben één doel → **Tmax**.
+
 ---
 
 ## 8. Marktcontext en multitimeframe
@@ -522,7 +535,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | **Einde** | Breakout boven vlag-hoogste, of prijs >50% retrace in pool |
 | **Bevestiging** | Sluiting boven vlag-hoogste met ≥ 0.5% |
 | **Invalidatie** | Sluiting >50% retrace in de pool |
-| **Koersdoel** *(v1.38)* | `vlag-top + pool-lengte` (= `flagHigh + (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de top van de vlag |
+| **Koersdoel (Tmax)** *(v1.38)* | `vlag-top + pool-lengte` (= `flagHigh + (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de top van de vlag |
 | Strength onbevestigd | 72 |
 | Strength bevestigd | 80 |
 
@@ -537,7 +550,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | Retrace vlag | Maximaal **50%** van de pool |
 | **Bevestiging** | Sluiting onder vlag-laagste met ≥ 0.5% |
 | **Invalidatie** | Sluiting >50% retrace in pool |
-| **Koersdoel** *(v1.38)* | `vlag-bodem − pool-lengte` (= `flagLow − (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de bodem van de vlag |
+| **Koersdoel (Tmax)** *(v1.38)* | `vlag-bodem − pool-lengte` (= `flagLow − (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de bodem van de vlag |
 | Strength | 72 (onbevestigd), 80 (bevestigd) |
 
 ---
@@ -799,7 +812,7 @@ Beide trendlijnen dalen, maar de **bovenlijn** daalt sneller dan de onderlijn. O
 | **Invalidatie** | Prijs sluit onder cup-bodem |
 | **Neklijn** | Het breakout-niveau = `handleHigh` (cup-rand) — als horizontale lijn getekend |
 | **T1 (doel)** | `handleHigh + (handleHigh − handleLow)` — breakout + **handle-diepte** (nabije eerste doel) |
-| **T2 (doel)** | `handleHigh + (cupRim − cupMin)` — breakout + **cup-diepte** (klassieke measured move) |
+| **Tmax (doel)** | `handleHigh + (cupRim − cupMin)` — breakout + **cup-diepte** (klassieke measured move = maximumdoel) |
 | **Context** | Geldig als voortzetting van opwaartse trend of na herstel van significante correctie |
 | Strength bevestigd | 82 |
 | Strength onbevestigd | 68 |
