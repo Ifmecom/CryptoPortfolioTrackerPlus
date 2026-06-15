@@ -522,6 +522,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | **Einde** | Breakout boven vlag-hoogste, of prijs >50% retrace in pool |
 | **Bevestiging** | Sluiting boven vlag-hoogste met ≥ 0.5% |
 | **Invalidatie** | Sluiting >50% retrace in de pool |
+| **Koersdoel** *(v1.38)* | `vlag-top + pool-lengte` (= `flagHigh + (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de top van de vlag |
 | Strength onbevestigd | 72 |
 | Strength bevestigd | 80 |
 
@@ -536,6 +537,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | Retrace vlag | Maximaal **50%** van de pool |
 | **Bevestiging** | Sluiting onder vlag-laagste met ≥ 0.5% |
 | **Invalidatie** | Sluiting >50% retrace in pool |
+| **Koersdoel** *(v1.38)* | `vlag-bodem − pool-lengte` (= `flagLow − (poleHigh − poleLow)`) — pool-lengte geprojecteerd vanaf de bodem van de vlag |
 | Strength | 72 (onbevestigd), 80 (bevestigd) |
 
 ---

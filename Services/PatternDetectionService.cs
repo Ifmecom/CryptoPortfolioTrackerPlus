@@ -657,6 +657,10 @@ public class PatternDetectionService : IPatternDetectionService
         // Staleness (§3.2/F6): prijs al >8% boven de vlag-breakout → uitgespeeld.
         if (IsPatternStale(currentPrice, flagHigh, PatternCategory.Bullish)) return null;
 
+        // Koersdoel = pool-lengte geprojecteerd vanaf de top van de vlag (het breakout-niveau).
+        double poleLength = poleHigh - poleLow;
+        double target     = flagHigh + poleLength;
+
         return new PatternResult
         {
             Type        = PatternType.BullFlag,
@@ -665,7 +669,8 @@ public class PatternDetectionService : IPatternDetectionService
             IsConfirmed = false,  // waiting for breakout of flag top
             Strength    = 72,
             Description = $"Bull flag: sterke opwaartse pool (+{poleGain * 100:F1}%) gevolgd door consolidatie. "
-                        + $"Breakout boven {FormatP(flagHigh)} activeert het patroon met koersdoel paal-hoogte erboven.",
+                        + $"Breakout boven {FormatP(flagHigh)} activeert het patroon. "
+                        + $"Koersdoel {FormatP(target)} (pool-lengte vanaf de vlag-top).",
             KeyLevel    = flagHigh,
             DistancePct = (flagHigh - currentPrice) / currentPrice * 100,
             Annotation  = new PatternAnnotation
@@ -692,10 +697,11 @@ public class PatternDetectionService : IPatternDetectionService
                         EndTime   = flag.Last().Date,  EndPrice   = flagLow,  Color = "#f59e0b",
                     },
                 },
-                // Breakout-trigger als één volle-breedte lijn.
+                // Breakout-trigger + koersdoel als volle-breedte lijnen.
                 HLines = new()
                 {
                     new PatternHLine { Price = flagHigh, Color = "#26a69a", Title = "Breakout" },
+                    new PatternHLine { Price = target,   Color = "#1e88e5", Title = "Doel" },
                 },
             },
         };
@@ -740,6 +746,10 @@ public class PatternDetectionService : IPatternDetectionService
         // Staleness (§3.2/F6): prijs al >8% onder de vlag-breakdown → uitgespeeld.
         if (IsPatternStale(currentPrice, flagLow, PatternCategory.Bearish)) return null;
 
+        // Koersdoel = pool-lengte geprojecteerd naar beneden vanaf de bodem van de vlag.
+        double poleLength = poleHigh - poleLow;
+        double target     = flagLow - poleLength;
+
         return new PatternResult
         {
             Type        = PatternType.BearFlag,
@@ -748,7 +758,8 @@ public class PatternDetectionService : IPatternDetectionService
             IsConfirmed = false,
             Strength    = 72,
             Description = $"Bear flag: scherpe daling (-{poleLoss * 100:F1}%) gevolgd door consolidatie. "
-                        + $"Breakdown onder {FormatP(flagLow)} bevestigt vervolg neerwaarts.",
+                        + $"Breakdown onder {FormatP(flagLow)} bevestigt vervolg neerwaarts. "
+                        + $"Koersdoel {FormatP(target)} (pool-lengte vanaf de vlag-bodem).",
             KeyLevel    = flagLow,
             DistancePct = (currentPrice - flagLow) / currentPrice * 100,
             Annotation  = new PatternAnnotation
@@ -774,10 +785,11 @@ public class PatternDetectionService : IPatternDetectionService
                         EndTime   = flag.Last().Date,  EndPrice   = flagLow,  Color = "#f59e0b",
                     },
                 },
-                // Breakdown-trigger als één volle-breedte lijn.
+                // Breakdown-trigger + koersdoel als volle-breedte lijnen.
                 HLines = new()
                 {
                     new PatternHLine { Price = flagLow, Color = "#ef5350", Title = "Breakdown" },
+                    new PatternHLine { Price = target,  Color = "#1e88e5", Title = "Doel" },
                 },
             },
         };

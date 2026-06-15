@@ -55,6 +55,11 @@ public sealed partial class WhatsNewView : Page
             "hoogste piek zijn). Bovendien staat de neklijn nu op het werkelijke dal/piek tussen de toppen, niet " +
             "meer op de live koers.");
 
+        AddFeature("🚩", "Bull/Bear flag: koersdoel erbij",
+            "Bull- en bear-flags tonen nu naast de pool, het vlag-vak en het breakout-/breakdown-niveau ook een " +
+            "koersdoel — de pool-lengte geprojecteerd vanaf de top van de vlag (bull) resp. de bodem (bear). " +
+            "Staat als 'Doel'-lijn op de grafiek en in de patroonbeschrijving.");
+
         AddFeature("🏆", "Cup & Handle: neklijn + koersdoelen T1/T2",
             "Bij een Cup & Handle tekent de grafiek nu de neklijn (breakout-niveau) duidelijk, plus twee " +
             "koersdoelen ná uitbraak: T1 = de handle-diepte boven de breakout en T2 = de cup-diepte boven de " +
