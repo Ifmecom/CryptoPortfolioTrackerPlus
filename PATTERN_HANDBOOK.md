@@ -791,6 +791,9 @@ Beide trendlijnen dalen, maar de **bovenlijn** daalt sneller dan de onderlijn. O
 | **Einde** | Breakout boven handle-hoogste of prijs zakt onder cup-bodem |
 | **Bevestiging** | Sluiting > handleHigh × 1.005 |
 | **Invalidatie** | Prijs sluit onder cup-bodem |
+| **Neklijn** | Het breakout-niveau = `handleHigh` (cup-rand) — als horizontale lijn getekend |
+| **T1 (doel)** | `handleHigh + (handleHigh − handleLow)` — breakout + **handle-diepte** (nabije eerste doel) |
+| **T2 (doel)** | `handleHigh + (cupRim − cupMin)` — breakout + **cup-diepte** (klassieke measured move) |
 | **Context** | Geldig als voortzetting van opwaartse trend of na herstel van significante correctie |
 | Strength bevestigd | 82 |
 | Strength onbevestigd | 68 |

@@ -1,3 +1,4 @@
+using CryptoPortfolioTracker.Enums;
 using CryptoPortfolioTracker.Models;
 using Microsoft.UI;
 using Microsoft.UI.Windowing;
@@ -126,6 +127,8 @@ public sealed partial class CoinChartWindow : Window
         PatternAnnotation? annotation = chosen?.Annotation;
         string patternLabel = chosen is not null ? $"  ·  {chosen.DisplayName} ({chosen.StatusLabel})" : string.Empty;
 
+        UpdateLegend(chosen);
+
         BarCountLabel.Text = bars.Count > 0
             ? $"{bars.Count} candles  ·  Bron: {_analysis.DataSource}{patternLabel}"
             : "Geen data beschikbaar voor dit timeframe";
@@ -134,6 +137,48 @@ public sealed partial class CoinChartWindow : Window
         ChartView.NavigateToString(html);
 
         await System.Threading.Tasks.Task.CompletedTask;
+    }
+
+    /// <summary>Vult de legenda met een uitleg van de getekende symbolen voor het gekozen patroon.</summary>
+    private void UpdateLegend(PatternResult? p)
+    {
+        if (p is null)
+        {
+            LegendBorder.Visibility = Microsoft.UI.Xaml.Visibility.Collapsed;
+            return;
+        }
+
+        string body = p.Type switch
+        {
+            PatternType.CupAndHandle =>
+                "🔵 L = cup-linkerrand · B = cup-bodem · R = cup-rechterrand · 🟠 ↑ = handle/breakout.  " +
+                "Lijnen: oranje = neklijn (breakout-niveau), groen = T1 (handle-diepte), blauw = T2 (cup-diepte) — koersdoelen ná uitbraak.",
+            PatternType.DoubleBottom =>
+                "🔵 B1, B2 = de twee bodems · oranje lijn = neklijn (slotkoers erboven = bevestiging).",
+            PatternType.DoubleTop =>
+                "🟠 T1, T2 = de twee toppen · rode lijn = neklijn (slotkoers eronder = bevestiging).",
+            PatternType.AdamAndEve =>
+                "🔵 A = scherpe (Adam) bodem · E = ronde (Eve) bodem · lijn = neklijn (breakout = bevestiging).",
+            PatternType.HeadAndShoulders =>
+                "🟠 LS = linkerschouder · H = hoofd · RS = rechterschouder · lijn = neklijn (breakdown eronder = bevestiging).",
+            PatternType.InverseHeadAndShoulders =>
+                "🔵 LS = linkerschouder · H = hoofd · RS = rechterschouder (omgekeerd) · lijn = neklijn (breakout erboven = bevestiging).",
+            PatternType.BullFlag =>
+                "Groene diagonale lijn = pool (sterke stijging) · oranje vak = vlag (consolidatie) · groene lijn = breakout-niveau.",
+            PatternType.BearFlag =>
+                "Rode diagonale lijn = pool (sterke daling) · oranje vak = vlag (consolidatie) · rode lijn = breakdown-niveau.",
+            PatternType.AscendingChannel or PatternType.DescendingChannel =>
+                "Twee parallelle trendlijnen = kanaalwanden — rood = weerstand (bovenlijn), groen = steun (onderlijn).",
+            PatternType.AscendingTriangle or PatternType.DescendingTriangle or PatternType.SymmetricalTriangle =>
+                "Twee convergerende trendlijnen — rood = weerstand (bovenlijn), groen = steun (onderlijn). Uitbraak bepaalt de richting.",
+            PatternType.RisingWedge or PatternType.FallingWedge =>
+                "Twee samenlopende trendlijnen vormen de wig — rood = bearish, groen = bullish.",
+            _ =>
+                "🔵 bollen onder de candle = structuurpunten (swings) · 🟠 bollen boven de candle = sleutel-/breakoutpunten · horizontale lijnen = sleutelniveaus.",
+        };
+
+        LegendLabel.Text = $"Legenda — {body}";
+        LegendBorder.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
     }
 
     private void UpdateButtonStates()

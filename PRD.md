@@ -671,6 +671,11 @@ patronen samengevoegd (`MergeAnnotations` over `_analysis.Patterns` met niet-leg
 entry-point en ook bij het wisselen van timeframe. Alleen Level 2/3-patronen dragen een annotatie; Level 1
 indicator-signalen (RSI/MACD/EMA/squeeze) hebben er geen en verschijnen dus niet als overlay.
 
+**Legenda + C&H-doelen *(v1.38)*:** de grafiek toont bovenin een **legenda** (`UpdateLegend`) die per getoond
+patroon de symbolen uitlegt (gekleurde markers L/B/R, schouders, bodems; lijnen = neklijn/targets/trendlijnen).
+**Cup & Handle** tekent nu expliciet de **neklijn** (breakout = `handleHigh`) plus twee koersdoelen:
+**T1** = `handleHigh + handle-diepte` en **T2** = `handleHigh + cup-diepte` (measured move).
+
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)
 

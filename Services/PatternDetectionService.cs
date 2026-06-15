@@ -1355,13 +1355,20 @@ public class PatternDetectionService : IPatternDetectionService
 
             // Valid cup found — build result
             bool   confirmed  = currentPrice > handleH * 1.005;
-            double rimTarget  = cupRim;
             int    n          = bars.Count;
             int    cupStartIdx = Math.Max(0, n - handleLen - cupLen);
             int    cupEndIdx   = Math.Max(0, n - handleLen - 1);
             var    cupSection  = bars.Skip(cupStartIdx).Take(cupEndIdx - cupStartIdx + 1).ToList();
             int    cupMinLocal = cupSection.IndexOf(cupSection.MinBy(b => b.Open)!);  // body bottom
             int    cupMinIdx   = cupStartIdx + cupMinLocal;
+
+            // Koersdoelen na uitbraak boven de neklijn (= handleH):
+            //   T1 = breakout + handle-diepte (kleinere, nabije eerste doel)
+            //   T2 = breakout + cup-diepte    (klassieke measured move)
+            double handleDepth = handleH - handleL;
+            double cupDepthAbs = cupRim  - cupMin;
+            double t1 = handleH + handleDepth;
+            double t2 = handleH + cupDepthAbs;
 
             return new PatternResult
             {
@@ -1372,8 +1379,9 @@ public class PatternDetectionService : IPatternDetectionService
                 Strength    = confirmed ? 82 : 68,
                 Description = $"Cup & Handle: U-vormig herstel ({cupDepth * 100:F0}% diepte, {cupLen} bars) + kleine consolidatie (handle {handleRange * 100:F1}% range). "
                             + (confirmed
-                               ? $"Uitbraak boven {FormatP(handleH)} — bullish continuatie."
-                               : $"Uitbraak boven {FormatP(handleH)} activeert het patroon met koersdoel {FormatP(rimTarget + (rimTarget - cupMin))}."),
+                               ? $"Uitbraak boven de neklijn {FormatP(handleH)} bevestigd — bullish continuatie."
+                               : $"Uitbraak boven de neklijn {FormatP(handleH)} activeert het patroon.")
+                            + $" Doelen: T1 {FormatP(t1)} (handle-diepte), T2 {FormatP(t2)} (cup-diepte).",
                 KeyLevel    = handleH,
                 DistancePct = (handleH - currentPrice) / currentPrice * 100,
                 Annotation  = new PatternAnnotation
@@ -1385,10 +1393,11 @@ public class PatternDetectionService : IPatternDetectionService
                         new PatternPoint { Time = bars[cupEndIdx].Date,   Price = cupRight, Label = "R",  AboveBar = false },
                         new PatternPoint { Time = bars[n - 1].Date,       Price = handleH,  Label = "↑",  AboveBar = true  },
                     },
-                    // Breakout-niveau (cup-rand) als begrensd segment over de cup → huidige candle.
-                    Trendlines = new()
+                    HLines = new()
                     {
-                        new PatternTrendline { StartTime = bars[cupStartIdx].Date, StartPrice = handleH, EndTime = bars[n - 1].Date, EndPrice = handleH, Color = "#26a69a" },
+                        new PatternHLine { Price = handleH, Color = "#f59e0b", Title = "Neklijn" },
+                        new PatternHLine { Price = t1,      Color = "#26a69a", Title = "T1" },
+                        new PatternHLine { Price = t2,      Color = "#1e88e5", Title = "T2" },
                     },
                 },
             };

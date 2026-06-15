@@ -47,6 +47,16 @@ public sealed partial class WhatsNewView : Page
             "Bovendien worden al-uitgespeelde patronen (koers >8% voorbij het sleutelniveau) nu breed " +
             "verborgen, niet alleen bij dubbele bodems/toppen. Gebaseerd op het bijgewerkte Patroon-handboek v2.1.");
 
+        AddFeature("🏆", "Cup & Handle: neklijn + koersdoelen T1/T2",
+            "Bij een Cup & Handle tekent de grafiek nu de neklijn (breakout-niveau) duidelijk, plus twee " +
+            "koersdoelen ná uitbraak: T1 = de handle-diepte boven de breakout en T2 = de cup-diepte boven de " +
+            "breakout (de klassieke measured move). De doelen staan ook in de patroonbeschrijving.");
+
+        AddFeature("🗺️", "Legenda op de grafiek",
+            "De grafiekweergave toont nu bovenin een legenda die de symbolen van het getoonde patroon uitlegt — " +
+            "wat de gekleurde bollen (L/B/R, schouders, bodems) en de lijnen (neklijn, targets, trendlijnen/pool) " +
+            "betekenen. Geen giswerk meer over de markeringen.");
+
         AddFeature("🚦", "Patroonstatus: In formatie · Voorlopig · Bevestigd",
             "Elk breakout-patroon toont nu een duidelijke status: 'In formatie' (koers nog niet bij het niveau), " +
             "'Voorlopig' (live koers tikt het niveau aan) of 'Bevestigd' (een afgesloten candle sluit erbuiten). " +

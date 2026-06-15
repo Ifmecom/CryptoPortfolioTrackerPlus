@@ -7,6 +7,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -48,8 +49,20 @@
                        Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
         </StackPanel>
 
+        <!-- ── Legenda: uitleg van de patroon-symbolen ── -->
+        <Border Grid.Row="1"
+                x:Name="LegendBorder"
+                Visibility="Collapsed"
+                Padding="12,4"
+                Background="{ThemeResource CardBackgroundFillColorSecondaryBrush}">
+            <TextBlock x:Name="LegendLabel"
+                       FontSize="11"
+                       TextWrapping="Wrap"
+                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+        </Border>
+
         <!-- ── WebView2 candlestick chart ── -->
-        <WebView2 Grid.Row="1"
+        <WebView2 Grid.Row="2"
                   x:Name="ChartView"
                   Loaded="ChartView_Loaded"/>
     </Grid>
