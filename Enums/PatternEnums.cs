@@ -44,6 +44,9 @@ public enum PatternType
     RisingWedge,                // Bearish — both trend lines rising but converging
     FallingWedge,               // Bullish — both trend lines falling but converging
     CupAndHandle,               // Bullish continuation — U-shape recovery + handle consolidation
+
+    BullPennant,                // Bullish continuation — sharp pole + small converging triangle
+    BearPennant,                // Bearish continuation — sharp drop + small converging triangle
 }
 
 // ── Direction category of a pattern ────────────────────────────────────────

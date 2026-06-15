@@ -64,6 +64,8 @@ public class PatternDetectionService : IPatternDetectionService
         TryAdd(results, DetectDoubleTop(data, swingHighs, timeframeLabel, currentPrice));
         TryAdd(results, DetectBullFlag(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectBearFlag(data, timeframeLabel, currentPrice));
+        TryAdd(results, DetectBullPennant(data, timeframeLabel, currentPrice));
+        TryAdd(results, DetectBearPennant(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectTriangle(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
         TryAdd(results, DetectConsolidation(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectBreakoutBreakdown(data, swingHighs, swingLows, timeframeLabel, currentPrice));
@@ -800,6 +802,136 @@ public class PatternDetectionService : IPatternDetectionService
                 {
                     new PatternHLine { Price = flagLow, Color = "#ef5350", Title = "Breakdown" },
                     new PatternHLine { Price = target,  Color = "#1e88e5", Title = "Tmax" },
+                },
+            },
+        };
+    }
+
+    // ── Bull pennant ───────────────────────────────────────────────────────────
+    // Zoals een bull flag, maar de consolidatie is een kleine CONVERGERENDE driehoek
+    // (lagere highs én hogere lows) i.p.v. een parallel vlag-vak. Doel = pool-lengte
+    // vanaf de pennant (de basis waar de uitbraak komt).
+    private static PatternResult? DetectBullPennant(List<OhlcvBar> bars, string tfl, double currentPrice)
+    {
+        if (bars.Count < 15) return null;
+
+        var poleBars = bars.Skip(Math.Max(0, bars.Count - 15)).Take(9).ToList();
+        var pen      = bars.TakeLast(6).ToList();
+        if (poleBars.Count < 5 || pen.Count < 6) return null;
+
+        double poleLow  = poleBars.Min(b => b.Low);
+        double poleHigh = poleBars.Max(b => b.High);
+        double poleGain = poleLow > 0 ? (poleHigh - poleLow) / poleLow : 0;
+        if (poleGain < 0.08) return null;
+        int loIdx = poleBars.FindIndex(b => b.Low  <= poleLow  + 1e-12);
+        int hiIdx = poleBars.FindLastIndex(b => b.High >= poleHigh - 1e-12);
+        if (hiIdx <= loIdx) return null;                       // pool moet stijgen
+
+        // Convergentie: eerste helft vs laatste helft — lagere highs én hogere lows.
+        var early = pen.Take(3).ToList();
+        var late  = pen.Skip(3).Take(3).ToList();
+        double earlyHigh = early.Max(b => b.High), lateHigh = late.Max(b => b.High);
+        double earlyLow  = early.Min(b => b.Low),  lateLow  = late.Min(b => b.Low);
+        if (lateHigh >= earlyHigh || lateLow <= earlyLow) return null;
+        double earlyRange = earlyHigh - earlyLow, lateRange = lateHigh - lateLow;
+        if (earlyRange <= 0 || lateRange > earlyRange * 0.6) return null;   // ≥40% versmalling
+
+        double penHigh = pen.Max(b => b.High);
+        double penLow  = pen.Min(b => b.Low);
+        if ((penHigh - penLow) / penHigh > 0.10) return null;                       // pennant blijft klein
+        if ((poleHigh - penLow) / (poleHigh - poleLow) > 0.5) return null;          // retrace < 50% van de pool
+
+        if (IsPatternStale(currentPrice, penHigh, PatternCategory.Bullish)) return null;
+
+        double poleLength = poleHigh - poleLow;
+        double tmax = penHigh + poleLength;
+
+        return new PatternResult
+        {
+            Type        = PatternType.BullPennant,
+            Category    = PatternCategory.Bullish,
+            Timeframe   = tfl,
+            IsConfirmed = false,
+            Strength    = 70,
+            Description = $"Bull pennant: sterke pool (+{poleGain * 100:F1}%) gevolgd door een kleine convergerende driehoek. "
+                        + $"Breakout boven {FormatP(penHigh)}. Koersdoel Tmax {FormatP(tmax)} (pool-lengte vanaf de pennant).",
+            KeyLevel    = penHigh,
+            DistancePct = (penHigh - currentPrice) / currentPrice * 100,
+            Annotation  = new PatternAnnotation
+            {
+                Trendlines = new()
+                {
+                    new PatternTrendline { StartTime = poleBars[loIdx].Date, StartPrice = poleLow, EndTime = poleBars[hiIdx].Date, EndPrice = poleHigh, Color = "#26a69a" },
+                    new PatternTrendline { StartTime = pen.First().Date, StartPrice = earlyHigh, EndTime = pen.Last().Date, EndPrice = lateHigh, Color = "#f59e0b" },
+                    new PatternTrendline { StartTime = pen.First().Date, StartPrice = earlyLow,  EndTime = pen.Last().Date, EndPrice = lateLow,  Color = "#f59e0b" },
+                },
+                HLines = new()
+                {
+                    new PatternHLine { Price = penHigh, Color = "#26a69a", Title = "Breakout" },
+                    new PatternHLine { Price = tmax,    Color = "#1e88e5", Title = "Tmax" },
+                },
+            },
+        };
+    }
+
+    // ── Bear pennant ───────────────────────────────────────────────────────────
+    private static PatternResult? DetectBearPennant(List<OhlcvBar> bars, string tfl, double currentPrice)
+    {
+        if (bars.Count < 15) return null;
+
+        var poleBars = bars.Skip(Math.Max(0, bars.Count - 15)).Take(9).ToList();
+        var pen      = bars.TakeLast(6).ToList();
+        if (poleBars.Count < 5 || pen.Count < 6) return null;
+
+        double poleHigh = poleBars.Max(b => b.High);
+        double poleLow  = poleBars.Min(b => b.Low);
+        double poleLoss = poleHigh > 0 ? (poleHigh - poleLow) / poleHigh : 0;
+        if (poleLoss < 0.08) return null;
+        int hiIdx = poleBars.FindIndex(b => b.High >= poleHigh - 1e-12);
+        int loIdx = poleBars.FindLastIndex(b => b.Low <= poleLow + 1e-12);
+        if (loIdx <= hiIdx) return null;                       // pool moet dalen
+
+        var early = pen.Take(3).ToList();
+        var late  = pen.Skip(3).Take(3).ToList();
+        double earlyHigh = early.Max(b => b.High), lateHigh = late.Max(b => b.High);
+        double earlyLow  = early.Min(b => b.Low),  lateLow  = late.Min(b => b.Low);
+        if (lateHigh >= earlyHigh || lateLow <= earlyLow) return null;   // convergentie
+        double earlyRange = earlyHigh - earlyLow, lateRange = lateHigh - lateLow;
+        if (earlyRange <= 0 || lateRange > earlyRange * 0.6) return null;
+
+        double penHigh = pen.Max(b => b.High);
+        double penLow  = pen.Min(b => b.Low);
+        if ((penHigh - penLow) / penHigh > 0.10) return null;
+        if ((penHigh - poleLow) / (poleHigh - poleLow) > 0.5) return null;   // retrace < 50% van de pool
+
+        if (IsPatternStale(currentPrice, penLow, PatternCategory.Bearish)) return null;
+
+        double poleLength = poleHigh - poleLow;
+        double tmax = penLow - poleLength;
+
+        return new PatternResult
+        {
+            Type        = PatternType.BearPennant,
+            Category    = PatternCategory.Bearish,
+            Timeframe   = tfl,
+            IsConfirmed = false,
+            Strength    = 70,
+            Description = $"Bear pennant: scherpe daling (-{poleLoss * 100:F1}%) gevolgd door een kleine convergerende driehoek. "
+                        + $"Breakdown onder {FormatP(penLow)}. Koersdoel Tmax {FormatP(tmax)} (pool-lengte vanaf de pennant).",
+            KeyLevel    = penLow,
+            DistancePct = (currentPrice - penLow) / currentPrice * 100,
+            Annotation  = new PatternAnnotation
+            {
+                Trendlines = new()
+                {
+                    new PatternTrendline { StartTime = poleBars[hiIdx].Date, StartPrice = poleHigh, EndTime = poleBars[loIdx].Date, EndPrice = poleLow, Color = "#ef5350" },
+                    new PatternTrendline { StartTime = pen.First().Date, StartPrice = earlyHigh, EndTime = pen.Last().Date, EndPrice = lateHigh, Color = "#f59e0b" },
+                    new PatternTrendline { StartTime = pen.First().Date, StartPrice = earlyLow,  EndTime = pen.Last().Date, EndPrice = lateLow,  Color = "#f59e0b" },
+                },
+                HLines = new()
+                {
+                    new PatternHLine { Price = penLow, Color = "#ef5350", Title = "Breakdown" },
+                    new PatternHLine { Price = tmax,   Color = "#1e88e5", Title = "Tmax" },
                 },
             },
         };
@@ -1945,6 +2077,7 @@ public class PatternDetectionService : IPatternDetectionService
         PatternType.DoubleBottom or PatternType.DoubleTop                    => 0.005,
         PatternType.CupAndHandle                                            => 0.005,
         PatternType.BullFlag or PatternType.BearFlag                        => 0.005,
+        PatternType.BullPennant or PatternType.BearPennant                  => 0.005,
         PatternType.AdamAndEve                                              => 0.005,
         PatternType.BreakoutAboveResistance or PatternType.BreakdownBelowSupport => 0.015,
         _ => null,

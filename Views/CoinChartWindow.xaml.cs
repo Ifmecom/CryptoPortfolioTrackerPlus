@@ -167,6 +167,10 @@ public sealed partial class CoinChartWindow : Window
                 "Groene diagonale lijn = pool (sterke stijging) · oranje vak = vlag (consolidatie) · groene lijn = breakout-niveau · blauwe lijn = Tmax (pool-lengte vanaf de vlag-top).",
             PatternType.BearFlag =>
                 "Rode diagonale lijn = pool (sterke daling) · oranje vak = vlag (consolidatie) · rode lijn = breakdown-niveau · blauwe lijn = Tmax (pool-lengte vanaf de vlag-bodem).",
+            PatternType.BullPennant =>
+                "Groene diagonale lijn = pool · oranje convergerende lijnen = pennant (driehoekige consolidatie) · groene lijn = breakout · blauwe lijn = Tmax (pool-lengte vanaf de pennant).",
+            PatternType.BearPennant =>
+                "Rode diagonale lijn = pool · oranje convergerende lijnen = pennant · rode lijn = breakdown · blauwe lijn = Tmax (pool-lengte vanaf de pennant).",
             PatternType.AscendingChannel or PatternType.DescendingChannel =>
                 "Twee parallelle trendlijnen = kanaalwanden — rood = weerstand (bovenlijn), groen = steun (onderlijn).",
             PatternType.AscendingTriangle or PatternType.DescendingTriangle or PatternType.SymmetricalTriangle =>

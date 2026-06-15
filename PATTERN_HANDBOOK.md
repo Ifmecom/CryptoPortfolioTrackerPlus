@@ -557,6 +557,24 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 
 ---
 
+### 10.7b Bull / Bear Pennant *(v1.38)*
+
+Zoals een flag, maar de consolidatie is een **kleine convergerende driehoek** (lagere highs én hogere lows)
+i.p.v. een parallel vlag-vak.
+
+| Criterium | Waarde |
+|-----------|--------|
+| Pool | Bull: stijging ≥ **8%**; Bear: daling ≥ **8%** (bars −15 tot −7, op de wicks, met geverifieerde richting) |
+| Pennant (laatste 6 bars) | **Convergerend**: `lateHigh < earlyHigh` én `lateLow > earlyLow`, met range-versmalling **≥ 40%** (`lateRange ≤ earlyRange × 0,6`) |
+| Grootte | Pennant-range ≤ **10%** |
+| Retrace | < **50%** van de pool |
+| **Bevestiging** | Bull: sluiting boven de pennant-top; Bear: sluiting onder de pennant-bodem (drie-staten-model §5) |
+| **Koersdoel (Tmax)** | Bull: `pennant-top + pool-lengte`; Bear: `pennant-bodem − pool-lengte` |
+| **Tekening** | Pool-lijn + twee convergerende trendlijnen + breakout/breakdown-lijn + Tmax |
+| Strength | 70 |
+
+---
+
 ### 10.8 Oplopende Driehoek (Ascending Triangle)
 
 ```

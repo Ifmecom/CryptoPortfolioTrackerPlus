@@ -97,6 +97,8 @@ public class PatternResult
         PatternType.RisingWedge              => "Rising Wedge",
         PatternType.FallingWedge             => "Falling Wedge",
         PatternType.CupAndHandle             => "Cup & Handle",
+        PatternType.BullPennant              => "Bull Pennant",
+        PatternType.BearPennant              => "Bear Pennant",
         _                                    => type.ToString(),
     };
 }
