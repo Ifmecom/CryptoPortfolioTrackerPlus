@@ -60,6 +60,11 @@ public sealed partial class WhatsNewView : Page
             "koersdoel — de pool-lengte geprojecteerd vanaf de top van de vlag (bull) resp. de bodem (bear). " +
             "Staat als 'Tmax'-lijn op de grafiek en in de patroonbeschrijving.");
 
+        AddFeature("🎯", "Koersdoel (Tmax) bij reversal-patronen",
+            "Dubbele top/bodem en (Inverse) Head & Shoulders tonen nu ook een Tmax-koersdoel: de patroonhoogte " +
+            "vanaf de neklijn geprojecteerd (omlaag bij top/H&S, omhoog bij bodem/Inv. H&S). Daarmee is het " +
+            "measured-move-doel bij alle doel-patronen zichtbaar.");
+
         AddFeature("🏷️", "Consistente doel-naamgeving",
             "Koersdoelen heten nu overal hetzelfde: 'Tmax' voor het uiteindelijke (measured-move) doel en " +
             "'T1'/'T2' voor tussendoelen. Bij Cup & Handle is dat T1 (handle-diepte) en Tmax (cup-diepte). " +

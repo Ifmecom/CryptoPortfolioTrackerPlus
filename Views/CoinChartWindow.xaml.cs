@@ -154,15 +154,15 @@ public sealed partial class CoinChartWindow : Window
                 "🔵 L = cup-linkerrand · B = cup-bodem · R = cup-rechterrand · 🟠 ↑ = handle/breakout.  " +
                 "Lijnen: oranje = neklijn (breakout-niveau), groen = T1 (handle-diepte), blauw = Tmax (cup-diepte) — koersdoelen ná uitbraak.",
             PatternType.DoubleBottom =>
-                "🔵 B1, B2 = de twee bodems · oranje lijn = neklijn (slotkoers erboven = bevestiging).",
+                "🔵 B1, B2 = de twee bodems · groene lijn = neklijn (slotkoers erboven = bevestiging) · blauwe lijn = Tmax (measured move).",
             PatternType.DoubleTop =>
-                "🟠 T1, T2 = de twee toppen · rode lijn = neklijn (slotkoers eronder = bevestiging).",
+                "🟠 T1, T2 = de twee toppen · rode lijn = neklijn (slotkoers eronder = bevestiging) · blauwe lijn = Tmax (measured move).",
             PatternType.AdamAndEve =>
                 "🔵 A = scherpe (Adam) bodem · E = ronde (Eve) bodem · lijn = neklijn (breakout = bevestiging).",
             PatternType.HeadAndShoulders =>
-                "🟠 LS = linkerschouder · H = hoofd · RS = rechterschouder · lijn = neklijn (breakdown eronder = bevestiging).",
+                "🟠 LS = linkerschouder · H = hoofd · RS = rechterschouder · rode lijn = neklijn (breakdown eronder = bevestiging) · blauwe lijn = Tmax (measured move).",
             PatternType.InverseHeadAndShoulders =>
-                "🔵 LS = linkerschouder · H = hoofd · RS = rechterschouder (omgekeerd) · lijn = neklijn (breakout erboven = bevestiging).",
+                "🔵 LS = linkerschouder · H = hoofd · RS = rechterschouder (omgekeerd) · groene lijn = neklijn (breakout erboven = bevestiging) · blauwe lijn = Tmax (measured move).",
             PatternType.BullFlag =>
                 "Groene diagonale lijn = pool (sterke stijging) · oranje vak = vlag (consolidatie) · groene lijn = breakout-niveau · blauwe lijn = Tmax (pool-lengte vanaf de vlag-top).",
             PatternType.BearFlag =>

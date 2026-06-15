@@ -500,6 +500,9 @@ public class PatternDetectionService : IPatternDetectionService
             // Don't report if price has already moved >8% past the neckline (pattern is stale)
             if (IsPatternStale(currentPrice, neckline, PatternCategory.Bullish)) continue;
 
+            // Measured move: patroonhoogte (neklijn → bodem) omhoog geprojecteerd vanaf de neklijn.
+            double tmax = neckline + (neckline - botLow);
+
             return new PatternResult
             {
                 Type        = PatternType.DoubleBottom,
@@ -510,7 +513,8 @@ public class PatternDetectionService : IPatternDetectionService
                 Description = $"Dubbele bodem gevonden (lows: {FormatP(prev.value)} / {FormatP(last.value)}). "
                             + (confirmed
                                ? "Patroon bevestigd — bullish reversal signaal."
-                               : "Nog niet bevestigd — wacht op sloting boven de neklijn."),
+                               : "Nog niet bevestigd — wacht op sloting boven de neklijn.")
+                            + $" Koersdoel Tmax {FormatP(tmax)} (hoogte vanaf de neklijn).",
                 KeyLevel    = neckline,
                 Annotation  = new PatternAnnotation
                 {
@@ -524,6 +528,7 @@ public class PatternDetectionService : IPatternDetectionService
                     {
                         new PatternTrendline { StartTime = bars[prev.idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#26a69a" },
                     },
+                    HLines = new() { new PatternHLine { Price = tmax, Color = "#1e88e5", Title = "Tmax" } },
                 },
             };
         }
@@ -587,6 +592,9 @@ public class PatternDetectionService : IPatternDetectionService
             // Don't report if price has already moved >8% past the neckline (pattern is stale)
             if (IsPatternStale(currentPrice, neckline, PatternCategory.Bearish)) continue;
 
+            // Measured move: patroonhoogte (top → neklijn) naar beneden geprojecteerd vanaf de neklijn.
+            double tmax = Math.Max(0, neckline - (topHigh - neckline));
+
             return new PatternResult
             {
                 Type        = PatternType.DoubleTop,
@@ -597,7 +605,8 @@ public class PatternDetectionService : IPatternDetectionService
                 Description = $"Dubbele top gevonden (highs: {FormatP(prev.value)} / {FormatP(last.value)}). "
                             + (confirmed
                                ? "Patroon bevestigd — bearish reversal signaal."
-                               : "Nog niet bevestigd — wacht op breakdown onder de neklijn."),
+                               : "Nog niet bevestigd — wacht op breakdown onder de neklijn.")
+                            + $" Koersdoel Tmax {FormatP(tmax)} (hoogte vanaf de neklijn).",
                 KeyLevel    = neckline,
                 Annotation  = new PatternAnnotation
                 {
@@ -611,6 +620,7 @@ public class PatternDetectionService : IPatternDetectionService
                     {
                         new PatternTrendline { StartTime = bars[prev.idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#ef5350" },
                     },
+                    HLines = new() { new PatternHLine { Price = tmax, Color = "#1e88e5", Title = "Tmax" } },
                 },
             };
         }
@@ -1081,6 +1091,9 @@ public class PatternDetectionService : IPatternDetectionService
             bool confirmed = currentPrice < neckline * 0.995; // broke neckline
             double distPct = (currentPrice - neckline) / neckline * 100;
 
+            // Measured move: hoogte (hoofd → neklijn) naar beneden geprojecteerd vanaf de neklijn.
+            double tmax = Math.Max(0, neckline - (head - neckline));
+
             return new PatternResult
             {
                 Type        = PatternType.HeadAndShoulders,
@@ -1091,7 +1104,8 @@ public class PatternDetectionService : IPatternDetectionService
                 Description = $"Head & Shoulders: schouders ~{FormatP(ls)}/{FormatP(rs)}, hoofd {FormatP(head)}, neklijn {FormatP(neckline)}. "
                             + (confirmed
                                ? "Neklijn gebroken — bearish reversal bevestigd."
-                               : "Rechter schouder gevormd; afwachten of neklijn breekt voor bevestiging."),
+                               : "Rechter schouder gevormd; afwachten of neklijn breekt voor bevestiging.")
+                            + $" Koersdoel Tmax {FormatP(tmax)} (hoogte vanaf de neklijn).",
                 KeyLevel    = neckline,
                 DistancePct = distPct,
                 Annotation  = new PatternAnnotation
@@ -1107,6 +1121,7 @@ public class PatternDetectionService : IPatternDetectionService
                     {
                         new PatternTrendline { StartTime = bars[rh[i - 1].idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#ef5350" },
                     },
+                    HLines = new() { new PatternHLine { Price = tmax, Color = "#1e88e5", Title = "Tmax" } },
                 },
             };
         }
@@ -1175,6 +1190,9 @@ public class PatternDetectionService : IPatternDetectionService
             bool confirmed = currentPrice > neckline * 1.005;
             double distPct = (neckline - currentPrice) / currentPrice * 100;
 
+            // Measured move: hoogte (neklijn → hoofd) omhoog geprojecteerd vanaf de neklijn.
+            double tmax = neckline + (neckline - head);
+
             return new PatternResult
             {
                 Type        = PatternType.InverseHeadAndShoulders,
@@ -1185,7 +1203,8 @@ public class PatternDetectionService : IPatternDetectionService
                 Description = $"Inverse H&S: schouders ~{FormatP(ls)}/{FormatP(rs)}, hoofd {FormatP(head)}, neklijn {FormatP(neckline)}. "
                             + (confirmed
                                ? "Neklijn gebroken — bullish reversal bevestigd."
-                               : "Rechter schouder gevormd; uitbraak boven neklijn is het signaal."),
+                               : "Rechter schouder gevormd; uitbraak boven neklijn is het signaal.")
+                            + $" Koersdoel Tmax {FormatP(tmax)} (hoogte vanaf de neklijn).",
                 KeyLevel    = neckline,
                 DistancePct = distPct,
                 Annotation  = new PatternAnnotation
@@ -1201,6 +1220,7 @@ public class PatternDetectionService : IPatternDetectionService
                     {
                         new PatternTrendline { StartTime = bars[rl[i - 1].idx].Date, StartPrice = neckline, EndTime = bars[^1].Date, EndPrice = neckline, Color = "#26a69a" },
                     },
+                    HLines = new() { new PatternHLine { Price = tmax, Color = "#1e88e5", Title = "Tmax" } },
                 },
             };
         }

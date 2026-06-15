@@ -479,6 +479,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | Minimale diepte | Opleving tússen de bodems minimaal **5%** boven de hoogste bodem |
 | **Dominante dalen** | **Geen lagere low tussen de bodems** (`min(Low) tussen ≥ bodem × 0,995`) — anders maakte de koers er tussendoor een lagere low → geen dubbele bodem |
 | Herstel na B2 | Minimaal **2%** stijging vanuit B2 |
+| **Tmax (doel)** *(v1.38)* | `neklijn + (neklijn − bodem)` — patroonhoogte omhoog geprojecteerd vanaf de neklijn |
 | **Start** | Bij de eerste bodem (B1) |
 | **Einde** | Bij breakout boven neklijn of invalidatie |
 | **Bevestiging** | Sluiting boven neklijn met ≥ 0.5% |
@@ -506,6 +507,7 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | Minimale hoogte | Dal tussen de toppen minimaal **5%** onder de laagste top |
 | **Dominante pieken** | **Geen hogere high tussen de toppen** (`max(High) tussen ≤ top × 1,005`) — als de koers er tussendoor uitbreekt (hogere high) is het géén dubbele top maar een uitbraak. *(OP-casus, fix v1.38.)* |
 | Daling na T2 | Minimaal **2%** vanuit T2 |
+| **Tmax (doel)** *(v1.38)* | `neklijn − (top − neklijn)` — patroonhoogte omlaag geprojecteerd vanaf de neklijn |
 | **Start** | Bij de eerste top (T1) |
 | **Einde** | Bij breakdown onder neklijn of invalidatie |
 | **Bevestiging** | Sluiting onder neklijn met ≥ 0.5% |
@@ -677,6 +679,7 @@ ___/    |    \___
 | **Einde** | Neklijn-breakdown of invalidatie |
 | **Bevestiging** | Sluiting < neklijn × 0.995 |
 | **Invalidatie** | Prijs stijgt boven het hoofd (H) |
+| **Tmax (doel)** *(v1.38)* | `neklijn − (hoofd − neklijn)` — hoogte omlaag geprojecteerd vanaf de neklijn |
 | **Context** | Alleen geldig na opwaartse trend van ≥ 15% over de 50 bars vóór LS |
 | Strength bevestigd | 84 |
 | Strength onbevestigd | 70 |
@@ -706,6 +709,7 @@ LS  \   |   / RS
 | **Start** | Bij de linker schouder (LS) |
 | **Bevestiging** | Sluiting > neklijn × 1.005 |
 | **Invalidatie** | Prijs daalt onder het hoofd (H) |
+| **Tmax (doel)** *(v1.38)* | `neklijn + (neklijn − hoofd)` — hoogte omhoog geprojecteerd vanaf de neklijn |
 | **Context** | Alleen geldig na neerwaartse trend van ≥ 15% over de 50 bars vóór LS |
 | Strength bevestigd | 84 |
 | Strength onbevestigd | 70 |

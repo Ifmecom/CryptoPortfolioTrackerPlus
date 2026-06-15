@@ -679,6 +679,10 @@ patroon de symbolen uitlegt (gekleurde markers L/B/R, schouders, bodems; lijnen 
 **Doel-naamgeving (consistent, v1.38):** **Neklijn** waar van toepassing, anders **Breakout/Breakdown**;
 tussendoelen **T1/T2**; het maximale (measured-move) doel **Tmax**. Flags hebben één doel → Tmax.
 
+**Reversal-doelen *(v1.38)*:** dubbele top/bodem en (Inv.) H&S tekenen nu een **Tmax**-lijn = patroonhoogte
+vanaf de neklijn geprojecteerd (top/H&S omlaag: `neklijn − (top/hoofd − neklijn)`; bodem/Inv. H&S omhoog:
+`neklijn + (neklijn − bodem/hoofd)`).
+
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)
 
