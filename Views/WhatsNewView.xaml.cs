@@ -47,6 +47,14 @@ public sealed partial class WhatsNewView : Page
             "Bovendien worden al-uitgespeelde patronen (koers >8% voorbij het sleutelniveau) nu breed " +
             "verborgen, niet alleen bij dubbele bodems/toppen. Gebaseerd op het bijgewerkte Patroon-handboek v2.1.");
 
+        AddFeature("⛰️", "Dubbele top/bodem & H&S: dominante pieken vereist (fix)",
+            "Een dubbele top wordt niet langer ten onrechte herkend wanneer de koers tussen de twee 'toppen' juist " +
+            "is uitgebroken naar een hogere high (zoals bij OP: een geslaagde Cup & Handle-uitbraak tussen de " +
+            "toppen). De twee toppen moeten nu de dominante pieken zijn — geen hogere high ertussen. Hetzelfde " +
+            "geldt spiegelbeeldig voor de dubbele bodem (geen lagere low ertussen) en H&S (het hoofd moet de " +
+            "hoogste piek zijn). Bovendien staat de neklijn nu op het werkelijke dal/piek tussen de toppen, niet " +
+            "meer op de live koers.");
+
         AddFeature("🏆", "Cup & Handle: neklijn + koersdoelen T1/T2",
             "Bij een Cup & Handle tekent de grafiek nu de neklijn (breakout-niveau) duidelijk, plus twee " +
             "koersdoelen ná uitbraak: T1 = de handle-diepte boven de breakout en T2 = de cup-diepte boven de " +

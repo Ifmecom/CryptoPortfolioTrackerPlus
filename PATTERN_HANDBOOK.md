@@ -463,7 +463,8 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 | Min. bars | 20 |
 | Afstand bodems | Minimaal **8 bars** apart |
 | Prijsverschil | Maximaal **3%** (`|B1 − B2| / B1`) |
-| Minimale diepte | Neklijn naar bodem minimaal **5%** |
+| Minimale diepte | Opleving tússen de bodems minimaal **5%** boven de hoogste bodem |
+| **Dominante dalen** | **Geen lagere low tussen de bodems** (`min(Low) tussen ≥ bodem × 0,995`) — anders maakte de koers er tussendoor een lagere low → geen dubbele bodem |
 | Herstel na B2 | Minimaal **2%** stijging vanuit B2 |
 | **Start** | Bij de eerste bodem (B1) |
 | **Einde** | Bij breakout boven neklijn of invalidatie |
@@ -489,7 +490,8 @@ Vereisen OHLCV-bars. Minimaal **20 bars** aanwezig.
 |-----------|--------|
 | Afstand toppen | Minimaal **8 bars** apart |
 | Prijsverschil | Maximaal **3%** |
-| Minimale hoogte | Neklijn naar top minimaal **5%** |
+| Minimale hoogte | Dal tussen de toppen minimaal **5%** onder de laagste top |
+| **Dominante pieken** | **Geen hogere high tussen de toppen** (`max(High) tussen ≤ top × 1,005`) — als de koers er tussendoor uitbreekt (hogere high) is het géén dubbele top maar een uitbraak. *(OP-casus, fix v1.38.)* |
 | Daling na T2 | Minimaal **2%** vanuit T2 |
 | **Start** | Bij de eerste top (T1) |
 | **Einde** | Bij breakdown onder neklijn of invalidatie |
@@ -651,6 +653,7 @@ ___/    |    \___
 |-----------|--------|
 | Swing highs nodig | Minimaal **5** recente swing highs |
 | Hoofd (H) | Minimaal **3%** hoger dan zowel LS als RS |
+| Dominante piek | Geen bar tussen de schouders mag boven het hoofd uitkomen (`max(High) ≤ H × 1,005`) — het hoofd is de hoogste piek *(v1.38)* |
 | Schouder-symmetrie | `|LS − RS| / max(LS, RS) ≤ 0.15` |
 | Volgorde | LS → H → RS chronologisch |
 | Neklijn | Max van (laagste low in LS–H interval, laagste low in H–RS interval) |
@@ -681,6 +684,7 @@ LS  \   |   / RS
 |-----------|--------|
 | Swing lows nodig | Minimaal **5** recente swing lows |
 | Hoofd (H) | Minimaal **3%** lager dan zowel LS als RS |
+| Dominante bodem | Geen bar tussen de schouders mag onder het hoofd zakken (`min(Low) ≥ H × 0,995`) — het hoofd is de laagste bodem *(v1.38)* |
 | Schouder-symmetrie | ≤ 15% verschil |
 | Neklijn | Min van (hoogste high in LS–H interval, hoogste high in H–RS interval) |
 | Min. patroonbreedte | **12 bars** |

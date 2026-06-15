@@ -469,12 +469,21 @@ public class PatternDetectionService : IPatternDetectionService
             double diff = Math.Abs(last.value - prev.value) / prev.value;
             if (diff > 0.03) continue;
 
-            // Minimum 5% bounce: the rally BETWEEN the two lows must rise at least 5% above the
-            // higher low. Without a real intervening peak the two "lows" are just one flat base,
-            // not a genuine double bottom. (Was incorrectly measuring the trough — bugfix v1.38.)
-            double higherLow = Math.Max(prev.value, last.value);
-            double midMax    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close);  // bounce peak (body top)
-            double bounce    = (midMax - higherLow) / higherLow;
+            // Bars strikt tussen de twee bodems.
+            var between = bars.Skip(prev.idx + 1).Take(last.idx - prev.idx - 1).ToList();
+            if (between.Count == 0) continue;
+
+            // Dominante dalen: geen LAGERE low tussen de twee bodems. Anders zijn het geen twee
+            // gelijke bodems maar maakte de koers er tussendoor een lagere low (spiegelbeeld van
+            // de dubbele-top-fix: geen hogere high tussen de toppen).
+            double botLow = Math.Min(prev.value, last.value);
+            if (between.Min(b => b.Low) < botLow * 0.995) continue;
+
+            // Min. 5% opleving: de piek tússen de bodems moet ≥5% boven de hoogste bodem liggen —
+            // anders is het één vlakke basis, geen echte dubbele bodem.
+            double higherLow  = Math.Max(prev.value, last.value);
+            double bouncePeak = between.Max(b => b.High);   // intervening rally (wick high)
+            double bounce     = (bouncePeak - higherLow) / higherLow;
             if (bounce < 0.05) continue;
 
             // Confirm price has moved up from the double bottom
@@ -484,9 +493,9 @@ public class PatternDetectionService : IPatternDetectionService
             double distPct = recovery * 100;
             bool confirmed = recovery > 0.04; // >4 % recovery = confirmed
 
-            double neckline = Math.Max(
-                bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close),  // body top
-                currentPrice);
+            // Neklijn = de piek tussen de bodems = het breakout-niveau (vast structureel niveau,
+            // níét beïnvloed door de live koers).
+            double neckline = bouncePeak;
 
             // Don't report if price has already moved >8% past the neckline (pattern is stale)
             if (IsPatternStale(currentPrice, neckline, PatternCategory.Bullish)) continue;
@@ -551,19 +560,29 @@ public class PatternDetectionService : IPatternDetectionService
             double diff = Math.Abs(last.value - prev.value) / prev.value;
             if (diff > 0.03) continue;  // handbook: 3%, not 2.5% (F2)
 
-            // Minimum 5% depth: the valley between the two highs must be at least 5% below the lower high
+            // Bars strikt tussen de twee toppen.
+            var between = bars.Skip(prev.idx + 1).Take(last.idx - prev.idx - 1).ToList();
+            if (between.Count == 0) continue;
+
+            // KERN-FIX (OP-casus): de twee toppen moeten de DOMINANTE pieken zijn. Als de koers
+            // tussen de toppen boven hen uitbreekt (een hogere high), is het géén dubbele top maar
+            // een uitbraak ertussen. Wijs af zodra een bar ertussen >0,5% boven de toppen sluit.
+            double topHigh = Math.Max(prev.value, last.value);
+            if (between.Max(b => b.High) > topHigh * 1.005) continue;
+
+            // Min. 5% diepte: het dal tussen de toppen moet ≥5% onder de laagste top liggen.
             double lowerHigh = Math.Min(prev.value, last.value);
-            double midMin    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Min(b => b.Open);  // body bottom
-            double depth     = (lowerHigh - midMin) / lowerHigh;
+            double valley    = between.Min(b => b.Low);   // dal tussen de toppen (wick-low)
+            double depth     = (lowerHigh - valley) / lowerHigh;
             if (depth < 0.05) continue;
 
             double decline = (last.value - currentPrice) / last.value;
             if (decline < 0.01) continue;
 
             bool confirmed = decline > 0.04;
-            double neckline = Math.Min(
-                bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Min(b => b.Open),  // body bottom
-                currentPrice);
+
+            // Neklijn = het dal tussen de toppen = vast structureel niveau (níét de live koers).
+            double neckline = valley;
 
             // Don't report if price has already moved >8% past the neckline (pattern is stale)
             if (IsPatternStale(currentPrice, neckline, PatternCategory.Bearish)) continue;
@@ -1021,6 +1040,11 @@ public class PatternDetectionService : IPatternDetectionService
             // Head must be at least 3 % above both shoulders
             if ((head - ls) / ls < 0.03 || (head - rs) / rs < 0.03) continue;
 
+            // Het HOOFD moet de hoogste piek zijn: geen bar tussen de schouders mag boven het
+            // hoofd uitkomen (>0,5%). Anders is het hoofd niet de dominante top → geen H&S.
+            var hsBetween = bars.Skip(rh[i - 1].idx + 1).Take(rh[i + 1].idx - rh[i - 1].idx - 1).ToList();
+            if (hsBetween.Count > 0 && hsBetween.Max(b => b.High) > head * 1.005) continue;
+
             // Width check: at least 12 bars between left shoulder and right shoulder (handbook: F7)
             if (rh[i + 1].idx - rh[i - 1].idx < 12) continue;
 
@@ -1110,6 +1134,11 @@ public class PatternDetectionService : IPatternDetectionService
             if (shoulderDiff > 0.15) continue;  // handbook: F6 — 15%, not 20%
 
             if ((ls - head) / head < 0.03 || (rs - head) / head < 0.03) continue;
+
+            // Het HOOFD moet de laagste trough zijn: geen bar tussen de schouders mag onder het
+            // hoofd zakken (>0,5%). Anders is het hoofd niet de dominante bodem → geen Inv. H&S.
+            var hsBetween = bars.Skip(rl[i - 1].idx + 1).Take(rl[i + 1].idx - rl[i - 1].idx - 1).ToList();
+            if (hsBetween.Count > 0 && hsBetween.Min(b => b.Low) < head * 0.995) continue;
 
             // Width check: at least 12 bars between left shoulder and right shoulder (handbook: F7)
             if (rl[i + 1].idx - rl[i - 1].idx < 12) continue;
@@ -1431,10 +1460,17 @@ public class PatternDetectionService : IPatternDetectionService
             double diff = Math.Abs(last.value - prev.value) / prev.value;
             if (diff > 0.03) continue;   // lows within 3 %
 
-            // Minimum 5% bounce between the two lows (intervening rally above the higher low),
-            // otherwise it is one flat base, not two distinct Adam/Eve bottoms. (Bugfix v1.38.)
+            // Bars strikt tussen de twee bodems.
+            var between = bars.Skip(prev.idx + 1).Take(last.idx - prev.idx - 1).ToList();
+            if (between.Count == 0) continue;
+
+            // Geen LAGERE low tussen de twee bodems (dominante dalen — zie dubbele-bodem-fix).
+            double botLow = Math.Min(prev.value, last.value);
+            if (between.Min(b => b.Low) < botLow * 0.995) continue;
+
+            // Minimum 5% opleving tussen de twee bodems, anders is het één vlakke basis.
             double higherLow = Math.Max(prev.value, last.value);
-            double midMax    = bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close);  // bounce peak (body top)
+            double midMax    = between.Max(b => b.High);   // bounce peak (wick high)
             if ((midMax - higherLow) / higherLow < 0.05) continue;
 
             bool prevIsAdam = IsAdamBottom(bars, prev.idx);
@@ -1455,9 +1491,8 @@ public class PatternDetectionService : IPatternDetectionService
             if (recovery < 0.01) continue;   // price hasn't bounced yet
 
             bool   confirmed = recovery > 0.04;
-            double neckline  = Math.Max(
-                bars.Skip(prev.idx).Take(last.idx - prev.idx + 1).Max(b => b.Close),  // body top
-                currentPrice);
+            // Neklijn = de piek tussen de bodems = vast structureel niveau (níét de live koers).
+            double neckline  = midMax;
 
             return new PatternResult
             {
