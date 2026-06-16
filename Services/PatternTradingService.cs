@@ -34,6 +34,7 @@ public class PatternTradingService : IPatternTradingService
     private readonly IGateIoDataService      _gateIo;
     private readonly IMexcDataService        _mexc;
     private readonly IPatternStateStore?     _patternState;
+    private readonly INotifierService?       _notifier;
 
     // Max simultaneous OHLCV fetches to respect exchange rate-limits
     private static readonly SemaphoreSlim _sem = new(3, 3);
@@ -46,7 +47,8 @@ public class PatternTradingService : IPatternTradingService
         IKuCoinDataService      kuCoin,
         IGateIoDataService      gateIo,
         IMexcDataService        mexc,
-        IPatternStateStore?     patternState = null)
+        IPatternStateStore?     patternState = null,
+        INotifierService?       notifier     = null)
     {
         _portfolio = portfolio;
         _detector  = detector;
@@ -56,6 +58,7 @@ public class PatternTradingService : IPatternTradingService
         _gateIo    = gateIo;
         _mexc      = mexc;
         _patternState = patternState;
+        _notifier  = notifier;
     }
 
     // =========================================================================
@@ -178,6 +181,8 @@ public class PatternTradingService : IPatternTradingService
     {
         if (_patternState is null) return;
 
+        var alertLines = new List<string>();   // sleuteltransities → één Telegram-samenvatting
+
         foreach (var r in results)
         {
             if (ct.IsCancellationRequested) break;
@@ -190,21 +195,55 @@ public class PatternTradingService : IPatternTradingService
                     coin.ApiId, coin.Symbol ?? string.Empty,
                     r.Patterns ?? new List<PatternResult>(), coin.Price, ct);
 
-                // Toon alleen de noemenswaardige overgangen sinds de vorige scan.
                 foreach (var t in transitions)
                 {
-                    if (t.To is not (PatternLifecycle.Confirmed or PatternLifecycle.Invalidated
-                                     or PatternLifecycle.PlayedOut or PatternLifecycle.Expired))
-                        continue;
-                    r.RecentPatternEvents.Add(
-                        $"{PatternResult.NameFor(t.Record.Type)} {t.Record.Timeframe}: " +
-                        $"{PatternResult.LabelFor(t.To)} — {t.Reason}");
+                    // Toon alle noemenswaardige overgangen sinds de vorige scan op de kaart.
+                    if (t.To is PatternLifecycle.Confirmed or PatternLifecycle.Invalidated
+                             or PatternLifecycle.PlayedOut or PatternLifecycle.Expired)
+                    {
+                        r.RecentPatternEvents.Add(
+                            $"{PatternResult.NameFor(t.Record.Type)} {t.Record.Timeframe}: " +
+                            $"{PatternResult.LabelFor(t.To)} — {t.Reason}");
+                    }
+
+                    // Notificeer alleen de twee sleuteltransities (bevestigd / geïnvalideerd).
+                    if (_notifier is not null && t.To is PatternLifecycle.Confirmed or PatternLifecycle.Invalidated)
+                        alertLines.Add(FormatAlertLine(coin.Symbol ?? coin.ApiId, t));
                 }
             }
             catch (Exception ex)
             {
                 Logger.Warning(ex, "PatternTrading: patroon-geheugen mislukt voor {Coin}", coin.ApiId);
             }
+        }
+
+        await SendPatternAlertsAsync(alertLines, ct);
+    }
+
+    private static string FormatAlertLine(string symbol, PatternTransition t)
+    {
+        string icon = t.To == PatternLifecycle.Confirmed ? "✅" : "❌";
+        return $"{icon} <b>{symbol.ToUpperInvariant()}</b> · {PatternResult.NameFor(t.Record.Type)} "
+             + $"{t.Record.Timeframe} — {PatternResult.LabelFor(t.To)} ({t.Reason})";
+    }
+
+    /// <summary>Stuurt één samenvattende Telegram-alert voor de sleuteltransities. Faalt stil.</summary>
+    private async Task SendPatternAlertsAsync(List<string> lines, CancellationToken ct)
+    {
+        if (_notifier is null || lines.Count == 0) return;
+
+        const int max = 20;
+        var shown = lines.Take(max).ToList();
+        if (lines.Count > max) shown.Add($"… en {lines.Count - max} meer");
+
+        string html = "<b>📊 Patroon-updates</b>\n" + string.Join("\n", shown);
+        try
+        {
+            await _notifier.SendAlertAsync(html, ct);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "PatternTrading: versturen patroon-alerts mislukt");
         }
     }
 
