@@ -262,6 +262,25 @@ Een patroon wordt **onmiddellijk** invalide als:
 > passeert (`lastIdx ≥ apexX`, met de apex vóór ons), is de driehoek volledig samengeknepen zonder
 > uitbraak en vervalt het patroon. Dit geldt voor de oplopende, dalende én symmetrische driehoek.
 
+### 6.3 Continue invalidatie — patroon-geheugen *(code v1.40)*
+
+De detectie zelf is **stateless**: elke scan bepaalt opnieuw wat er *nu* geldig is. Een persistente laag
+geeft een patroon daarbovenop een **levenscyclus over scans heen** (SQLite-tabel `PatternStates`):
+
+| Fase | Betekenis |
+|------|-----------|
+| In formatie / Voorlopig / Bevestigd | Spiegelt het momentane drie-staten-model (§5) terwijl het patroon nog wordt gedetecteerd. |
+| **Uitgespeeld** | Was Bevestigd en is daarna verdwenen terwijl de koers nog vóórbij het sleutelniveau staat. |
+| **Geïnvalideerd** | Was bevestigd/voorlopig en is teruggevallen door het sleutelniveau (valse uitbraak). |
+| **Vervallen** | Niet meer gedetecteerd zonder duidelijke invalidatie (structuur weg / max-leeftijd). |
+
+- **Identiteit** over scans: grove sleutel `coin|timeframe|type` + ankerniveau-nabijheid (1,5%).
+- **Grace/hysterese:** één gemiste scan telt nog niet als verval (tegen flikkeren).
+- **Bron van waarheid** blijft de stateless detector; de reconciliatie classificeert alleen het
+  *verdwijnen* van een patroon (met reden + tijdstip) en draait sequentieel ná de scan.
+- **Zichtbaar** als confidence ("N× gezien") in tooltips/legenda, een patroon-updates-chip per coin,
+  en een Telegram-alert bij Bevestigd/Geïnvalideerd.
+
 ---
 
 ## 7. Tekenregels

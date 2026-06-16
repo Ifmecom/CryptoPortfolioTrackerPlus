@@ -33,7 +33,7 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 | **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ✅ (Fase A) | `IsPatternStale` nu in double bottom/top, H&S, Inv. H&S, wedge, kanaal, asc/desc-driehoek, bull/bear-flag en cup&handle. (Breakout/Breakdown nog open.) |
 | **Drie-staten-bevestiging** (§5, F7) | ✅ (Fase B) | `PatternStatus` (Forming/Tentative/Confirmed) centraal bepaald in `DetectFromBars` (`ApplyStatus`/`EvalStatus`): Bevestigd op `bars[^1].Close` + marge, Voorlopig op live koers. `IsConfirmed` afgeleid. Status in badge-tooltip, overflow-tooltip en grafieklabel. |
 | **Volume-bevestiging bij breakout** (§5.1) | ❌ | Volume wordt alleen in `DetectVolumeSpike` gebruikt. Breakout-bevestiging kijkt niet naar volume (kan wel — Binance-klines hebben volume). |
-| **Continue invalidatie** (§6) | ❌ ontbreekt als concept | Detectie is stateless: elke scan opnieuw. Een patroon "invalideert" alleen impliciet doordat het de volgende scan niet meer gedetecteerd wordt. Er is geen expliciete invalidatie-/levensduurstatus per patroon. |
+| **Continue invalidatie** (§6) | ✅ (P7) | Patroon-geheugen over scans heen: `PatternStateRecord` (SQLite-tabel `PatternStates`) + pure `PatternReconciler` + `PatternStateStore`. Een patroon krijgt een levenscyclus (Forming→Tentative→Confirmed→PlayedOut, of Invalidated/Expired) met reden + tijdstip, grace-marge tegen flikkeren, en notificatie bij Bevestigd/Geïnvalideerd. De detector blijft stateless; de reconciliatie draait sequentieel ná de scan. |
 | **Tekenen: begrensde segmenten** (§7) | ✅ (v1.38) | Alle patronen tekenen begrensde trendlijn-segmenten; grafiek toont 1 patroon per timeframe. |
 | **Tekenen: body-respecterende lijnen** (§7.2) | ⚠️ tegenstrijdig | Handboek §7.2 zegt "body-respecterend"; v1.38 gebruikt bewust wicks. → handboek bijwerken. |
 
@@ -102,8 +102,19 @@ kanaal. Getest in `PatternGeometryTests` (apex/kanaal-tests, niet-vacuous geveri
 (`lastIdx ≥ apexX`, met apex vóór ons) zonder breakout, dan vervalt het patroon (geldt voor asc/desc/sym
 driehoeken). Getest met een convergerend-apex-bereikt scenario (verworpen) vs apex-nog-vóór-ons (herkend).
 
-**P7 — Continue invalidatie (concept).** Optioneel/groot: een patroon-geheugen zodat een eerder
-gedetecteerd patroon expliciet "geïnvalideerd" of "bevestigd" kan worden i.p.v. puur stateless her-scan.
+**P7 — Continue invalidatie (patroon-geheugen).** ✅ **Gedaan.** Een persistent geheugen geeft een eerder
+gedetecteerd patroon expliciet een levenscyclus i.p.v. puur stateless her-scan:
+- **Opslag:** `PatternStateRecord` → SQLite-tabel `PatternStates` (idempotent via `ApplyPlusSchemaAsync`,
+  gedocumenteerde migratie `AddPatternState`).
+- **Identiteit:** `PatternFingerprint` (grove sleutel `coin|tf|type` + niveau-nabijheid van 1,5%).
+- **Logica:** pure `PatternReconciler` — nieuw/match/upgrade, grace-marge tegen flikkeren, en terminale
+  classificatie van een verdwenen patroon (PlayedOut / Invalidated / Expired met reden + tijdstip).
+- **Integratie:** `PatternStateStore` (EF) wordt sequentieel ná de parallelle scan aangeroepen; verrijkt
+  elke `PatternResult` met `Lifecycle`/`TimesSeen`/`LifecycleReason`. De detector blijft stateless.
+- **UI:** confidence ("N× gezien") in tooltips/legenda + een "patroon-updates"-chip per coin (overgangen
+  sinds de vorige scan, met reden).
+- **Notificatie:** één samengevatte Telegram-alert bij Bevestigd/Geïnvalideerd (via `INotifierService`).
+- **Tests:** `PatternFingerprintTests` (10) + `PatternReconcilerTests` (11), beide pure.
 
 **Doc-onderhoud:** ✅ gedaan — handboek is bijgewerkt naar **v2.1** (§2.1 wicks/lookback 5/0,4×ATR;
 §2.4 15M; §3.1 R²+aanrakingen; §3.3 ATR+%; §5 drie-staten-bevestiging; §7.2 wicks/regressie; F1/F10/F11/F12).
@@ -116,11 +127,14 @@ Daarna ook gedaan: definitie-fixes (dominante pieken dubbele top/bodem + H&S), T
 reversals), Bull/Bear Pennant, en **Support Bounce / Resistance Rejection** (waren dode enum-waarden,
 nu echt geïmplementeerd met geteste-niveau + ommekeer). **Breakout/breakdown-staleness** bleek
 redundant — de 0,5–4%-band sluit stale (>4%) al uit. **P5** (driehoek/kanaal bevestiging + invalidatie)
-en **P6** (sym-driehoek apex-verval) zijn nu ook geïmplementeerd met tests.
+en **P6** (sym-driehoek apex-verval) zijn geïmplementeerd met tests. **P7** (continue invalidatie met
+patroon-geheugen: `PatternStates`-tabel + `PatternReconciler` + `PatternStateStore`, UI-chip en
+Telegram-notificatie) is nu ook af.
 
-Resteert nog: **P7** (continue invalidatie met patroon-geheugen — een eerder gedetecteerd patroon
-expliciet "geïnvalideerd"/"bevestigd" kunnen houden i.p.v. puur stateless her-scan).
+**De volledige werklijst P1–P7 is daarmee afgerond.** Mogelijke vervolgstappen liggen buiten deze lijst
+(bv. volume-bevestiging bij breakout §5.1, interne-schendingsfilter §3.2, of analytics op de
+invalidatie-historie die nu in `PatternStates` wordt vastgelegd).
 
 ---
 
-*Spec vastgelegd in handboek v2.1; Fase A + B (P1–P6) geïmplementeerd met tests.*
+*Spec vastgelegd in handboek v2.1; werklijst P1–P7 geïmplementeerd met tests.*

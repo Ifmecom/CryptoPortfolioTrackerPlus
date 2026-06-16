@@ -28,6 +28,19 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.40  —  Patroon-geheugen: patronen volgen over scans heen");
+
+        AddFeature("🧠", "Patronen onthouden hun verhaal",
+            "Een patroon krijgt nu een levenscyclus over scans heen: In formatie → Voorlopig → Bevestigd, en " +
+            "daarna Uitgespeeld, Geïnvalideerd of Vervallen — met reden en tijdstip.");
+
+        AddFeature("🔄", "Updates sinds je vorige scan",
+            "Een 'patroon-updates'-chip per coin toont welke patronen bevestigd raakten, terugvielen of hun doel " +
+            "uitspeelden. Badges tonen ook hoe vaak een patroon al is gezien.");
+
+        AddFeature("🔔", "Telegram bij bevestiging/invalidatie",
+            "Eén samengevat bericht per scan bij de sleuteltransities — geen spam.");
+
         AddVersionHeader("v1.39  —  Driehoeken & kanalen: slimmere bevestiging en verval");
 
         AddFeature("📐", "Driehoek-uitbraak op de slotkoers",

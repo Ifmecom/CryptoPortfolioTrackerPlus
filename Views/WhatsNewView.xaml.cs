@@ -27,6 +27,28 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.40 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.40", "Patroon-geheugen: patronen volgen over scans heen");
+
+        AddFeature("🧠", "Patronen onthouden hun verhaal",
+            "De tool onthoudt nu een patroon van scan tot scan in plaats van het elke keer opnieuw 'vers' te " +
+            "vinden. Zo krijgt elk patroon een levenscyclus: In formatie → Voorlopig → Bevestigd, en daarna " +
+            "Uitgespeeld, Geïnvalideerd of Vervallen — telkens met een reden en tijdstip.");
+
+        AddFeature("🔄", "Zie wat er sinds je vorige scan veranderde",
+            "Elke coin-kaart toont een 'patroon-updates'-chip wanneer er overgangen waren: welk patroon werd " +
+            "bevestigd, welk patroon viel terug (valse uitbraak) of speelde zijn doel uit. Hover erover voor de " +
+            "details. De badges tonen daarnaast hoe vaak een patroon al is gezien — een confidence-signaal.");
+
+        AddFeature("🛡️", "Minder geflikker, duidelijker verval",
+            "Een patroon dat één scan even wegvalt verdwijnt niet meteen (grace-marge tegen flikkeren). En als " +
+            "het écht weg is, weet je wáárom: teruggevallen door het niveau (geïnvalideerd) of doel bereikt " +
+            "(uitgespeeld) in plaats van stilletjes verdwijnen.");
+
+        AddFeature("🔔", "Telegram-alert bij bevestiging of invalidatie",
+            "Zodra een patroon bevestigd wordt of geïnvalideerd raakt, krijg je (als Telegram aanstaat) één " +
+            "samengevat bericht per scan. Geen spam: alleen bij een echte fase-wissel.");
+
         // ── v1.39 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.39", "Driehoeken & kanalen: slimmere bevestiging en verval");
 

@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.39
+## CryptoPortfolioTracker Plus — v1.40
 
 | | |
 |---|---|
@@ -101,6 +101,7 @@ Scoped = per navigatie-sessie; Singleton = app-lifetime.
 
 // Pattern Trading (v1.19):
 services.AddSingleton<IPatternDetectionService, PatternDetectionService>(); // pure berekening, geen state
+services.AddScoped<IPatternStateStore, PatternStateStore>();                 // P7 — patroon-geheugen (EF)
 services.AddScoped<IPatternTradingService, PatternTradingService>();         // afhankelijk van PortfolioService
 
 // Setup Tracker (v1.30):
@@ -114,7 +115,8 @@ services.AddScoped<SetupTrackerView>();
 | Service | Scope | Omschrijving |
 |---------|-------|-------------|
 | `IPatternDetectionService` | Singleton | Pure berekening: Level 1 + Level 2 patroondetectie, TradabilityScore berekening. Geen I/O, geen state. |
-| `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen. |
+| `IPatternStateStore` | Scoped | P7 — patroon-geheugen: laadt/persisteert `PatternStateRecord`s, draait de pure `PatternReconciler`, verrijkt detecties met hun levenscyclus. |
+| `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen, patroon-geheugen verzoenen (sequentieel ná de scan). |
 
 ### 2.4 Database-toegang
 
@@ -698,6 +700,24 @@ hun geldigheid hebben verloren (handboek §6.2/§10.10):
 
 Getest in `PatternGeometryTests` (apex-bereikt vs apex-vóór-ons; kanaal-slotkoers buiten de wand), elk
 empirisch geverifieerd als niet-vacuous.
+
+**Patroon-geheugen / continue invalidatie *(v1.40, P7)*:** de stateless detector wordt aangevuld met een
+persistent geheugen dat een patroon over scans heen een **levenscyclus** geeft (handboek §6.3):
+- **Opslag:** `PatternStateRecord` → SQLite-tabel `PatternStates` (idempotent in `ApplyPlusSchemaAsync`;
+  gedocumenteerde migratie `AddPatternState`). Coin-identiteit gedenormaliseerd (geen FK), zoals `WatchedSetup`.
+- **Identiteit:** `PatternFingerprint` — grove sleutel `coin|timeframe|type` + ankerniveau-nabijheid (1,5%),
+  zodat een licht schuivend anker hetzelfde patroon blijft (geen bucket-randproblemen).
+- **Logica:** pure `PatternReconciler` — nieuw/match/upgrade, **grace-marge** tegen flikkeren, en terminale
+  classificatie van een verdwenen patroon: **Uitgespeeld** (koers nog voorbij niveau), **Geïnvalideerd**
+  (teruggevallen door het niveau) of **Vervallen**. Levert transities met reden + tijdstip.
+- **Integratie:** `PatternStateStore` (EF, `IPatternStateStore`) wordt **sequentieel ná** de parallelle
+  per-coin scan aangeroepen in `PatternTradingService.ReconcilePatternMemoryAsync` (de gedeelde DB-context
+  is dan vrij). Verrijkt elke `PatternResult` met `Lifecycle` / `TimesSeen` / `LifecycleReason`.
+- **UI:** confidence ("N× gezien") in badge-/overflow-tooltip en grafieklegenda; een **patroon-updates-chip**
+  per coin (overgangen sinds de vorige scan, met reden in de tooltip — `PatternCoinAnalysis.RecentPatternEvents`).
+- **Notificatie:** één samengevatte Telegram-alert (via `INotifierService.SendAlertAsync`) bij de
+  sleuteltransities **Bevestigd** en **Geïnvalideerd**; geen spam (transitie alleen bij een echte fase-wissel).
+- **Tests:** `PatternFingerprintTests` (10) + `PatternReconcilerTests` (11), beide pure.
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)
