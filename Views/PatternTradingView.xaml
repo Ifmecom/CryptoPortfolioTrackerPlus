@@ -588,6 +588,16 @@
                                                    FontSize="10" FontWeight="SemiBold"
                                                    Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
                                     </Border>
+
+                                    <!-- P7 — patroon-overgangen sinds de vorige scan (hover voor details) -->
+                                    <Border CornerRadius="4" Padding="6,2"
+                                            Background="{ThemeResource SystemControlBackgroundChromeMediumBrush}"
+                                            Visibility="{x:Bind PatternEventsVis}"
+                                            ToolTipService.ToolTip="{x:Bind PatternEventsToolTip}">
+                                        <TextBlock Text="{x:Bind PatternEventsText}"
+                                                   FontSize="10" FontWeight="SemiBold"
+                                                   Foreground="DarkGoldenrod"/>
+                                    </Border>
                                 </StackPanel>
 
                                 <!-- ── Setup detail (score >= 40) ── -->

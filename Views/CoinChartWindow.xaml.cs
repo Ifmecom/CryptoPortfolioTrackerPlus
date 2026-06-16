@@ -185,7 +185,8 @@ public sealed partial class CoinChartWindow : Window
                 "🔵 bollen onder de candle = structuurpunten (swings) · 🟠 bollen boven de candle = sleutel-/breakoutpunten · horizontale lijnen = sleutelniveaus.",
         };
 
-        LegendLabel.Text = $"Legenda — {body}";
+        // P7 — toon de levenscyclus-status + confidence (aantal scans gezien) van het getekende patroon.
+        LegendLabel.Text = $"Legenda · {p.DisplayName} [{p.StatusLabel} · {p.SeenLabel}] — {body}";
         LegendBorder.Visibility = Microsoft.UI.Xaml.Visibility.Visible;
     }
 

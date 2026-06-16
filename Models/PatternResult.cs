@@ -51,6 +51,24 @@ public class PatternResult
     /// <summary>Reden van de laatste fase-overgang (mensgericht, NL), als die er is.</summary>
     public string? LifecycleReason { get; set; }
 
+    /// <summary>Nederlandse weergave van de levenscyclus-fase voor de UI.</summary>
+    public string LifecycleLabel => LabelFor(Lifecycle);
+
+    /// <summary>Korte confidence-aanduiding op basis van het aantal scans dat het patroon is gezien.</summary>
+    public string SeenLabel => TimesSeen >= 2 ? $"{TimesSeen}× gezien" : "nieuw";
+
+    /// <summary>Nederlandse weergave van een levenscyclus-fase — bruikbaar zonder instance.</summary>
+    public static string LabelFor(PatternLifecycle lc) => lc switch
+    {
+        PatternLifecycle.Forming     => "In formatie",
+        PatternLifecycle.Tentative   => "Voorlopig",
+        PatternLifecycle.Confirmed   => "Bevestigd",
+        PatternLifecycle.PlayedOut   => "Uitgespeeld",
+        PatternLifecycle.Invalidated => "Geïnvalideerd",
+        PatternLifecycle.Expired     => "Vervallen",
+        _                            => lc.ToString(),
+    };
+
     /// <summary>Pattern clarity / strength on a 0–100 scale.</summary>
     public int Strength { get; set; }
 

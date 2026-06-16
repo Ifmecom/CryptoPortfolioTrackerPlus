@@ -97,6 +97,14 @@ public class PatternCoinRow
     /// <summary>Multi-line overzicht van de patronen áchter de "+N"-chip (voor de mouseover-tooltip).</summary>
     public string     OverflowToolTip { get; }
 
+    // ── Patroon-updates sinds de vorige scan (P7 — continue invalidatie) ──────
+    /// <summary>True wanneer er deze scan patroon-overgangen waren (bevestigd/geïnvalideerd/…).</summary>
+    public bool       HasPatternEvents     { get; }
+    public string     PatternEventsText    { get; } = string.Empty;
+    /// <summary>Multi-line opsomming van de overgangen, voor de mouseover-tooltip.</summary>
+    public string     PatternEventsToolTip { get; } = string.Empty;
+    public Visibility PatternEventsVis     => HasPatternEvents ? Visibility.Visible : Visibility.Collapsed;
+
     // ── Near-breakout indicator ─────────────────────────────────────────────
     public bool   IsNearBreakout    => Analysis.IsNearBreakout;
     public string BreakoutIndicator => IsNearBreakout ? "⚡ Bijna Breakout" : "";
@@ -179,7 +187,15 @@ public class PatternCoinRow
         OverflowToolTip = overflow.Count == 0
             ? string.Empty
             : "Overige patronen:\n" + string.Join("\n", overflow.Select(p =>
-                $"• {p.Timeframe,-3} {p.DisplayName} · sterkte {p.Strength} · {p.StatusLabel}"));
+                $"• {p.Timeframe,-3} {p.DisplayName} · sterkte {p.Strength} · {p.StatusLabel} · {p.SeenLabel}"));
+
+        // P7 — patroon-updates sinds de vorige scan (bevestigd / geïnvalideerd / uitgespeeld / vervallen).
+        var events = analysis.RecentPatternEvents ?? new List<string>();
+        HasPatternEvents     = events.Count > 0;
+        PatternEventsText    = HasPatternEvents ? $"🔄 {events.Count} patroon-update{(events.Count == 1 ? "" : "s")}" : string.Empty;
+        PatternEventsToolTip = HasPatternEvents
+            ? "Wijzigingen sinds de vorige scan:\n" + string.Join("\n", events.Select(e => $"• {e}"))
+            : string.Empty;
 
         // Setup reasoning — max 4 bullets
         ReasoningBullets = analysis.Setup?.Reasoning.Take(4).ToList()
@@ -234,7 +250,7 @@ public class PatternBadge
         Analysis  = analysis;
         Label     = pattern.DisplayName;
         Timeframe = pattern.Timeframe;
-        ToolTip   = $"[{pattern.StatusLabel}] {pattern.Description}";
+        ToolTip   = $"[{pattern.StatusLabel} · {pattern.SeenLabel}] {pattern.Description}";
         Confirmed = pattern.IsConfirmed;
         Status    = pattern.Status;
 

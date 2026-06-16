@@ -186,9 +186,20 @@ public class PatternTradingService : IPatternTradingService
 
             try
             {
-                await _patternState.ReconcileCoinAsync(
+                var transitions = await _patternState.ReconcileCoinAsync(
                     coin.ApiId, coin.Symbol ?? string.Empty,
                     r.Patterns ?? new List<PatternResult>(), coin.Price, ct);
+
+                // Toon alleen de noemenswaardige overgangen sinds de vorige scan.
+                foreach (var t in transitions)
+                {
+                    if (t.To is not (PatternLifecycle.Confirmed or PatternLifecycle.Invalidated
+                                     or PatternLifecycle.PlayedOut or PatternLifecycle.Expired))
+                        continue;
+                    r.RecentPatternEvents.Add(
+                        $"{PatternResult.NameFor(t.Record.Type)} {t.Record.Timeframe}: " +
+                        $"{PatternResult.LabelFor(t.To)} — {t.Reason}");
+                }
             }
             catch (Exception ex)
             {

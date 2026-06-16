@@ -30,6 +30,12 @@ public class PatternCoinAnalysis
     /// <summary>All detected patterns across 1D, 4H and 1H timeframes.</summary>
     public List<PatternResult> Patterns { get; set; } = new();
 
+    /// <summary>
+    /// Mensgerichte regels (NL) van patroon-overgangen sinds de vorige scan (P7): bevestigd,
+    /// geïnvalideerd, uitgespeeld of vervallen. Runtime ingevuld door de patroon-geheugen-reconciliatie.
+    /// </summary>
+    public List<string> RecentPatternEvents { get; set; } = new();
+
     /// <summary>Patterns with Strength >= 60 — shown as badges in the UI.</summary>
     public List<PatternResult> KeyPatterns => Patterns.Where(p => p.Strength >= 60).ToList();
 
