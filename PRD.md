@@ -1687,7 +1687,7 @@ Confidence:
 - **Bull/Bear Pennant *(v1.38)*:** zoals een flag maar met een **convergerende driehoek** (lagere highs + hogere lows, ≥40% range-versmalling) als consolidatie i.p.v. een parallel vak. `PatternType.BullPennant`/`BearPennant`. Pool ≥ 8%, retrace < 50%, pennant-range ≤ 10%. Tekening: pool-lijn + twee convergerende trendlijnen + breakout/breakdown + Tmax (pool-lengte vanaf de pennant).
 - Ascending / Descending / Symmetrical Triangle: bar-index regressie op swinghighs en swinglows
 - Consolidation: koersbereik < 8% over laatste 15 bars
-- Support Bounce / Resistance Rejection: koers stuitert op steun/weerstand
+- Support Bounce / Resistance Rejection *(geïmplementeerd v1.38)*: prijs stuitert op een **≥2× geteste** steun (recente tik binnen 1%, daarna 0,5–5% omhoog) resp. wordt afgewezen op een geteste weerstand; bevestiging = bullish/bearish ommekeer-candle. Tekening: niveau-lijn + bounce/afwijzings-markering. (Waren eerder enum-waarden zonder detector.)
 - Breakout / Breakdown: confirmed (0.5–4% voorbij niveau) of potentieel (−3% tot +0.5%)
 
 **Swing point detectie *(herzien v1.38)*:**

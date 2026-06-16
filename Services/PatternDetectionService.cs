@@ -69,6 +69,8 @@ public class PatternDetectionService : IPatternDetectionService
         TryAdd(results, DetectTriangle(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
         TryAdd(results, DetectConsolidation(data, timeframeLabel, currentPrice));
         TryAdd(results, DetectBreakoutBreakdown(data, swingHighs, swingLows, timeframeLabel, currentPrice));
+        TryAdd(results, DetectSupportBounce(data, swingLows, timeframeLabel, currentPrice));
+        TryAdd(results, DetectResistanceRejection(data, swingHighs, timeframeLabel, currentPrice));
         TryAdd(results, DetectAdamAndEve(data, swingLows, timeframeLabel, currentPrice));
         TryAdd(results, DetectChannel(data, swingHighs, swingLows, timeframeLabel, currentPrice, atr));
 
@@ -1149,6 +1151,95 @@ public class PatternDetectionService : IPatternDetectionService
         }
 
         return null;
+    }
+
+    // ── Support bounce (Bullish) ───────────────────────────────────────────────
+    // Prijs stuitert op een GETESTE steun (≥2× geraakt) en draait omhoog.
+    private static PatternResult? DetectSupportBounce(
+        List<OhlcvBar> bars, List<(int idx, double value)> swingLows, string tfl, double currentPrice)
+    {
+        if (swingLows.Count < 2 || !HasRecentSwing(swingLows, bars.Count)) return null;
+
+        var rl = swingLows.TakeLast(4).ToList();
+        double support = rl[^1].value;
+
+        // Getest niveau: minstens één eerdere swing-low binnen 2% (steun ≥2× geraakt).
+        if (!rl.Take(rl.Count - 1).Any(l => Math.Abs(l.value - support) / support <= 0.02)) return null;
+
+        // Prijs is van de steun afgestuiterd: 0,5–5% erboven (niet al weggelopen).
+        double above = (currentPrice - support) / support * 100;
+        if (above < 0.5 || above > 5.0) return null;
+
+        // De recente koers raakte de steun ook echt aan (binnen 1%) en herstelde.
+        var recent = bars.TakeLast(4).ToList();
+        double recentLow = recent.Min(b => b.Low);
+        if ((recentLow - support) / support > 0.01) return null;
+
+        int lowIdx = bars.Count - recent.Count;
+        for (int k = 0; k < recent.Count; k++)
+            if (recent[k].Low <= recentLow + 1e-12) { lowIdx = bars.Count - recent.Count + k; break; }
+
+        bool confirmed = bars[^1].Close > bars[^1].Open;   // bullish ommekeer-candle
+        return new PatternResult
+        {
+            Type        = PatternType.SupportBounce,
+            Category    = PatternCategory.Bullish,
+            Timeframe   = tfl,
+            IsConfirmed = confirmed,
+            Strength    = confirmed ? 65 : 58,
+            Description = $"Support bounce: prijs stuitert op de geteste steun {FormatP(support)} (+{above:F1}%). "
+                        + (confirmed ? "Bullish ommekeer-candle bevestigt." : "Wacht op een bullish candle ter bevestiging."),
+            KeyLevel    = support,
+            DistancePct = above,
+            Annotation  = new PatternAnnotation
+            {
+                Markers = new() { new PatternPoint { Time = bars[lowIdx].Date, Price = recentLow, Label = "↑", AboveBar = false } },
+                HLines  = new() { new PatternHLine  { Price = support, Color = "#26a69a", Title = "Steun" } },
+            },
+        };
+    }
+
+    // ── Resistance rejection (Bearish) ─────────────────────────────────────────
+    // Prijs wordt afgewezen op een GETESTE weerstand (≥2× geraakt) en draait omlaag.
+    private static PatternResult? DetectResistanceRejection(
+        List<OhlcvBar> bars, List<(int idx, double value)> swingHighs, string tfl, double currentPrice)
+    {
+        if (swingHighs.Count < 2 || !HasRecentSwing(swingHighs, bars.Count)) return null;
+
+        var rh = swingHighs.TakeLast(4).ToList();
+        double resistance = rh[^1].value;
+
+        if (!rh.Take(rh.Count - 1).Any(h => Math.Abs(h.value - resistance) / resistance <= 0.02)) return null;
+
+        double below = (resistance - currentPrice) / resistance * 100;
+        if (below < 0.5 || below > 5.0) return null;
+
+        var recent = bars.TakeLast(4).ToList();
+        double recentHigh = recent.Max(b => b.High);
+        if ((resistance - recentHigh) / resistance > 0.01) return null;
+
+        int highIdx = bars.Count - recent.Count;
+        for (int k = 0; k < recent.Count; k++)
+            if (recent[k].High >= recentHigh - 1e-12) { highIdx = bars.Count - recent.Count + k; break; }
+
+        bool confirmed = bars[^1].Close < bars[^1].Open;   // bearish ommekeer-candle
+        return new PatternResult
+        {
+            Type        = PatternType.ResistanceRejection,
+            Category    = PatternCategory.Bearish,
+            Timeframe   = tfl,
+            IsConfirmed = confirmed,
+            Strength    = confirmed ? 65 : 58,
+            Description = $"Resistance rejection: prijs afgewezen op de geteste weerstand {FormatP(resistance)} (-{below:F1}%). "
+                        + (confirmed ? "Bearish ommekeer-candle bevestigt." : "Wacht op een bearish candle ter bevestiging."),
+            KeyLevel    = resistance,
+            DistancePct = below,
+            Annotation  = new PatternAnnotation
+            {
+                Markers = new() { new PatternPoint { Time = bars[highIdx].Date, Price = recentHigh, Label = "↓", AboveBar = true } },
+                HLines  = new() { new PatternHLine  { Price = resistance, Color = "#ef5350", Title = "Weerstand" } },
+            },
+        };
     }
 
     // =========================================================================

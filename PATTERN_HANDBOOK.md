@@ -666,6 +666,24 @@ i.p.v. een parallel vlag-vak.
 
 ---
 
+### 10.15 Support Bounce (Bullish) *(geïmplementeerd v1.38)*
+
+| Criterium | Waarde |
+|-----------|--------|
+| Getest niveau | Steun ≥ **2×** geraakt: laatste swing-low + ≥1 eerdere swing-low binnen **2%** |
+| Recente tik | De laatste 4 bars raakten de steun (low binnen **1%** boven de steun) |
+| Ommekeer | Prijs **0,5–5%** boven de steun (afgestuiterd, niet weggelopen) |
+| Bevestiging | Laatste candle bullish (`Close > Open`) |
+| Tekening | Horizontale "Steun"-lijn + ↑-markering op het bounce-punt |
+| Strength | 65 (bevestigd) / 58 (onbevestigd) |
+
+### 10.16 Resistance Rejection (Bearish) *(geïmplementeerd v1.38)*
+
+Spiegelbeeld: geteste weerstand (≥2×), recente tik binnen 1% onder de weerstand, prijs 0,5–5% eronder,
+bevestiging = bearish candle. Tekening: "Weerstand"-lijn + ↓-markering. Strength 65/58.
+
+---
+
 ## 11. Level 3 — Klassieke grafiekpatronen
 
 Vereisen minimaal **50 bars**.

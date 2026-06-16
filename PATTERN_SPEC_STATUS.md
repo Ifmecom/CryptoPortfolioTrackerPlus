@@ -105,11 +105,14 @@ De Double-Bottom-diepte (§10.4) was al correct in het handboek — de code is d
 
 ---
 
-**Fase A + B geïmplementeerd.** P1–P4 zijn gedaan; de "Bevestiging"-kolommen in §2 (die ⚠️ "via live
-koers" tonen) zijn daarmee achterhaald — bevestiging loopt nu centraal via het drie-staten-model.
-Resteert nog: P5 (driehoek/kanaal bevestiging/invalidatie verfijnen), P6 (sym-driehoek apex),
-P7 (continue invalidatie met geheugen), en de open detail-items (breakout/breakdown staleness,
-Support Bounce/Resistance Rejection-review).
+**Fase A + B geïmplementeerd.** P1–P4 gedaan; bevestiging loopt centraal via het drie-staten-model.
+Daarna ook gedaan: definitie-fixes (dominante pieken dubbele top/bodem + H&S), Tmax overal (flags, C&H,
+reversals), Bull/Bear Pennant, en **Support Bounce / Resistance Rejection** (waren dode enum-waarden,
+nu echt geïmplementeerd met geteste-niveau + ommekeer). **Breakout/breakdown-staleness** bleek
+redundant — de 0,5–4%-band sluit stale (>4%) al uit.
+
+Resteert nog: **P5** (driehoek/kanaal bevestiging/invalidatie verder verfijnen — bevestiging loopt al via
+het drie-staten-model), **P6** (sym-driehoek apex-verval), **P7** (continue invalidatie met geheugen).
 
 ---
 

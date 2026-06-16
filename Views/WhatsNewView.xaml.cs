@@ -60,6 +60,12 @@ public sealed partial class WhatsNewView : Page
             "koersdoel — de pool-lengte geprojecteerd vanaf de top van de vlag (bull) resp. de bodem (bear). " +
             "Staat als 'Tmax'-lijn op de grafiek en in de patroonbeschrijving.");
 
+        AddFeature("📊", "Nieuw: Support Bounce & Resistance Rejection",
+            "Twee patronen die wel in de lijst stonden maar nooit werden herkend, zijn nu echt geïmplementeerd: " +
+            "een Support Bounce (prijs stuitert op een minstens twee keer geteste steun en draait omhoog) en een " +
+            "Resistance Rejection (afwijzing op een geteste weerstand, draait omlaag). Met het geteste niveau als " +
+            "lijn en een markering op het bounce-/afwijzingspunt.");
+
         AddFeature("🚩", "Nieuw patroon: Bull/Bear Pennant",
             "Naast de flags herkent de tool nu ook pennants: een scherpe pool gevolgd door een kleine " +
             "convergerende driehoek (i.p.v. een parallel vlag-vak). Met pool-lijn, de twee convergerende " +

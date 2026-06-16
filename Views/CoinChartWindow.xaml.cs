@@ -177,6 +177,10 @@ public sealed partial class CoinChartWindow : Window
                 "Twee convergerende trendlijnen — rood = weerstand (bovenlijn), groen = steun (onderlijn). Uitbraak bepaalt de richting.",
             PatternType.RisingWedge or PatternType.FallingWedge =>
                 "Twee samenlopende trendlijnen vormen de wig — rood = bearish, groen = bullish.",
+            PatternType.SupportBounce =>
+                "🔵 ↑ = bounce-punt · groene lijn = geteste steun (≥2× geraakt). Prijs draait omhoog van de steun.",
+            PatternType.ResistanceRejection =>
+                "🟠 ↓ = afwijzingspunt · rode lijn = geteste weerstand (≥2× geraakt). Prijs draait omlaag van de weerstand.",
             _ =>
                 "🔵 bollen onder de candle = structuurpunten (swings) · 🟠 bollen boven de candle = sleutel-/breakoutpunten · horizontale lijnen = sleutelniveaus.",
         };
