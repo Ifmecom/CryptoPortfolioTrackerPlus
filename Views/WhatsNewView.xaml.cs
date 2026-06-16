@@ -27,6 +27,20 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.41 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.41", "Geen trade-setups meer op stabiele coins");
+
+        AddFeature("🚫", "Geen setup op stille of stablecoins",
+            "Pattern Trading én Trade Advies tonen geen trade-setup meer op coins zonder edge: stablecoins " +
+            "(USDT, USDC, DAI…) en (bijna) vlakke coins met een ATR onder ~1,5% van de koers. In plaats van " +
+            "een setup zie je de reden ('te lage volatiliteit' of 'stablecoin'). Een trade wordt nu eerlijk " +
+            "alleen voorgesteld als er daadwerkelijk beweging in zit.");
+
+        AddFeature("🩹", "Verzonnen volatiliteit verwijderd",
+            "Voorheen verzon de tool een ATR van 2,5–3% als een coin geen meetbare volatiliteit had — daardoor " +
+            "verscheen er een keurige maar betekenisloze setup op een coin die niet beweegt. Die kunstgreep is " +
+            "weg; de setup-niveaus worden nu uitsluitend op de échte volatiliteit gebaseerd.");
+
         // ── v1.40 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.40", "Patroon-geheugen: patronen volgen over scans heen");
 

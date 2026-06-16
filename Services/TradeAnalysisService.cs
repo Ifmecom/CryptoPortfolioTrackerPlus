@@ -142,9 +142,11 @@ public class TradeAnalysisService : ITradeAnalysisService
         (result.ResistanceLevels, result.SupportLevels) = FindKeyLevels(levelsSource, coin.Price);
 
         // ── Trade setup ───────────────────────────────────────────────────
+        // Echte volatiliteit (daily, of 6×4H). GEEN synthetische fallback meer — bij ontbrekende
+        // volatiliteit blijft atr 0 en wijst de setup-poort het af (stille/stablecoin → geen setup).
         double atr = result.Daily.Atr > 0 ? result.Daily.Atr
                    : result.FourHour.Atr > 0 ? result.FourHour.Atr * 6   // 6×4H ≈ 1 day
-                   : coin.Price * 0.03;                                    // 3% fallback
+                   : 0;
 
         result.Setup = BuildTradeSetup(coin, result, atr);
 
@@ -423,6 +425,16 @@ public class TradeAnalysisService : ITradeAnalysisService
         var setup = new TradeSetupAdvice();
         double score = res.CombinedScore;   // live score (zelfde engine als Pattern Trading)
         double price = coin.Price;
+
+        // Volatiliteits-/stablecoin-poort: geen setup op stille of fiat-gekoppelde coins.
+        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr);
+        if (!gateOk)
+        {
+            setup.Direction  = "Geen signaal";
+            setup.Confidence = "–";
+            setup.Reasoning.Add(gateReason!);
+            return setup;
+        }
 
         // Direction from combined score
         if (score >= 60)

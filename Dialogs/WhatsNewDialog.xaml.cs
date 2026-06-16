@@ -28,6 +28,15 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.41  —  Geen trade-setups meer op stabiele coins");
+
+        AddFeature("🚫", "Geen setup op stille of stablecoins",
+            "Stablecoins en (bijna) vlakke coins (ATR < ~1,5% van de koers) krijgen geen trade-setup meer — " +
+            "je ziet de reden in plaats van verzonnen niveaus. Geldt voor Pattern Trading én Trade Advies.");
+
+        AddFeature("🩹", "Verzonnen volatiliteit verwijderd",
+            "De oude 2,5–3% ATR-fallback op coins zonder beweging is weg; setups gebruiken nu alleen de échte volatiliteit.");
+
         AddVersionHeader("v1.40  —  Patroon-geheugen: patronen volgen over scans heen");
 
         AddFeature("🧠", "Patronen onthouden hun verhaal",

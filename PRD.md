@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.40
+## CryptoPortfolioTracker Plus — v1.41
 
 | | |
 |---|---|
@@ -718,6 +718,16 @@ persistent geheugen dat een patroon over scans heen een **levenscyclus** geeft (
 - **Notificatie:** één samengevatte Telegram-alert (via `INotifierService.SendAlertAsync`) bij de
   sleuteltransities **Bevestigd** en **Geïnvalideerd**; geen spam (transitie alleen bij een echte fase-wissel).
 - **Tests:** `PatternFingerprintTests` (10) + `PatternReconcilerTests` (11), beide pure.
+
+**Setup-poort: geen setups op stabiele coins *(v1.41)*:** `TradeSetupGate` (pure) bepaalt vóór het bouwen
+van een setup of de coin überhaupt een edge heeft. Geweigerd worden (1) **stablecoins** (symbool-match:
+USDT/USDC/DAI/…) en (2) coins met **ATR < 1,5% van de koers** (`MinAtrPctForSetup`). De vroegere
+synthetische ATR-fallback (`prijs × 2,5%` in Pattern Trading, `× 3%` in Trade Advies) is **verwijderd** —
+zonder echte volatiliteit blijft `atr = 0` en weigert de poort de setup met een reden ("Geen signaal —
+te lage volatiliteit / stablecoin"). Toegepast in `PatternTradingService.BuildSetupAdvice` én
+`TradeAnalysisService.BuildTradeSetup`. `PatternCoinRow.HasSetup` vereist nu bovendien een echt
+richtingssignaal (Long/Short), zodat een geweigerde setup geen niveaus op $0 toont. Getest in
+`TradeSetupGateTests` (10).
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

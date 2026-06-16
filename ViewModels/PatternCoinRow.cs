@@ -110,7 +110,10 @@ public class PatternCoinRow
     public string BreakoutIndicator => IsNearBreakout ? "⚡ Bijna Breakout" : "";
 
     // ── Setup ───────────────────────────────────────────────────────────────
-    public bool HasSetup => Analysis.Setup is not null && Analysis.TradabilityScore >= 40;
+    // Toon het setup-blok alleen bij een echt richtingssignaal. Een "Geen signaal"-setup
+    // (bv. door de volatiliteits-/stablecoin-poort) toont dus géén niveaus op $0.
+    public bool HasSetup => Analysis.Setup is not null && Analysis.TradabilityScore >= 40
+                            && (Analysis.Setup.Direction == "Long" || Analysis.Setup.Direction == "Short");
 
     public string EntryDisplay   => HasSetup ? FormatPrice(Analysis.Setup!.EntryPrice)  : "–";
     public string StopDisplay    => HasSetup ? FormatPrice(Analysis.Setup!.StopLoss)     : "–";

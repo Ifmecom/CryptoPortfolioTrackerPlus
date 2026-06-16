@@ -330,9 +330,11 @@ public class PatternTradingService : IPatternTradingService
                 _detector.CalculateTradabilityScore(patterns, tfDaily, tfH4);
 
             // ── 6. Trade setup advice ────────────────────────────────────────
+            // Echte volatiliteit (daily, of 4H×6 als daily ontbreekt). GEEN synthetische fallback
+            // meer — bij ontbrekende volatiliteit blijft atr 0 en wijst de setup-poort het af.
             double atr = tfDaily.Atr > 0 ? tfDaily.Atr
                        : tfH4.Atr   > 0 ? tfH4.Atr * 6
-                       : coin.Price * 0.025;
+                       : 0;
 
             result.Setup = BuildSetupAdvice(coin, result, tfDaily, atr);
 
@@ -577,6 +579,16 @@ public class PatternTradingService : IPatternTradingService
         var setup = new TradeSetupAdvice();
         double price = coin.Price;
         string dir   = res.PrimaryDirection;
+
+        // Volatiliteits-/stablecoin-poort: geen setup op stille of fiat-gekoppelde coins.
+        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr);
+        if (!gateOk)
+        {
+            setup.Direction  = "Geen signaal";
+            setup.Confidence = "–";
+            setup.Reasoning.Add(gateReason!);
+            return setup;
+        }
 
         if (dir == "Neutraal" || res.TradabilityScore < 40)
         {
