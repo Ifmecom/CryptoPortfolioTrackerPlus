@@ -36,6 +36,21 @@ public class PatternResult
         _                       => "In formatie",
     };
 
+    // ── Patroon-geheugen over scans heen (P7) — runtime verrijkt door PatternStateStore ──
+
+    /// <summary>
+    /// Levenscyclus-fase uit het persistente patroon-geheugen. Voor een patroon dat nú gedetecteerd
+    /// wordt komt dit overeen met <see cref="Status"/>; de terminale fases gelden voor verdwenen
+    /// patronen (zie <see cref="Services.PatternReconciler"/>).
+    /// </summary>
+    public PatternLifecycle Lifecycle { get; set; } = PatternLifecycle.Forming;
+
+    /// <summary>Aantal opeenvolgende scans waarin dit patroon al is gezien (1 = nieuw). Confidence-signaal.</summary>
+    public int TimesSeen { get; set; } = 1;
+
+    /// <summary>Reden van de laatste fase-overgang (mensgericht, NL), als die er is.</summary>
+    public string? LifecycleReason { get; set; }
+
     /// <summary>Pattern clarity / strength on a 0–100 scale.</summary>
     public int Strength { get; set; }
 

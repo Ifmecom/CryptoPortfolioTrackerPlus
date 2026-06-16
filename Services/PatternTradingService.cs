@@ -33,6 +33,7 @@ public class PatternTradingService : IPatternTradingService
     private readonly IKuCoinDataService      _kuCoin;
     private readonly IGateIoDataService      _gateIo;
     private readonly IMexcDataService        _mexc;
+    private readonly IPatternStateStore?     _patternState;
 
     // Max simultaneous OHLCV fetches to respect exchange rate-limits
     private static readonly SemaphoreSlim _sem = new(3, 3);
@@ -44,7 +45,8 @@ public class PatternTradingService : IPatternTradingService
         IBinanceDataService     binance,
         IKuCoinDataService      kuCoin,
         IGateIoDataService      gateIo,
-        IMexcDataService        mexc)
+        IMexcDataService        mexc,
+        IPatternStateStore?     patternState = null)
     {
         _portfolio = portfolio;
         _detector  = detector;
@@ -53,6 +55,7 @@ public class PatternTradingService : IPatternTradingService
         _kuCoin    = kuCoin;
         _gateIo    = gateIo;
         _mexc      = mexc;
+        _patternState = patternState;
     }
 
     // =========================================================================
@@ -152,11 +155,46 @@ public class PatternTradingService : IPatternTradingService
         var allTasks = holdingTasks.Concat(watchlistTasks);
         var results  = await Task.WhenAll(allTasks);
 
+        // ── P7: patroon-geheugen bijwerken ───────────────────────────────────
+        // Sequentieel ná de parallelle analyse — de gedeelde DB-context is dan vrij.
+        await ReconcilePatternMemoryAsync(results, ct);
+
         // Sort: highest score first, then isNearBreakout
         return results
             .OrderByDescending(r => r.TradabilityScore)
             .ThenByDescending(r => r.IsNearBreakout)
             .ToList();
+    }
+
+    /// <summary>
+    /// Verzoent het persistente patroon-geheugen (P7) voor alle gescande coins en verrijkt elke
+    /// <see cref="PatternResult"/> met zijn levenscyclus. Wordt sequentieel aangeroepen: de
+    /// parallelle per-coin analyse is op dit punt afgerond, dus de gedeelde context is veilig.
+    /// Coins zónder huidige patronen worden ook verzoend, zodat eerder gedetecteerde patronen die nu
+    /// verdwenen zijn correct naar Invalidated/Expired overgaan.
+    /// </summary>
+    private async Task ReconcilePatternMemoryAsync(
+        IEnumerable<PatternCoinAnalysis> results, CancellationToken ct)
+    {
+        if (_patternState is null) return;
+
+        foreach (var r in results)
+        {
+            if (ct.IsCancellationRequested) break;
+            var coin = r.Coin;
+            if (coin is null || string.IsNullOrWhiteSpace(coin.ApiId)) continue;
+
+            try
+            {
+                await _patternState.ReconcileCoinAsync(
+                    coin.ApiId, coin.Symbol ?? string.Empty,
+                    r.Patterns ?? new List<PatternResult>(), coin.Price, ct);
+            }
+            catch (Exception ex)
+            {
+                Logger.Warning(ex, "PatternTrading: patroon-geheugen mislukt voor {Coin}", coin.ApiId);
+            }
+        }
     }
 
     public async Task<PatternCoinAnalysis> AnalyzeCoinAsync(Coin coin)
