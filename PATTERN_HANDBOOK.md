@@ -246,15 +246,21 @@ Een patroon wordt **onmiddellijk** invalide als:
 |---------|-----------------|
 | Rising Wedge | Prijs breekt boven bovenlijn (bullish breakout) |
 | Falling Wedge | Prijs breekt onder onderlijn (bearish breakdown) |
-| Ascending Triangle | Prijs sluit onder steunlijn (loss of higher low structure) |
-| Descending Triangle | Prijs breekt boven dalende weerstandslijn |
-| Symmetrische Driehoek | Prijs breekt met >2% buiten apex vóór breakout richting |
+| Ascending Triangle | **Slotkoers >1% onder de stijgende steunlijn** (verlies van de higher-low-structuur) — *code v1.39* |
+| Descending Triangle | **Slotkoers >1% boven de dalende weerstandslijn** — *code v1.39* |
+| Symmetrische Driehoek | **Koers bereikt de apex (convergentiepunt) zonder breakout → structuurverval** — *code v1.39* |
+| Ascending/Descending Channel | **Slotkoers >1% buiten de boven- of onderwand** (de kanaalstructuur is verbroken) — *code v1.39* |
 | Bull Flag | Prijs zakt >50% retrace in de pool |
 | Bear Flag | Prijs stijgt >50% retrace in de pool |
 | H&S | Prijs stijgt boven het hoofd |
 | Double Top | Prijs stijgt >2% boven beide toppen |
 | Double Bottom | Prijs zakt >2% onder beide bodems |
 | Cup & Handle | Prijs zakt onder de cup-bodem |
+
+> **Apex-berekening (v1.39).** Het convergentiepunt van de twee regressie-trendlijnen ligt op bar-index
+> `apexX = (lowInt − highInt) / (highSlope − lowSlope)`. Zodra de laatste bar die index bereikt of
+> passeert (`lastIdx ≥ apexX`, met de apex vóór ons), is de driehoek volledig samengeknepen zonder
+> uitbraak en vervalt het patroon. Dit geldt voor de oplopende, dalende én symmetrische driehoek.
 
 ---
 
@@ -617,9 +623,9 @@ i.p.v. een parallel vlag-vak.
 | Swing highs | Minimaal 3, slope negatief |
 | Swing lows | Minimaal 3, slope positief |
 | Min. aanrakingen | 2 per trendlijn |
-| Apex | Breakout uiterlijk vóór de laatste **15%** van het apex-punt |
+| Apex | Breakout uiterlijk vóór de laatste **15%** van het apex-punt (ideaal); *code v1.39 verwerpt bij het volledige convergentiepunt `lastIdx ≥ apexX`) |
 | **Bevestiging** | Directional close buiten de structuur met ≥ 1.0% + volume |
-| **Invalidatie** | Prijs bereikt apex zonder breakout (structuurverval) |
+| **Invalidatie** | Prijs bereikt apex zonder breakout (structuurverval) — *code v1.39, zie §6.2* |
 | Strength | 60 (richting onbekend) |
 
 ---

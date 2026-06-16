@@ -27,6 +27,26 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.39 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.39", "Driehoeken & kanalen: slimmere bevestiging en verval");
+
+        AddFeature("📐", "Driehoek-uitbraak op de slotkoers i.p.v. afstand",
+            "Een oplopende of dalende driehoek wordt nu pas 'bevestigd' wanneer de koers daadwerkelijk met " +
+            "≥1% buiten de structuur sluit (slotkoers-breakout), niet langer alleen omdat de prijs dicht bij de " +
+            "weerstand staat. Dit loopt via hetzelfde drie-staten-model (In formatie → Voorlopig → Bevestigd) " +
+            "als de overige patronen.");
+
+        AddFeature("🛑", "Driehoek & kanaal vervallen bij een doorbraak",
+            "Patronen die hun geldigheid verliezen verdwijnen nu: een oplopende driehoek vervalt als de koers " +
+            ">1% onder de stijgende steunlijn sluit, een dalende driehoek als hij >1% boven de dalende weerstand " +
+            "sluit, en een kanaal zodra de slotkoers >1% buiten de boven- of onderwand sluit. Zo blijven er geen " +
+            "'gebroken' driehoeken en kanalen op de grafiek staan.");
+
+        AddFeature("🔺", "Symmetrische driehoek: verval bij de apex",
+            "Een symmetrische driehoek knijpt samen naar een convergentiepunt (de apex). Komt de koers bij de " +
+            "apex aan zonder uit te breken, dan is de spanning eruit en vervalt het patroon automatisch — precies " +
+            "zoals een ervaren analist hem niet meer zou verhandelen. De uitbraak hoort vóór de apex te komen.");
+
         // ── v1.38 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.38", "Betere patroonherkenning · gefitte trendlijnen");
 

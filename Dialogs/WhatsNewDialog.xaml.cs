@@ -28,6 +28,19 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.39  —  Driehoeken & kanalen: slimmere bevestiging en verval");
+
+        AddFeature("📐", "Driehoek-uitbraak op de slotkoers",
+            "Oplopende/dalende driehoeken bevestigen nu op een echte slotkoers-breakout (≥1%), niet meer op de " +
+            "afstand tot de weerstand.");
+
+        AddFeature("🛑", "Gebroken driehoeken & kanalen vervallen",
+            "Een driehoek vervalt bij een slotkoers >1% door de steun-/weerstandslijn; een kanaal bij een " +
+            "slotkoers >1% buiten een wand. Geen 'gebroken' patronen meer op de grafiek.");
+
+        AddFeature("🔺", "Symmetrische driehoek: verval bij de apex",
+            "Bereikt de koers het convergentiepunt (apex) zonder uitbraak, dan vervalt het patroon automatisch.");
+
         AddVersionHeader("v1.38  —  Betere patroonherkenning · gefitte trendlijnen");
 
         AddFeature("📐", "Trendlijnen die op de koers passen",

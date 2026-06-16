@@ -992,6 +992,20 @@ public class PatternDetectionService : IPatternDetectionService
         double highAtEnd   = highInt + highSlope * winEnd;
         double lowAtStart  = lowInt  + lowSlope  * winStart;
         double lowAtEnd    = lowInt  + lowSlope  * winEnd;
+
+        int    lastIdx   = bars.Count - 1;
+        double lastClose = bars[lastIdx].Close;
+
+        // P6 — Apex (convergentiepunt, handboek §10.10/§4.2). De twee trendlijnen kruisen op bar-index
+        // apexX = (lowInt − highInt) / (highSlope − lowSlope). Bereikt de koers de apex zonder breakout,
+        // dan is de driehoek volledig samengeknepen en vervalt het patroon (structuurverval).
+        double denom = highSlope - lowSlope;
+        if (Math.Abs(denom) > 1e-9)
+        {
+            double apexX = (lowInt - highInt) / denom;
+            if (apexX > winEnd && lastIdx >= apexX) return null;   // prijs heeft de apex bereikt → vervallen
+        }
+
         var trendlines = new List<PatternTrendline>
         {
             new() { StartTime = bars[winStart].Date, StartPrice = highAtStart, EndTime = bars[winEnd].Date, EndPrice = highAtEnd, Color = "#ef5350" },
@@ -1003,13 +1017,17 @@ public class PatternDetectionService : IPatternDetectionService
         {
             double resistance = (highAtStart + highAtEnd) / 2.0;
             if (IsPatternStale(currentPrice, resistance, PatternCategory.Bullish)) return null;
+            // P5 — Invalidatie: een slotkoers >1% onder de stijgende steunlijn breekt de structuur.
+            if (lastClose < (lowInt + lowSlope * lastIdx) * 0.99) return null;
             double distPct = (resistance - currentPrice) / currentPrice * 100;
             return new PatternResult
             {
                 Type        = PatternType.AscendingTriangle,
                 Category    = PatternCategory.Bullish,
                 Timeframe   = tfl,
-                IsConfirmed = distPct < 3,
+                // P5 — Bevestiging loopt centraal via ApplyStatus op een slotkoers-breakout (≥1% boven
+                // de weerstand). Lokaal niet "bevestigd" claimen op basis van afstand.
+                IsConfirmed = false,
                 Strength    = 68,
                 Description = $"Oplopende driehoek: vlakke weerstand rond {FormatP(resistance)} + stijgende bodems. "
                             + $"Breakout boven {FormatP(resistance)} geeft statistisch een sterk bullish signaal.",
@@ -1024,13 +1042,17 @@ public class PatternDetectionService : IPatternDetectionService
         {
             double support = (lowAtStart + lowAtEnd) / 2.0;
             if (IsPatternStale(currentPrice, support, PatternCategory.Bearish)) return null;
+            // P5 — Invalidatie: een slotkoers >1% boven de dalende weerstandslijn breekt de structuur.
+            if (lastClose > (highInt + highSlope * lastIdx) * 1.01) return null;
             double distPct = (currentPrice - support) / currentPrice * 100;
             return new PatternResult
             {
                 Type        = PatternType.DescendingTriangle,
                 Category    = PatternCategory.Bearish,
                 Timeframe   = tfl,
-                IsConfirmed = distPct < 3,
+                // P5 — Bevestiging loopt centraal via ApplyStatus op een slotkoers-breakout (≥1% onder
+                // de steun). Lokaal niet "bevestigd" claimen op basis van afstand.
+                IsConfirmed = false,
                 Strength    = 68,
                 Description = $"Dalende driehoek: vlakke steun rond {FormatP(support)} + dalende toppen. "
                             + $"Breakdown onder {FormatP(support)} bevestigt bearish continuatie.",
@@ -1049,7 +1071,8 @@ public class PatternDetectionService : IPatternDetectionService
                 Timeframe   = tfl,
                 IsConfirmed = false,
                 Strength    = 60,
-                Description = "Symmetrische driehoek: convergende highs en lows. Richting nog onbepaald — wacht op een directional breakout met volume voor een handelssignaal.",
+                Description = "Symmetrische driehoek: convergende highs en lows. Richting nog onbepaald — wacht op een directional breakout met volume voor een handelssignaal. "
+                            + "De breakout hoort vóór de apex (convergentiepunt) te komen; bereikt de koers de apex zonder uitbraak, dan vervalt het patroon.",
                 Annotation  = new PatternAnnotation { Trendlines = trendlines },
             };
 
@@ -1894,6 +1917,15 @@ public class PatternDetectionService : IPatternDetectionService
         double keyWall = ascending ? channelLow : channelHigh;
         if (IsPatternStale(currentPrice, keyWall,
                 ascending ? PatternCategory.Bullish : PatternCategory.Bearish)) return null;
+
+        // P5 — Invalidatie (handboek §6.2/§10.7): een kanaal is gebroken zodra de SLOTKOERS >1% buiten
+        // een wand sluit. Project de wanden naar de laatste bar en toets de slotkoers; bij een doorbraak
+        // buiten boven- of onderwand vervalt het kanaal (de structuur is dan verbroken).
+        int    lastIdx     = bars.Count - 1;
+        double lastClose   = bars[lastIdx].Close;
+        double upperAtLast = highInt + highSlope * lastIdx;
+        double lowerAtLast = lowInt  + lowSlope  * lastIdx;
+        if (lastClose > upperAtLast * 1.01 || lastClose < lowerAtLast * 0.99) return null;
 
         // Fitted trendlines for drawing (both share the window start/end bars).
         var trendlines = new List<PatternTrendline>

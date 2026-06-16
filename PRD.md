@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.38
+## CryptoPortfolioTracker Plus — v1.39
 
 | | |
 |---|---|
@@ -682,6 +682,22 @@ tussendoelen **T1/T2**; het maximale (measured-move) doel **Tmax**. Flags hebben
 **Reversal-doelen *(v1.38)*:** dubbele top/bodem en (Inv.) H&S tekenen nu een **Tmax**-lijn = patroonhoogte
 vanaf de neklijn geprojecteerd (top/H&S omlaag: `neklijn − (top/hoofd − neklijn)`; bodem/Inv. H&S omhoog:
 `neklijn + (neklijn − bodem/hoofd)`).
+
+**Driehoek/kanaal-invalidatie + apex *(v1.39)*:** de driehoek- en kanaaldetectie verwerpt nu patronen die
+hun geldigheid hebben verloren (handboek §6.2/§10.10):
+- **Oplopende driehoek** vervalt bij een **slotkoers >1% onder de stijgende steunlijn** (verlies van de
+  higher-low-structuur); **dalende driehoek** bij een **slotkoers >1% boven de dalende weerstandslijn**.
+  De bevestiging van beide loopt al volledig via het drie-staten-model op een slotkoers-breakout (≥1%) —
+  de oude `distPct<3`-claim (afstand tot weerstand) is verwijderd (`IsConfirmed=false` lokaal).
+- **Symmetrische driehoek (apex):** het convergentiepunt van de twee regressie-trendlijnen ligt op
+  bar-index `apexX = (lowInt − highInt) / (highSlope − lowSlope)`. Bereikt de laatste bar de apex
+  (`lastIdx ≥ apexX`, met de apex vóór ons) zonder breakout, dan is de driehoek volledig samengeknepen en
+  vervalt het patroon (geldt ook voor de oplopende/dalende driehoek).
+- **Op-/aflopend kanaal:** vervalt bij een **slotkoers >1% buiten de boven- of onderwand** (de
+  kanaalstructuur is verbroken). De wanden worden naar de laatste bar geprojecteerd en getoetst.
+
+Getest in `PatternGeometryTests` (apex-bereikt vs apex-vóór-ons; kanaal-slotkoers buiten de wand), elk
+empirisch geverifieerd als niet-vacuous.
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

@@ -49,9 +49,9 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 | **Double Top** | ✅ | ⚠️ live-koers | ⚠️ idem | Bevestiging op slotkoers |
 | **Bull Flag** | ✅ v1.38 (wicks, pool-richting, consolidatie-slope) | ⚠️ `IsConfirmed=false` standaard; geen slotkoers-breakouttoets | ⚠️ retrace<50% bij detectie, geen live-tracking | Geen breakout-bevestiging + geen staleness |
 | **Bear Flag** | ✅ v1.38 | ⚠️ idem | ⚠️ idem | idem |
-| **Ascending Triangle** | ✅ v1.38 (regressie + R²) | ⚠️ `distPct<3` (afstand tot weerstand) i.p.v. slotkoers-breakout | ❌ geen "sluit onder steunlijn"-check | Bevestiging + invalidatie niet conform §5/§6 |
-| **Descending Triangle** | ✅ v1.38 | ⚠️ idem | ❌ idem | idem |
-| **Symmetrical Triangle** | ✅ v1.38 | ❌ `IsConfirmed=false`; geen directional-breakout-check | ❌ geen apex-vervaltoets (§10.10) | Apex + breakout ontbreken |
+| **Ascending Triangle** | ✅ v1.38 (regressie + R²) | ✅ slotkoers-breakout ≥1% via drie-staten-model (P5) | ✅ slotkoers >1% onder de stijgende steunlijn → verworpen (P5) | — |
+| **Descending Triangle** | ✅ v1.38 | ✅ slotkoers-breakdown ≥1% (P5) | ✅ slotkoers >1% boven de dalende weerstandslijn → verworpen (P5) | — |
+| **Symmetrical Triangle** | ✅ v1.38 | ✅ apex-verval i.p.v. valse bevestiging (P6) | ✅ apex-vervaltoets (§10.10): koers bereikt convergentiepunt → verworpen (P6) | — |
 | **Consolidation** | ✅ (range ≤8% / 15 bars) | n.v.t. | n.v.t. | Handboek noemt 7% + ondergrens 1,5%; code 8% zonder ondergrens |
 | **Breakout/Breakdown** | ✅ (0,5–5% voorbij niveau) | ⚠️ zones kloppen, maar geen volume | ❌ geen staleness-hergebruik van `IsPatternStale` | Volume + staleness |
 | **Uptrend/Downtrend** | ✅ (HH+HL / LH+LL) | n.v.t. | ⚠️ alleen bij her-scan | — |
@@ -67,7 +67,7 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 | **Falling Wedge** | ✅ v1.38 | ⚠️ live-koers | ❌ idem | idem |
 | **Cup & Handle** | ✅ (diepte 10–40%, rim 6%, handle 45%) | ⚠️ live-koers | ⚠️ geen "onder cup-bodem"-tracking | F7 + ATR + staleness |
 | **Adam & Eve** | ✅ na v1.38-fix (zelfde opleving-bug als Double Bottom) | ⚠️ live-koers | ⚠️ | F7 |
-| **Ascending/Descending Channel** | ✅ v1.38 (regressie + R² + parallel + breedte) | ⚠️ "prijs nadert wand" i.p.v. wand-sluiting | ❌ geen "sluit buiten wand ≥1%"-check | Bevestiging + invalidatie |
+| **Ascending/Descending Channel** | ✅ v1.38 (regressie + R² + parallel + breedte) | ⚠️ "prijs nadert wand" i.p.v. wand-sluiting | ✅ slotkoers >1% buiten boven-/onderwand → verworpen (P5) | — |
 
 ### Level 1 — indicator (geen bars)
 
@@ -90,11 +90,17 @@ driehoek, wedge, H&S, Inv. H&S, bull/bear-flag en cup&handle. Resteert: breakout
 
 **P4 — Aanrakingsvalidatie: R² én ≥2 binnen 1% (§3.1, F10).** ✅ **Gedaan (Fase A)** via `CountTouches`.
 
-**P5 — Bevestiging/invalidatie voor driehoeken & kanalen (§5/§6).** Driehoek-bevestiging op een
-slotkoers-breakout (≥1%) i.p.v. alleen afstand; kanaal-invalidatie op een sluiting buiten de wand (≥1%).
+**P5 — Bevestiging/invalidatie voor driehoeken & kanalen (§5/§6).** ✅ **Gedaan.** Driehoek-bevestiging
+loopt op een slotkoers-breakout (≥1%) via het drie-staten-model (de oude `distPct<3`-claim is verwijderd:
+`IsConfirmed=false` lokaal, `ApplyStatus` bepaalt Bevestigd op de slotkoers). Driehoek-invalidatie: een
+slotkoers >1% door de "vlakke" kant (asc: onder de stijgende steun; desc: boven de dalende weerstand)
+verwerpt het patroon. Kanaal-invalidatie: een slotkoers >1% buiten de boven- of onderwand verwerpt het
+kanaal. Getest in `PatternGeometryTests` (apex/kanaal-tests, niet-vacuous geverifieerd).
 
-**P6 — Symmetrische driehoek: apex (§10.10).** Bereken het convergentiepunt en verval het patroon als
-prijs de apex bereikt zonder breakout.
+**P6 — Symmetrische driehoek: apex (§10.10).** ✅ **Gedaan.** Het convergentiepunt wordt berekend als
+`apexX = (lowInt − highInt) / (highSlope − lowSlope)` (bar-index). Bereikt de laatste bar de apex
+(`lastIdx ≥ apexX`, met apex vóór ons) zonder breakout, dan vervalt het patroon (geldt voor asc/desc/sym
+driehoeken). Getest met een convergerend-apex-bereikt scenario (verworpen) vs apex-nog-vóór-ons (herkend).
 
 **P7 — Continue invalidatie (concept).** Optioneel/groot: een patroon-geheugen zodat een eerder
 gedetecteerd patroon expliciet "geïnvalideerd" of "bevestigd" kan worden i.p.v. puur stateless her-scan.
@@ -109,11 +115,12 @@ De Double-Bottom-diepte (§10.4) was al correct in het handboek — de code is d
 Daarna ook gedaan: definitie-fixes (dominante pieken dubbele top/bodem + H&S), Tmax overal (flags, C&H,
 reversals), Bull/Bear Pennant, en **Support Bounce / Resistance Rejection** (waren dode enum-waarden,
 nu echt geïmplementeerd met geteste-niveau + ommekeer). **Breakout/breakdown-staleness** bleek
-redundant — de 0,5–4%-band sluit stale (>4%) al uit.
+redundant — de 0,5–4%-band sluit stale (>4%) al uit. **P5** (driehoek/kanaal bevestiging + invalidatie)
+en **P6** (sym-driehoek apex-verval) zijn nu ook geïmplementeerd met tests.
 
-Resteert nog: **P5** (driehoek/kanaal bevestiging/invalidatie verder verfijnen — bevestiging loopt al via
-het drie-staten-model), **P6** (sym-driehoek apex-verval), **P7** (continue invalidatie met geheugen).
+Resteert nog: **P7** (continue invalidatie met patroon-geheugen — een eerder gedetecteerd patroon
+expliciet "geïnvalideerd"/"bevestigd" kunnen houden i.p.v. puur stateless her-scan).
 
 ---
 
-*Spec vastgelegd in handboek v2.1; Fase A + B (P1–P4) geïmplementeerd met tests.*
+*Spec vastgelegd in handboek v2.1; Fase A + B (P1–P6) geïmplementeerd met tests.*
