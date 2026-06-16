@@ -608,6 +608,40 @@ namespace CryptoPortfolioTracker.Services
                 await TryAddColumnAsync(db, "CoinFundamentals", "ScoreOnChain", "REAL", "0");
                 await TryAddColumnAsync(db, "CoinFundamentals", "AppSentiment", "REAL", "0");
 
+                // Patroon-geheugen over scans heen (P7 — continue invalidatie, v1.40)
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS PatternStates (
+                        Id                   INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Fingerprint          TEXT    NOT NULL DEFAULT '',
+                        CoinApiId            TEXT    NOT NULL DEFAULT '',
+                        CoinSymbol           TEXT    NOT NULL DEFAULT '',
+                        Timeframe            TEXT    NOT NULL DEFAULT '',
+                        Type                 INTEGER NOT NULL DEFAULT 0,
+                        Category             INTEGER NOT NULL DEFAULT 0,
+                        KeyLevel             REAL    NOT NULL DEFAULT 0,
+                        Strength             INTEGER NOT NULL DEFAULT 0,
+                        LastDescription      TEXT    NOT NULL DEFAULT '',
+                        Lifecycle            INTEGER NOT NULL DEFAULT 0,
+                        IsActive             INTEGER NOT NULL DEFAULT 1,
+                        FirstSeenAt          TEXT    NOT NULL,
+                        LastSeenAt           TEXT    NOT NULL,
+                        LastScanAt           TEXT    NOT NULL,
+                        TimesSeen            INTEGER NOT NULL DEFAULT 0,
+                        MissedScans          INTEGER NOT NULL DEFAULT 0,
+                        LastTransitionReason TEXT    NOT NULL DEFAULT '',
+                        LastTransitionAt     TEXT,
+                        NotifiedLifecycle    INTEGER
+                    )");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_PatternStates_Fingerprint
+                    ON PatternStates(Fingerprint)");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_PatternStates_CoinApiId
+                    ON PatternStates(CoinApiId)");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_PatternStates_IsActive
+                    ON PatternStates(IsActive)");
+
                 Logger?.Information("PLUS schema applied successfully");
             }
             catch (Exception ex)

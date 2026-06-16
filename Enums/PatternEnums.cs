@@ -71,6 +71,29 @@ public enum PatternStatus
     Confirmed,
 }
 
+// ── Levenscyclus over scans heen (P7 — continue invalidatie met geheugen) ────
+
+/// <summary>
+/// De fase van een patroon dat over meerdere scans heen wordt onthouden
+/// (<c>PatternStateRecord</c>). Breidt het momentane drie-staten-model
+/// (<see cref="PatternStatus"/>) uit met terminale/late fases.
+/// </summary>
+public enum PatternLifecycle
+{
+    /// <summary>Structuur geldig, prijs heeft het sleutelniveau nog niet bereikt (== Forming).</summary>
+    Forming     = 0,
+    /// <summary>Live koers staat voorbij het sleutelniveau, nog geen afgesloten candle.</summary>
+    Tentative   = 1,
+    /// <summary>Een slotkoers brak het sleutelniveau met de vereiste marge (bevestigd).</summary>
+    Confirmed   = 2,
+    /// <summary>Na bevestiging het meetbare doel (Tmax) bereikt — uitgespeeld.</summary>
+    PlayedOut   = 3,
+    /// <summary>Een invalidatieregel vuurde (wand-/steun-sluiting, apex, tegenovergestelde breakout).</summary>
+    Invalidated = 4,
+    /// <summary>Verdwenen zonder duidelijke invalidatie (max-leeftijd / niet meer gedetecteerd na grace).</summary>
+    Expired     = 5,
+}
+
 // ── UI filter options ───────────────────────────────────────────────────────
 
 public enum PatternFilter
