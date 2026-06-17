@@ -957,6 +957,7 @@ public class PatternDetectionService : IPatternDetectionService
         int winStart = Math.Max(rh.First().idx, rl.First().idx);
         int winEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
         if (winEnd - winStart < 10) return null;
+        if (winEnd - winStart > 60) return null;   // max patroonleeftijd driehoek (handboek §4.3)
 
         var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
         var (lowSlope,  lowInt)  = LinearRegressionByBarIdx(rl);
@@ -966,6 +967,10 @@ public class PatternDetectionService : IPatternDetectionService
             RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
         if (CountTouches(rh, highSlope, highInt) < 2 ||
             CountTouches(rl, lowSlope,  lowInt)  < 2) return null;
+
+        // Interne-schendingsfilter (§3.2): te veel slotkoersen buiten de driehoek → rommelig → verwerpen.
+        if (InternalViolationFraction(bars, winStart, winEnd, highSlope, highInt, lowSlope, lowInt)
+                > MaxInternalViolationFraction) return null;
 
         double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
         if (meanPrice <= 0) return null;
@@ -1498,6 +1503,7 @@ public class PatternDetectionService : IPatternDetectionService
         int winStart = Math.Max(rh.First().idx, rl.First().idx);
         int winEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
         if (winEnd - winStart < 15) return null;
+        if (winEnd - winStart > 80) return null;   // max patroonleeftijd wig (handboek §4.3)
 
         var rhW = rh.Where(p => p.idx >= winStart && p.idx <= winEnd).ToList();
         var rlW = rl.Where(p => p.idx >= winStart && p.idx <= winEnd).ToList();
@@ -1512,6 +1518,10 @@ public class PatternDetectionService : IPatternDetectionService
             RSquaredByBarIdx(rlW, lowSlope,  lowIntercept)  < 0.55) return null;
         if (CountTouches(rhW, highSlope, highIntercept) < 2 ||
             CountTouches(rlW, lowSlope,  lowIntercept)  < 2) return null;
+
+        // Interne-schendingsfilter (§3.2): te veel slotkoersen buiten de wig → rommelig → verwerpen.
+        if (InternalViolationFraction(bars, winStart, winEnd, highSlope, highIntercept, lowSlope, lowIntercept)
+                > MaxInternalViolationFraction) return null;
 
         // Project each regression line to the window edges
         double highAtStart = highIntercept + highSlope * winStart;
@@ -1859,7 +1869,8 @@ public class PatternDetectionService : IPatternDetectionService
         // Overlapping window on the real time axis
         int winStart = Math.Max(rh.First().idx, rl.First().idx);
         int winEnd   = Math.Min(rh.Last().idx,  rl.Last().idx);
-        if (winEnd - winStart < 10) return null;   // exclude micro-channels
+        if (winEnd - winStart < 10) return null;    // exclude micro-channels
+        if (winEnd - winStart > 120) return null;   // max patroonleeftijd kanaal (handboek §4.3)
 
         // Bar-index regression for both trendlines (slope = price/bar)
         var (highSlope, highInt) = LinearRegressionByBarIdx(rh);
@@ -1871,6 +1882,10 @@ public class PatternDetectionService : IPatternDetectionService
             RSquaredByBarIdx(rl, lowSlope,  lowInt)  < 0.70) return null;
         if (CountTouches(rh, highSlope, highInt) < 2 ||
             CountTouches(rl, lowSlope,  lowInt)  < 2) return null;
+
+        // Interne-schendingsfilter (§3.2): te veel slotkoersen buiten de kanaalwanden → rommelig → verwerpen.
+        if (InternalViolationFraction(bars, winStart, winEnd, highSlope, highInt, lowSlope, lowInt)
+                > MaxInternalViolationFraction) return null;
 
         double meanPrice = (rh.Average(s => s.value) + rl.Average(s => s.value)) / 2.0;
         if (meanPrice <= 0) return null;
@@ -2129,6 +2144,34 @@ public class PatternDetectionService : IPatternDetectionService
             if (Math.Abs(val - predicted) / Math.Abs(predicted) <= tolPct) touches++;
         }
         return touches;
+    }
+
+    /// <summary>Maximaal toegestane fractie bars die binnen het venster buiten de structuur sluiten (§3.2).</summary>
+    internal const double MaxInternalViolationFraction = 0.30;
+
+    /// <summary>
+    /// Fractie bars in [<paramref name="winStart"/>, <paramref name="winEnd"/>] waarvan de SLOTKOERS
+    /// buiten de band tussen onder- en bovenlijn valt (met <paramref name="tolPct"/> marge). Een
+    /// rommelige structuur met veel interne doorbraken hoort verworpen te worden (handboek §3.2),
+    /// ook al passen de swing-punten zelf toevallig goed op een rechte (hoge R²).
+    /// </summary>
+    internal static double InternalViolationFraction(
+        List<OhlcvBar> bars, int winStart, int winEnd,
+        double highSlope, double highInt, double lowSlope, double lowInt, double tolPct = 0.01)
+    {
+        int n = 0, viol = 0;
+        int lo = Math.Max(0, winStart);
+        int hi = Math.Min(bars.Count - 1, winEnd);
+        for (int i = lo; i <= hi; i++)
+        {
+            double upper = highInt + highSlope * i;
+            double lower = lowInt  + lowSlope  * i;
+            if (upper <= 0 || lower <= 0 || upper <= lower) continue;
+            n++;
+            double c = bars[i].Close;
+            if (c > upper * (1 + tolPct) || c < lower * (1 - tolPct)) viol++;
+        }
+        return n > 0 ? (double)viol / n : 0;
     }
 
     /// <summary>

@@ -28,8 +28,8 @@ Legenda code-status: ✅ volgt de spec · ⚠️ gedeeltelijk / afwijkend · ❌
 | **Bar-index regressie** (§2.3, F2) | ✅ | Kanaal/driehoek/wedge gebruiken `LinearRegressionByBarIdx` + geprojecteerde lijnen. |
 | **Aanrakingsvalidatie: R² én ≥2 binnen 1%** (§3.1, F10) | ✅ (Fase A) | `CountTouches` ≥2 per lijn binnen 1% náást de R²-gate — actief in kanaal/driehoek/wedge. |
 | **Grootte: ATR-band én prijs-%-band** (§3.3, F11) | ✅ (Fase A) | Kanaal/wedge: gap `≥0,5×ATR` en `≤15×ATR` náást de prijs-%-band; driehoek: start-gap `≥0,5×ATR`. |
-| **Interne-schending-filter** (§3.2: >30% bars buiten de lijn → verwerpen) | ❌ | Niet geïmplementeerd. Een rommelige structuur die toevallig een goede R² heeft, wordt niet afgewezen op interne doorbraken. |
-| **Maximale patroonleeftijd** (§4.3) | ❌ | Geen max-age; alleen `HasRecentSwing` (laatste swing ≤20 bars). Een 100 bars oud kanaal kan nog gerapporteerd worden. |
+| **Interne-schending-filter** (§3.2: >30% bars buiten de lijn → verwerpen) | ✅ | `InternalViolationFraction` in kanaal/driehoek/wig: >30% slotkoersen buiten de band (1% tol) → verworpen, náást de R²-gate. |
+| **Maximale patroonleeftijd** (§4.3) | ✅ | Span-cap per type náást `HasRecentSwing`: driehoek 60, wig 80, kanaal 120 bars (`winEnd − winStart`). Te uitgerekte structuren worden afgewezen. |
 | **Verouderd / al uitgespeeld** (§3.2, F6: >8% voorbij sleutelniveau) | ✅ (Fase A) | `IsPatternStale` nu in double bottom/top, H&S, Inv. H&S, wedge, kanaal, asc/desc-driehoek, bull/bear-flag en cup&handle. (Breakout/Breakdown nog open.) |
 | **Drie-staten-bevestiging** (§5, F7) | ✅ (Fase B) | `PatternStatus` (Forming/Tentative/Confirmed) centraal bepaald in `DetectFromBars` (`ApplyStatus`/`EvalStatus`): Bevestigd op `bars[^1].Close` + marge, Voorlopig op live koers. `IsConfirmed` afgeleid. Status in badge-tooltip, overflow-tooltip en grafieklabel. |
 | **Volume-bevestiging bij breakout** (§5.1) | ❌ | Volume wordt alleen in `DetectVolumeSpike` gebruikt. Breakout-bevestiging kijkt niet naar volume (kan wel — Binance-klines hebben volume). |
