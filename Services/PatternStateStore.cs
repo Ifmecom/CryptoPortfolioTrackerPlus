@@ -88,4 +88,26 @@ public class PatternStateStore : IPatternStateStore
             _gate.Release();
         }
     }
+
+    public async Task<IReadOnlyList<PatternHistoryStat>> GetHistoryStatsAsync(CancellationToken ct = default)
+    {
+        var ctx = _portfolio.Context;
+        if (ctx is null) return Array.Empty<PatternHistoryStat>();
+
+        await _gate.WaitAsync(ct);
+        try
+        {
+            var records = await ctx.PatternStates.AsNoTracking().ToListAsync(ct);
+            return PatternHistoryCalculator.Compute(records);
+        }
+        catch (Exception ex)
+        {
+            _log.Warning(ex, "PatternStateStore historie-statistiek mislukt");
+            return Array.Empty<PatternHistoryStat>();
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
 }

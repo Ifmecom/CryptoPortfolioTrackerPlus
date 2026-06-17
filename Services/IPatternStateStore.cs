@@ -24,4 +24,10 @@ public interface IPatternStateStore
         IReadOnlyList<PatternResult> detections,
         double currentPrice,
         CancellationToken ct = default);
+
+    /// <summary>
+    /// Hit/fail-statistiek per patroontype uit de volledige PatternStates-historie (item 7):
+    /// hoe vaak een bevestigd patroon zijn doel uitspeelde versus terugviel.
+    /// </summary>
+    Task<IReadOnlyList<PatternHistoryStat>> GetHistoryStatsAsync(CancellationToken ct = default);
 }

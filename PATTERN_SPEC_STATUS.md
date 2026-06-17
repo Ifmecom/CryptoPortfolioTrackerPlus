@@ -131,10 +131,12 @@ en **P6** (sym-driehoek apex-verval) zijn geïmplementeerd met tests. **P7** (co
 patroon-geheugen: `PatternStates`-tabel + `PatternReconciler` + `PatternStateStore`, UI-chip en
 Telegram-notificatie) is nu ook af.
 
-**De volledige werklijst P1–P7 is daarmee afgerond.** Mogelijke vervolgstappen liggen buiten deze lijst
-(bv. volume-bevestiging bij breakout §5.1, interne-schendingsfilter §3.2, of analytics op de
-invalidatie-historie die nu in `PatternStates` wordt vastgelegd).
+**De volledige werklijst P1–P7 is afgerond.** Daarna ook de resterende systeembrede TA-punten:
+**interne-schendingsfilter (§3.2)**, **maximale patroonleeftijd (§4.3)** en **volume-bevestiging bij
+breakout (§5.1)** zijn nu geïmplementeerd (zie de tabel in §1). Bovendien berekent
+`PatternHistoryCalculator` nu hit/fail-statistiek per patroontype uit de `PatternStates`-historie
+(`IPatternStateStore.GetHistoryStatsAsync`) — de basis voor uitkomst-gebaseerde scorekalibratie.
 
 ---
 
-*Spec vastgelegd in handboek v2.1; werklijst P1–P7 geïmplementeerd met tests.*
+*Spec vastgelegd in handboek v2.1; werklijst P1–P7 + systeembrede TA-punten geïmplementeerd met tests.*
