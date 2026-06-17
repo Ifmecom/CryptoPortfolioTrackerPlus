@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.42
+## CryptoPortfolioTracker Plus — v1.43
 
 | | |
 |---|---|
@@ -739,6 +739,15 @@ richtingssignaal (Long/Short), zodat een geweigerde setup geen niveaus op $0 too
 - **Eerste-scan-stilte:** `PatternTransition.IsNew` markeert de eerste waarneming van een patroon; de
   reconciliatie-postpass slaat `IsNew`-transities over voor zowel de patroon-updates-chip als de
   Telegram-alert — alleen een échte fase-wissel meldt.
+
+**Patroonkwaliteit + volume *(v1.43)*:**
+- **Interne-schendingsfilter (§3.2):** `InternalViolationFraction` verwerpt kanaal/driehoek/wig als >30%
+  van de slotkoersen in het venster buiten de band [onderlijn, bovenlijn] sluit (1% tol), náást de R²-gate.
+- **Maximale patroonleeftijd (§4.3):** span-cap (`winEnd − winStart`) per type — driehoek 60, wig 80,
+  kanaal 120 bars — náást `HasRecentSwing`.
+- **Volume-bevestiging (§5.1):** `RelativeVolume` (laatste bar t.o.v. gemiddelde van 20) voedt een
+  sterkte-correctie + tekstnoot op breakout/breakdown (≥1,5× → +8; <0,8× → −12, met waarschuwing). Werkt op
+  de exchange-klines (volume aanwezig). Getest: `InternalViolationTests` (4), `RelativeVolumeTests` (5).
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

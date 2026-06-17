@@ -27,6 +27,23 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.43 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.43", "Strengere patroonkwaliteit + volumebevestiging");
+
+        AddFeature("🧹", "Rommelige structuren eruit gefilterd",
+            "Een kanaal, driehoek of wig wordt nu afgewezen als meer dan 30% van de candles binnen de " +
+            "structuur juist buiten de trendlijnen sluit — ook al passen de draaipunten toevallig op een " +
+            "rechte. Zo verdwijnen 'mooi ogende maar betekenisloze' lijnen.");
+
+        AddFeature("⏳", "Geen verouderde patronen meer",
+            "Patronen krijgen een maximale leeftijd (driehoek 60, wig 80, kanaal 120 candles). Een structuur " +
+            "die zich te lang uitrekt zonder uitbraak wordt niet langer gemeld.");
+
+        AddFeature("📊", "Volume bevestigt de uitbraak",
+            "Bij een breakout/breakdown kijkt de tool nu naar het volume van de doorbraak-candle t.o.v. het " +
+            "gemiddelde. Bovengemiddeld volume versterkt het signaal (en staat erbij vermeld); zwak volume " +
+            "verlaagt de sterkte met de waarschuwing dat de uitbraak minder betrouwbaar is.");
+
         // ── v1.42 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.42", "Verfijningen: score, instelbare drempel, minder meldingen");
 

@@ -1130,17 +1130,20 @@ public class PatternDetectionService : IPatternDetectionService
             double above = (currentPrice - resistance) / resistance * 100;
 
             if (above > 0.5 && above <= 4.0)  // just broke out (0.5%–4% above)
+            {
+                var (volNote, volDelta) = VolumeSignal(RelativeVolume(bars));
                 return new PatternResult
                 {
                     Type        = PatternType.BreakoutAboveResistance,
                     Category    = PatternCategory.Bullish,
                     Timeframe   = tfl,
                     IsConfirmed = above > 1.5,
-                    Strength    = 80,
+                    Strength    = Math.Clamp(80 + volDelta, 50, 92),
                     Description = $"Uitbraak boven weerstand {FormatP(resistance)} (+{above:F1}%). "
-                                + "Sterke setup: voormalige weerstand wordt nu steun. Volume-bevestiging is cruciaal.",
+                                + "Voormalige weerstand wordt nu steun." + volNote,
                     KeyLevel    = resistance,
                 };
+            }
 
             // Potential breakout: close to resistance
             if (above > -3.0 && above <= 0.5)
@@ -1165,17 +1168,20 @@ public class PatternDetectionService : IPatternDetectionService
             double below = (support - currentPrice) / support * 100;
 
             if (below > 0.5 && below <= 4.0)
+            {
+                var (volNote, volDelta) = VolumeSignal(RelativeVolume(bars));
                 return new PatternResult
                 {
                     Type        = PatternType.BreakdownBelowSupport,
                     Category    = PatternCategory.Bearish,
                     Timeframe   = tfl,
                     IsConfirmed = below > 1.5,
-                    Strength    = 80,
+                    Strength    = Math.Clamp(80 + volDelta, 50, 92),
                     Description = $"Breakdown onder steun {FormatP(support)} (-{below:F1}%). "
-                                + "Voormalige steun wordt weerstand. Verhoogde kans op verdere daling.",
+                                + "Voormalige steun wordt weerstand. Verhoogde kans op verdere daling." + volNote,
                     KeyLevel    = support,
                 };
+            }
         }
 
         return null;
@@ -2172,6 +2178,33 @@ public class PatternDetectionService : IPatternDetectionService
             if (c > upper * (1 + tolPct) || c < lower * (1 - tolPct)) viol++;
         }
         return n > 0 ? (double)viol / n : 0;
+    }
+
+    /// <summary>
+    /// Volume van de laatste bar t.o.v. het gemiddelde van de voorgaande <paramref name="lookback"/> bars.
+    /// 1.0 = gemiddeld; >1 = bovengemiddeld. Geeft 1.0 (neutraal) bij onvoldoende of ontbrekend volume.
+    /// </summary>
+    internal static double RelativeVolume(List<OhlcvBar> bars, int lookback = 20)
+    {
+        if (bars.Count < 3) return 1.0;
+        int    cnt = 0;
+        double sum = 0;
+        int start = Math.Max(0, bars.Count - 1 - lookback);
+        for (int i = start; i < bars.Count - 1; i++)
+        {
+            sum += bars[i].Volume;
+            cnt++;
+        }
+        double avg = cnt > 0 ? sum / cnt : 0;
+        return avg > 0 ? bars[^1].Volume / avg : 1.0;
+    }
+
+    /// <summary>Volume-bevestiging bij een breakout (handboek §5.1): tekstnoot + sterkte-correctie.</summary>
+    private static (string Note, int StrengthDelta) VolumeSignal(double relVol)
+    {
+        if (relVol >= 1.5) return ($" Volume bevestigt de uitbraak ({relVol:F1}× gemiddeld).", +8);
+        if (relVol >= 1.0) return ($" Volume rond het gemiddelde ({relVol:F1}×).", 0);
+        return ($" Let op: zwak volume ({relVol:F1}× gemiddeld) — minder betrouwbare uitbraak.", -12);
     }
 
     /// <summary>

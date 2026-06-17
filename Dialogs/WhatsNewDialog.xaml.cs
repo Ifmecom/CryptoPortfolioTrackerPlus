@@ -28,6 +28,17 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.43  —  Strengere patroonkwaliteit + volumebevestiging");
+
+        AddFeature("🧹", "Rommelige structuren eruit",
+            "Kanaal/driehoek/wig wordt afgewezen als >30% van de candles binnen de structuur buiten de trendlijnen sluit.");
+
+        AddFeature("⏳", "Geen verouderde patronen",
+            "Maximale patroonleeftijd: driehoek 60, wig 80, kanaal 120 candles.");
+
+        AddFeature("📊", "Volume bevestigt de uitbraak",
+            "Breakout/breakdown weegt nu het volume van de doorbraak-candle mee in de sterkte (en vermeldt het).");
+
         AddVersionHeader("v1.42  —  Verfijningen: score, instelbare drempel, minder meldingen");
 
         AddFeature("📉", "Score gedempt op coins zonder edge",
