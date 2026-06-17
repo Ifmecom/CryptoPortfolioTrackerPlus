@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.41
+## CryptoPortfolioTracker Plus — v1.42
 
 | | |
 |---|---|
@@ -728,6 +728,17 @@ te lage volatiliteit / stablecoin"). Toegepast in `PatternTradingService.BuildSe
 `TradeAnalysisService.BuildTradeSetup`. `PatternCoinRow.HasSetup` vereist nu bovendien een echt
 richtingssignaal (Long/Short), zodat een geweigerde setup geen niveaus op $0 toont. Getest in
 `TradeSetupGateTests` (10).
+
+**Verfijningen *(v1.42)*:**
+- **Score-demping:** weigert de poort een coin (stablecoin/lage vol), dan capt `PatternTradingService` de
+  `TradabilityScore` op `LowVolScoreCap` (15) en zet de richting op Neutraal — zo sorteert een coin zonder
+  edge niet langer als kans bovenaan.
+- **Instelbare drempel:** `Settings.MinSetupAtrPercent` (default 1,5%, clamp 0,5–5%) met een schuif in
+  SettingsView → Signalen & Trading. `PatternTradingService` én `TradeAnalysisService` geven deze fractie
+  door aan `TradeSetupGate.Evaluate` (i.p.v. de hardcoded const).
+- **Eerste-scan-stilte:** `PatternTransition.IsNew` markeert de eerste waarneming van een patroon; de
+  reconciliatie-postpass slaat `IsNew`-transities over voor zowel de patroon-updates-chip als de
+  Telegram-alert — alleen een échte fase-wissel meldt.
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

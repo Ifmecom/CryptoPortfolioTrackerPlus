@@ -133,6 +133,9 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
     [ObservableProperty] private double signalScoreThreshold;
     partial void OnSignalScoreThresholdChanged(double value) => AppSettings.SignalScoreThreshold = value;
 
+    [ObservableProperty] private double minSetupAtrPercent;
+    partial void OnMinSetupAtrPercentChanged(double value) => AppSettings.MinSetupAtrPercent = value;
+
     // -----------------------------------------------------------------------
     // Risk-guardrails
     // -----------------------------------------------------------------------
@@ -457,6 +460,7 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
 
         IsPaperTradingEnabled    = AppSettings.IsPaperTradingEnabled;
         SignalScoreThreshold     = AppSettings.SignalScoreThreshold;
+        MinSetupAtrPercent       = AppSettings.MinSetupAtrPercent;
         MaxPortfolioPercPerTrade = AppSettings.MaxPortfolioPercPerTrade;
         MaxOpenPositions         = AppSettings.MaxOpenPositions;
         DailyLossLimitPerc       = AppSettings.DailyLossLimitPerc;

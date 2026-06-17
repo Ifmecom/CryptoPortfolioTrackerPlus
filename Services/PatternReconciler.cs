@@ -7,11 +7,14 @@ using CryptoPortfolioTracker.Models;
 namespace CryptoPortfolioTracker.Services;
 
 /// <summary>Eén fase-overgang van een patroon, voor UI/notificatie.</summary>
+/// <param name="IsNew">True als dit de eerste waarneming van het patroon is (geen echte fase-wissel
+/// van een eerder bekende staat) — gebruikt om de eerste-scan alert-burst te onderdrukken.</param>
 public sealed record PatternTransition(
     PatternStateRecord Record,
     PatternLifecycle From,
     PatternLifecycle To,
-    string Reason);
+    string Reason,
+    bool IsNew = false);
 
 /// <summary>Resultaat van een reconciliatie-pas: op te slaan records + de transitie-events.</summary>
 public sealed class PatternReconcileResult
@@ -99,7 +102,7 @@ public static class PatternReconciler
                     LastTransitionAt     = now,
                 };
                 result.Upserts.Add(rec);
-                result.Transitions.Add(new PatternTransition(rec, PatternLifecycle.Forming, newLc, rec.LastTransitionReason));
+                result.Transitions.Add(new PatternTransition(rec, PatternLifecycle.Forming, newLc, rec.LastTransitionReason, IsNew: true));
                 continue;
             }
 

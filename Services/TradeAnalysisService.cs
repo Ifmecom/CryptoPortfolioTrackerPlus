@@ -22,6 +22,7 @@ public class TradeAnalysisService : ITradeAnalysisService
     private readonly IOrderBookService?          _orderBook;
     private readonly IBinanceFuturesDataService? _futures;
     private readonly IMacroEventService?         _macroEvents;
+    private readonly Configuration.Settings?     _settings;
 
     public TradeAnalysisService(
         IBinanceDataService      binance,
@@ -31,7 +32,8 @@ public class TradeAnalysisService : ITradeAnalysisService
         IPatternDetectionService patternDetection,
         IOrderBookService?          orderBook   = null,
         IBinanceFuturesDataService? futures     = null,
-        IMacroEventService?         macroEvents = null)
+        IMacroEventService?         macroEvents = null,
+        Configuration.Settings?     settings    = null)
     {
         _binance          = binance          ?? throw new ArgumentNullException(nameof(binance));
         _kuCoin           = kuCoin           ?? throw new ArgumentNullException(nameof(kuCoin));
@@ -41,7 +43,12 @@ public class TradeAnalysisService : ITradeAnalysisService
         _orderBook        = orderBook;
         _futures          = futures;
         _macroEvents      = macroEvents;
+        _settings         = settings;
     }
+
+    /// <summary>Volatiliteitsdrempel (fractie van de koers) uit Settings, met de gate-default als fallback.</summary>
+    private double MinAtrFraction =>
+        (_settings?.MinSetupAtrPercent ?? TradeSetupGate.MinAtrPctForSetup * 100.0) / 100.0;
 
     // -----------------------------------------------------------------------
     // Public entry point
@@ -427,7 +434,7 @@ public class TradeAnalysisService : ITradeAnalysisService
         double price = coin.Price;
 
         // Volatiliteits-/stablecoin-poort: geen setup op stille of fiat-gekoppelde coins.
-        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr);
+        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr, MinAtrFraction);
         if (!gateOk)
         {
             setup.Direction  = "Geen signaal";

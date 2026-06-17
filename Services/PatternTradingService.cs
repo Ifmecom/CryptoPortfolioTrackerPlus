@@ -35,6 +35,11 @@ public class PatternTradingService : IPatternTradingService
     private readonly IMexcDataService        _mexc;
     private readonly IPatternStateStore?     _patternState;
     private readonly INotifierService?       _notifier;
+    private readonly Configuration.Settings? _settings;
+
+    // Score-plafond voor coins zonder edge (stablecoin / lage volatiliteit) — onder de setup-drempel
+    // van 40 zodat ze niet als kans bovenaan komen en geen setup tonen.
+    private const int LowVolScoreCap = 15;
 
     // Max simultaneous OHLCV fetches to respect exchange rate-limits
     private static readonly SemaphoreSlim _sem = new(3, 3);
@@ -48,7 +53,8 @@ public class PatternTradingService : IPatternTradingService
         IGateIoDataService      gateIo,
         IMexcDataService        mexc,
         IPatternStateStore?     patternState = null,
-        INotifierService?       notifier     = null)
+        INotifierService?       notifier     = null,
+        Configuration.Settings? settings     = null)
     {
         _portfolio = portfolio;
         _detector  = detector;
@@ -59,7 +65,12 @@ public class PatternTradingService : IPatternTradingService
         _mexc      = mexc;
         _patternState = patternState;
         _notifier  = notifier;
+        _settings  = settings;
     }
+
+    /// <summary>Volatiliteitsdrempel (fractie van de koers) uit Settings, met de gate-default als fallback.</summary>
+    private double MinAtrFraction =>
+        (_settings?.MinSetupAtrPercent ?? TradeSetupGate.MinAtrPctForSetup * 100.0) / 100.0;
 
     // =========================================================================
     // Public API
@@ -197,6 +208,9 @@ public class PatternTradingService : IPatternTradingService
 
                 foreach (var t in transitions)
                 {
+                    // Eerste waarneming is geen 'update' — onderdrukt de eerste-scan alert/chip-burst.
+                    if (t.IsNew) continue;
+
                     // Toon alle noemenswaardige overgangen sinds de vorige scan op de kaart.
                     if (t.To is PatternLifecycle.Confirmed or PatternLifecycle.Invalidated
                              or PatternLifecycle.PlayedOut or PatternLifecycle.Expired)
@@ -336,7 +350,16 @@ public class PatternTradingService : IPatternTradingService
                        : tfH4.Atr   > 0 ? tfH4.Atr * 6
                        : 0;
 
-            result.Setup = BuildSetupAdvice(coin, result, tfDaily, atr);
+            // Coins zonder edge (stablecoin / te lage volatiliteit): demp de score + neutrale richting,
+            // zodat ze niet als kans bovenaan sorteren en geen setup tonen.
+            var (gateOk, _) = TradeSetupGate.Evaluate(coin.Symbol, coin.Price, atr, MinAtrFraction);
+            if (!gateOk)
+            {
+                result.TradabilityScore = Math.Min(result.TradabilityScore, LowVolScoreCap);
+                result.PrimaryDirection = "Neutraal";
+            }
+
+            result.Setup = BuildSetupAdvice(coin, result, tfDaily, atr, MinAtrFraction);
 
             // ── 7. Share text ────────────────────────────────────────────────
             result.ShareText = BuildShareText(result, coin);
@@ -574,14 +597,14 @@ public class PatternTradingService : IPatternTradingService
     // =========================================================================
 
     private static TradeSetupAdvice BuildSetupAdvice(
-        Coin coin, PatternCoinAnalysis res, TimeframeAnalysis daily, double atr)
+        Coin coin, PatternCoinAnalysis res, TimeframeAnalysis daily, double atr, double minAtrPct)
     {
         var setup = new TradeSetupAdvice();
         double price = coin.Price;
         string dir   = res.PrimaryDirection;
 
         // Volatiliteits-/stablecoin-poort: geen setup op stille of fiat-gekoppelde coins.
-        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr);
+        var (gateOk, gateReason) = TradeSetupGate.Evaluate(coin.Symbol, price, atr, minAtrPct);
         if (!gateOk)
         {
             setup.Direction  = "Geen signaal";

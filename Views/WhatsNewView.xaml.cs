@@ -27,6 +27,22 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.42 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.42", "Verfijningen: score, instelbare drempel, minder meldingen");
+
+        AddFeature("📉", "Score gedempt op coins zonder edge",
+            "Stablecoins en (bijna) vlakke coins krijgen niet alleen geen setup meer, maar ook een gedempte " +
+            "score en neutrale richting — zo komen ze niet langer als 'kans' bovenaan de lijst staan.");
+
+        AddFeature("🎚️", "Volatiliteitsdrempel zelf instelbaar",
+            "In Instellingen → Signalen & Trading staat nu een schuif 'Min. volatiliteit voor setup' (0,5–5%). " +
+            "Daarmee bepaal je zelf onder welke ATR (% van de koers) een coin als te stil geldt voor een setup.");
+
+        AddFeature("🔕", "Minder meldingen bij de eerste scan",
+            "Een patroon dat bij de allereerste waarneming al bevestigd is, geeft geen Telegram-alert of " +
+            "patroon-update meer — je krijgt alleen een melding bij een échte fase-wissel (bv. van Voorlopig " +
+            "naar Bevestigd), niet bij de nulmeting.");
+
         // ── v1.41 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.41", "Geen trade-setups meer op stabiele coins");
 

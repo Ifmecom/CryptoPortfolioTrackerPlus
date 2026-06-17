@@ -28,6 +28,17 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.42  —  Verfijningen: score, instelbare drempel, minder meldingen");
+
+        AddFeature("📉", "Score gedempt op coins zonder edge",
+            "Stablecoins/vlakke coins krijgen nu ook een gedempte score + neutrale richting — niet meer bovenaan als kans.");
+
+        AddFeature("🎚️", "Volatiliteitsdrempel instelbaar",
+            "Instellingen → Signalen & Trading: schuif 'Min. volatiliteit voor setup' (0,5–5%).");
+
+        AddFeature("🔕", "Minder meldingen bij de eerste scan",
+            "Alleen een alert bij een échte fase-wissel, niet bij een al-bevestigd patroon op de nulmeting.");
+
         AddVersionHeader("v1.41  —  Geen trade-setups meer op stabiele coins");
 
         AddFeature("🚫", "Geen setup op stille of stablecoins",

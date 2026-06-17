@@ -276,6 +276,16 @@ public partial class Settings : ObservableObject
         set { _store.Set("SignalScoreThreshold", value); OnPropertyChanged(nameof(SignalScoreThreshold)); }
     }
 
+    /// <summary>
+    /// Minimale ATR als % van de koers om een trade setup te tonen (0,5–5%). Onder deze drempel
+    /// (en voor stablecoins) geeft de tool geen tradable setup — voorkomt setups op stille coins.
+    /// </summary>
+    public double MinSetupAtrPercent
+    {
+        get => _store.Get("MinSetupAtrPercent", 1.5);
+        set { _store.Set("MinSetupAtrPercent", Math.Clamp(value, 0.5, 5.0)); OnPropertyChanged(nameof(MinSetupAtrPercent)); }
+    }
+
     // -----------------------------------------------------------------------
     // Risk-guardrails
     // -----------------------------------------------------------------------

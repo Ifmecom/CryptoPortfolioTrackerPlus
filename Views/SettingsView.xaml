@@ -247,6 +247,20 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <!-- Minimale volatiliteit voor een trade setup -->
+                                <ct:SettingsCard Header="Min. volatiliteit voor setup"
+                                    Description="Minimale ATR als % van de koers om een trade setup te tonen. Onder deze drempel (en voor stablecoins) geeft de tool geen setup — voorkomt setups op stille coins."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9D9;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.MinSetupAtrPercent, Mode=TwoWay}"
+                                                Minimum="0.5" Maximum="5" StepFrequency="0.1"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.MinSetupAtrPercent, Mode=OneWay}"/>
+                                        <TextBlock VerticalAlignment="Center" Text="%"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 
