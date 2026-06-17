@@ -23,7 +23,8 @@ public class ThreePctBacktestService : IThreePctBacktestService
         Constants.SourceContextPropertyName, nameof(ThreePctBacktestService).PadRight(22));
 
     private const string CalibrationFileName = "3pct_calibration.json";
-    private const int    MinTradesReliable   = 30;
+    // Centraal gedefinieerd in ReliabilityThresholds (item 9): grover, strategie-breed → hogere drempel.
+    private const int    MinTradesReliable   = ReliabilityThresholds.MinBacktestTrades;
 
     private readonly IBinanceDataService   _binance;
     private readonly IThreePctScoringService _scorer;

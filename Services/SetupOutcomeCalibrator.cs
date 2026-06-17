@@ -13,8 +13,9 @@ namespace CryptoPortfolioTracker.Services;
 /// </summary>
 public static class SetupOutcomeCalibrator
 {
-    /// <summary>Minimum aantal gesloten trades voor een betrouwbare uitspraak per klasse.</summary>
-    public const int MinReliable = 10;
+    /// <summary>Minimum aantal gesloten trades voor een betrouwbare uitspraak per klasse.
+    /// Centraal gedefinieerd in <see cref="ReliabilityThresholds"/> (item 9).</summary>
+    public const int MinReliable = ReliabilityThresholds.MinClosedSetups;
 
     /// <summary>Vaste scoreklassen — consistent met de 3%-Trading-kalibratie.</summary>
     public static readonly string[] Buckets = { "0-40", "41-60", "61-80", "81-100" };
