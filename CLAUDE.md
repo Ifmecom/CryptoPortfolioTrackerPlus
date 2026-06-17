@@ -16,6 +16,35 @@ C:\Program Files\Microsoft Visual Studio\18\Community\MSBuild\Current\Bin\MSBuil
 
 Of: Ctrl+Shift+B in Visual Studio. F5 om te runnen (Unpackaged profiel).
 
+**Build-output lezen:**
+- `error CS####` = echte compileerfout → fixen.
+- `error MSB3027`/`MSB3021` ("file is locked by … CryptoFolioTrackerPlus") = de app draait nog; **compilatie is geslaagd**, alleen de copy-stap faalt. Geen codefout — negeren of de app sluiten.
+- `token recognition error at: '!'` = onschadelijke ruis, geen fout.
+- Command-line MSBuild **verifieert** compilatie maar levert geen runnende build (ontbrekende `.pri`/WebView2Loader/e_sqlite3); een runnende deploy maak je in Visual Studio. **Nooit `bin`/`obj` verwijderen** — dat brak de build eerder.
+
+**Bekende crash:** `0xc0000374` (ntdll heap) bij standalone start is een intermittent, latent WinUI-probleem (~1 op 3), géén codefout → opnieuw starten / Ctrl+F5.
+
+---
+
+## Testen
+
+Testproject: `…\Crypto\CryptoPortfolioTracker.Tests\` — een **sibling-map BUITEN deze git-repo** (source-includes via `..\CryptoPortfolioTrackerPlus-main\…`). xUnit + FluentAssertions.
+
+```
+dotnet test "…\CryptoPortfolioTracker.Tests\CryptoPortfolioTracker.Tests.csproj" --nologo -v minimal
+```
+
+- Tests worden **niet meegecommit** (staan buiten de repo); alleen productiecode zit in `main`. Draai ze lokaal voor verificatie.
+- Een nieuwe **pure** service die je wilt testen: voeg het bronbestand toe aan de `<Compile Include>`-lijst in `CryptoPortfolioTracker.Tests.csproj` (geen ProjectReference). `Models/*` en `Enums/*` worden al automatisch meegecompileerd.
+
+---
+
+## Commits
+
+- Werk op `main`, push per feature.
+- PowerShell-commitmessage via single-quoted here-string `@'…'@` **zonder dubbele aanhalingstekens** (PowerShell 5.1 splitst de message anders).
+- Trailer: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+
 ---
 
 ## Architectuur
@@ -66,11 +95,10 @@ services.AddScoped<SignalsView>();
 1. Model aanmaken in `Models/XxxModel.cs`
 2. `EntityTypeConfiguration` aanmaken in `Infrastructure/EntityConfigurations/`
 3. `DbSet<Xxx>` toevoegen aan `PortfolioContext.cs`
-4. Migratie genereren:
-   ```
-   dotnet ef migrations add MigratieNaam --project CryptoPortfolioTracker.csproj
-   ```
-5. Migratie toepassen bij app-start gebeurt automatisch via `context.Database.MigrateAsync()`
+4. **Tabel aanmaken — gebruik het PLUS-patroon, NIET `dotnet ef` (onbetrouwbaar bij WinUI-CLI):**
+   - `CREATE TABLE IF NOT EXISTS Xxx (…)` + indices toevoegen in `PortfolioService.ApplyPlusSchemaAsync` (draait idempotent bij startup, ná `MigrateAsync`).
+   - Hand-geschreven migratie `Migrations/2026MMDDHHMMSS_AddXxx.cs` als **documentatie** (mirror `AddCoinFundamentals`/`AddPatternState`). Géén `[Migration]`-attribuut/Designer → `MigrateAsync` negeert hem, dus geen "table already exists"-clash. `PortfolioContextModelSnapshot.cs` niet bewerken.
+5. Startup doet `MigrateAsync()` (alleen attribuut-dragende migraties) + `ApplyPlusSchemaAsync()` (de echte, idempotente aanmaak voor PLUS-tabellen).
 
 ### Migratie-conventies
 
@@ -224,6 +252,15 @@ Wat bijgewerkt moet worden:
 - **Geen nieuwe databron toevoegen zonder de Databronnen-tab in `SettingsView.xaml` bij te werken**
 - **Geen zichtbare gebruikersfunctie toevoegen zonder `WhatsNewView.xaml.cs` (`BuildContent`) bij te werken**
 - **`PRD.md` nooit verouderd laten — altijd bijwerken na elke wijziging (zie § PRD bijhouden)**
+
+---
+
+## Patroondetectie (subsysteem)
+
+- **`Services/PatternDetectionService.cs`** — puur/stateless. `DetectFromBars`: swings op wicks, R²≥0,70 + ≥2 aanrakingen, ATR+%-groottebanden, drie-staten-bevestiging via `ApplyStatus`/`BreakoutMarginPct`. Niet breken; uitbreiden = nieuwe `Detect*`-methode toevoegen.
+- **`Services/TradeSetupGate.cs`** — pure poort: geen trade-setup op stablecoins of coins met ATR < `MinAtrPctForSetup` (1,5%). Toegepast in `PatternTradingService.BuildSetupAdvice` én `TradeAnalysisService.BuildTradeSetup`.
+- **Patroon-geheugen (P7):** `PatternStateRecord` (tabel `PatternStates`) + pure `PatternFingerprint`/`PatternReconciler` + EF `PatternStateStore`. Reconciliatie draait **sequentieel ná** de parallelle per-coin scan in `PatternTradingService` (detector blijft puur; gedeelde DB-context niet vanuit de parallelle tak schrijven).
+- **Spec/docs:** `PATTERN_HANDBOOK.md` (v2.1, autoritatief), `PATTERN_SPEC_STATUS.md` (werklijst P1–P7, allemaal ✅). Werk deze bij bij detectie-wijzigingen.
 
 ---
 
