@@ -28,6 +28,15 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.44  —  Uitleg, patroon-prestaties en een opgeruimd menu");
+
+        AddFeature("ℹ️", "Score-uitleg + patroon-prestaties",
+            "Twee nieuwe knoppen in Pattern Trading: een legenda voor score/status/levenscyclus, en de hit-rate " +
+            "per patroontype uit je eigen historie.");
+
+        AddFeature("🗂️", "Menu gegroepeerd in het Nederlands",
+            "Navigatiekopjes (Portfolio · Analyse & handel · Bibliotheek); 'Analysis' heet nu 'Analyse'.");
+
         AddVersionHeader("v1.43  —  Strengere patroonkwaliteit + volumebevestiging");
 
         AddFeature("🧹", "Rommelige structuren eruit",

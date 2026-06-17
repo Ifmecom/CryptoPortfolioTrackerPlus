@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.43
+## CryptoPortfolioTracker Plus — v1.44
 
 | | |
 |---|---|
@@ -748,6 +748,18 @@ richtingssignaal (Long/Short), zodat een geweigerde setup geen niveaus op $0 too
 - **Volume-bevestiging (§5.1):** `RelativeVolume` (laatste bar t.o.v. gemiddelde van 20) voedt een
   sterkte-correctie + tekstnoot op breakout/breakdown (≥1,5× → +8; <0,8× → −12, met waarschuwing). Werkt op
   de exchange-klines (volume aanwezig). Getest: `InternalViolationTests` (4), `RelativeVolumeTests` (5).
+
+**UX *(v1.44)*:**
+- **Scores-legenda:** een "Score-uitleg"-flyout in de Pattern-Trading-toolbar legt de score-banden, de
+  patroonstatus en de levenscyclus uit (statische tekst, geen binding).
+- **Patroon-prestaties:** een "Patroon-prestaties"-flyout toont per patroontype de hit-rate uit
+  `IPatternStateStore.GetHistoryStatsAsync` (`PatternHistoryCalculator`); `PatternTradingViewModel`
+  verrijkt `PatternHistoryText` bij het laden en na elke scan. Dit surfacet item 7 en consolideert de
+  uitkomst-feedback richting Pattern Trading.
+- **Betrouwbaarheidsdrempels** lopen nu via `ReliabilityThresholds` (één plek, met uitleg) i.p.v. losse
+  magic numbers in `SetupOutcomeCalibrator`/`ThreePctBacktestService`.
+- **Menu:** `MainPage.xaml` groepeert de navigatie met `NavigationViewItemHeader`s (Portfolio ·
+  Analyse & handel · Bibliotheek); "Analysis" → "Analyse".
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

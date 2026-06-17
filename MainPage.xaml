@@ -51,8 +51,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItemSeparator  Margin="0,5,0,5"/>
-
+                <NavigationViewItemHeader Content="Portfolio"/>
 
                 <NavigationViewItem x:Name="AssetsNavItem" l:Uids.Uid="Navigation_Assets" Tag="AssetsView" >
                     <NavigationViewItem.Icon>
@@ -70,9 +69,9 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItemSeparator  Margin="0,5,0,5"/>
+                <NavigationViewItemHeader Content="Analyse &amp; handel"/>
 
-                <NavigationViewItem x:Name="AnalysisNavItem" Content="Analysis" Tag="SignalsView">
+                <NavigationViewItem x:Name="AnalysisNavItem" Content="Analyse" Tag="SignalsView">
                     <NavigationViewItem.Icon>
                         <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE9D9;"/>
                     </NavigationViewItem.Icon>
@@ -126,8 +125,7 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
-                <NavigationViewItemSeparator  Margin="0,5,0,5"/>
-
+                <NavigationViewItemHeader Content="Bibliotheek"/>
 
                 <NavigationViewItem x:Name="CoinLibraryNavItem" l:Uids.Uid="Navigation_CoinLibrary" Tag="CoinLibraryView" >
                         <NavigationViewItem.Icon>

@@ -27,6 +27,23 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.44 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.44", "Uitleg, patroon-prestaties en een opgeruimd menu");
+
+        AddFeature("ℹ️", "Score-uitleg in Pattern Trading",
+            "Een nieuwe knop 'Score-uitleg' opent een korte legenda: wat de TradabilityScore-banden betekenen, " +
+            "de patroonstatus (In formatie → Voorlopig → Bevestigd) en de levenscyclus (Uitgespeeld / " +
+            "Geïnvalideerd / Vervallen + 'N× gezien').");
+
+        AddFeature("📈", "Patroon-prestaties uit je eigen historie",
+            "De knop 'Patroon-prestaties' toont per patroontype de hit-rate uit het patroon-geheugen — hoe vaak " +
+            "een bevestigd patroon zijn doel uitspeelde versus terugviel. Zo zie je welke patronen bij jouw " +
+            "coins in de praktijk het best werken (met een 'weinig data'-markering tot er genoeg uitkomsten zijn).");
+
+        AddFeature("🗂️", "Opgeruimd menu in het Nederlands",
+            "Het navigatiemenu is gegroepeerd met kopjes (Portfolio · Analyse & handel · Bibliotheek) en " +
+            "'Analysis' heet nu consistent 'Analyse'.");
+
         // ── v1.43 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.43", "Strengere patroonkwaliteit + volumebevestiging");
 

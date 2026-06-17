@@ -73,6 +73,10 @@ public partial class PatternTradingViewModel : BaseViewModel
     private readonly IFundamentalsService _fundamentals;
     private readonly IOrderBookService    _orderBook;
     private readonly IBinanceDataService  _binance;
+    private readonly IPatternStateStore?  _patternState;
+
+    /// <summary>Samenvatting van de patroon-prestaties (hit/fail per type) uit de PatternStates-historie (item 10).</summary>
+    [ObservableProperty] private string patternHistoryText = "Nog geen patroon-historie — draai een paar scans om uitkomsten te verzamelen.";
     private IReadOnlyDictionary<string, CoinFundamentals> _fundMap =
         new Dictionary<string, CoinFundamentals>();
 
@@ -87,7 +91,8 @@ public partial class PatternTradingViewModel : BaseViewModel
         IFundamentalsService   fundamentals,
         IOrderBookService      orderBook,
         IBinanceDataService    binance,
-        Settings               appSettings) : base(appSettings)
+        Settings               appSettings,
+        IPatternStateStore?    patternState = null) : base(appSettings)
     {
         Current               = this;
         _patternService       = patternService;
@@ -96,6 +101,7 @@ public partial class PatternTradingViewModel : BaseViewModel
         _fundamentals         = fundamentals;
         _orderBook            = orderBook;
         _binance              = binance;
+        _patternState         = patternState;
         _dispatcherQueue  = DispatcherQueue.GetForCurrentThread();
         Logger = Log.Logger.ForContext(
             Constants.SourceContextPropertyName,
@@ -113,6 +119,7 @@ public partial class PatternTradingViewModel : BaseViewModel
     public async Task ViewLoading()
     {
         await LoadWatchlistItemsAsync();
+        await RefreshPatternHistoryAsync();
         try { _fundMap = await _fundamentals.GetScoreMapAsync(); }
         catch (Exception ex) { Logger.Warning(ex, "PatternTrading: fundamentals-map laden mislukt"); }
     }
@@ -224,6 +231,7 @@ public partial class PatternTradingViewModel : BaseViewModel
 
             RebuildPatternOptions();   // vul de patroon-dropdown met wat er nú gevonden is
             ApplyFilter(ActiveFilter);
+            await RefreshPatternHistoryAsync();   // patroon-prestaties bijwerken (item 10)
         }
         catch (OperationCanceledException)
         {
@@ -238,6 +246,35 @@ public partial class PatternTradingViewModel : BaseViewModel
         {
             IsAnalyzing   = false;
             ProgressValue = 100;
+        }
+    }
+
+    /// <summary>
+    /// Laadt de hit/fail-statistiek per patroontype uit de PatternStates-historie en formatteert die
+    /// voor de "Patroon-prestaties"-flyout (item 10). Faalt stil.
+    /// </summary>
+    private async Task RefreshPatternHistoryAsync()
+    {
+        if (_patternState is null) return;
+        try
+        {
+            var stats    = await _patternState.GetHistoryStatsAsync();
+            var decisive = stats.Where(s => s.Decisive > 0).ToList();
+            if (decisive.Count == 0)
+            {
+                PatternHistoryText = "Nog geen beslissende uitkomsten — draai meer scans om patroon-prestaties te verzamelen.";
+                return;
+            }
+            var lines = decisive.Select(s =>
+                $"• {s.DisplayName}: {s.HitRatePct:F0}% hit  ({s.PlayedOut}/{s.Decisive})"
+                + (s.IsReliable ? "" : "  · weinig data"));
+            PatternHistoryText =
+                "Hit-rate per patroon — uitgespeeld vs. teruggevallen (bevestigde patronen):\n"
+                + string.Join("\n", lines);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "PatternTrading: patroon-historie laden mislukt");
         }
     }
 

@@ -103,6 +103,43 @@
                             Click="ShowHandbook_Click"
                             Padding="10,6" FontSize="12"
                             ToolTipService.ToolTip="Open het Pattern Handboek — uitleg per patroon met drempelwaarden en criteria"/>
+
+                    <!-- Scores-legenda (item 8) — zelfstandige uitleg-flyout -->
+                    <Button Content="ℹ  Score-uitleg"
+                            Padding="10,6" FontSize="12"
+                            ToolTipService.ToolTip="Uitleg van de TradabilityScore, de patroonstatus en de levenscyclus">
+                        <Button.Flyout>
+                            <Flyout>
+                                <StackPanel Spacing="4" MaxWidth="380">
+                                    <TextBlock Text="TradabilityScore" FontWeight="SemiBold"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12"
+                                               Text="80–100 = sterk (donkergroen) · 60–79 = gunstig (groen) · 40–59 = zwak/neutraal (oranje) · onder 40 = geen edge (grijs). Onder de 40 (en op stablecoins / te lage volatiliteit) wordt geen setup getoond."/>
+                                    <TextBlock Text="Patroonstatus (live)" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12"
+                                               Text="In formatie → Voorlopig (live koers raakt het sleutelniveau) → Bevestigd (een slotkoers sluit er met marge buiten)."/>
+                                    <TextBlock Text="Levenscyclus (over scans)" FontWeight="SemiBold" Margin="0,8,0,0"/>
+                                    <TextBlock TextWrapping="Wrap" FontSize="12"
+                                               Text="Bevestigd → Uitgespeeld (doel gehaald) · Geïnvalideerd (teruggevallen) · Vervallen (structuur weg). 'N× gezien' = hoe vaak een patroon achtereen is herkend — een confidence-signaal."/>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
+
+                    <!-- Patroon-prestaties (item 10) — hit/fail per type uit de historie -->
+                    <Button Content="📈  Patroon-prestaties"
+                            Padding="10,6" FontSize="12"
+                            ToolTipService.ToolTip="Hit-rate per patroontype uit de opgebouwde historie (uitgespeeld vs. teruggevallen)">
+                        <Button.Flyout>
+                            <Flyout>
+                                <StackPanel Spacing="6" MaxWidth="420">
+                                    <TextBlock Text="Patroon-prestaties" FontWeight="SemiBold"/>
+                                    <TextBlock Text="{x:Bind _viewModel.PatternHistoryText, Mode=OneWay}"
+                                               TextWrapping="Wrap" FontSize="12"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                </StackPanel>
+                            </Flyout>
+                        </Button.Flyout>
+                    </Button>
                 </StackPanel>
             </Grid>
 
