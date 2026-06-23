@@ -27,6 +27,21 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.45 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.45", "Trade Advies vs. Pattern Trading: duidelijker onderscheid");
+
+        AddFeature("🧭", "Trade Advies = trend & momentum (zonder patronen)",
+            "Trade Advies bepaalt de richting puur op trend en momentum (EMA, RSI, MACD, ADX, %B, Squeeze) — " +
+            "chartpatronen tellen hier níét mee. Dat staat nu duidelijk vermeld op het scherm en in de " +
+            "onderbouwing. Daarom kan Trade Advies in een zwakke markt vooral shorts tonen, terwijl Pattern " +
+            "Trading dezelfde coin als long kan zien zodra er een bullish patroon vormt.");
+
+        AddFeature("⚠️", "Counter-trend waarschuwing in Pattern Trading",
+            "Gaat een patroon-setup tegen de daily-trend in (een Long bij een bearish trend, of een Short bij " +
+            "een bullish trend), dan verschijnt nu een amberkleurige waarschuwing '⚠ Tegen daily-trend'. Het " +
+            "patroon staat dan onder druk van de overkoepelende trend: hogere kans op een mislukte uitbraak — " +
+            "wacht op bevestiging en gebruik een kleinere positie of strakkere stop.");
+
         // ── v1.44 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.44", "Uitleg, patroon-prestaties en een opgeruimd menu");
 

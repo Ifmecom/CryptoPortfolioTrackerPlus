@@ -1,5 +1,5 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.44
+## CryptoPortfolioTracker Plus — v1.45
 
 | | |
 |---|---|
@@ -760,6 +760,20 @@ richtingssignaal (Long/Short), zodat een geweigerde setup geen niveaus op $0 too
   magic numbers in `SetupOutcomeCalibrator`/`ThreePctBacktestService`.
 - **Menu:** `MainPage.xaml` groepeert de navigatie met `NavigationViewItemHeader`s (Portfolio ·
   Analyse & handel · Bibliotheek); "Analysis" → "Analyse".
+
+**Trade Advies vs. Pattern Trading verduidelijkt *(v1.45)*:**
+- **Oorzaak van het verschil:** beide schermen delen `CalculateTradabilityScore(patterns, daily, h4)`, maar
+  Trade Advies geeft een **lege** patroonlijst mee (richting puur uit trend/momentum) terwijl Pattern Trading
+  de **volledige** gedetecteerde patronenset meegeeft (tot 40 punten, grootste blok). Daardoor kan dezelfde
+  coin in Trade Advies short en in Pattern Trading long uitvallen.
+- **Optie 2 — labeling:** de misleidende onderbouwingsregel in `TradeAnalysisService.BuildTradeSetup`
+  ("zelfde engine als Pattern Trading") is herschreven; ze vermeldt nu expliciet dat chartpatronen NIET
+  meewegen. `TradeAnalysisView` toont een cursief infolabel (`TrendMomentumNote()`) in het Overzicht én de
+  Trade Setup-sectie.
+- **Optie 3 — counter-trend waarschuwing:** nieuwe pure helper `TrendAlignment` (`Services/`) markeert een
+  Long bij een bearish daily-trend (of Short bij bullish). De waarschuwing komt als eerste onderbouwingsbullet
+  in `PatternTradingService.BuildSetupAdvice` én als amber chip "⚠ Tegen daily-trend" met tooltip via
+  `PatternCoinRow.CounterTrend*` in `PatternTradingView.xaml`. Getest: `TrendAlignmentTests` (14).
 
 **ViewModel:** `PatternTradingViewModel` (`ViewModels/`) erft van `BaseViewModel`
 **View:** `PatternTradingView` (`Views/`)

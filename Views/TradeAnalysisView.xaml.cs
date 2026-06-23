@@ -238,6 +238,7 @@ public sealed partial class TradeAnalysisView : Page
         headerRow.Children.Add(titleBlock);
         headerRow.Children.Add(tsBlock);
         OverviewPanel.Children.Add(headerRow);
+        OverviewPanel.Children.Add(TrendMomentumNote());
 
         string? lastDir = null;
         foreach (var s in results)
@@ -760,6 +761,7 @@ public sealed partial class TradeAnalysisView : Page
 
         col.Children.Add(headerRow);
         col.Children.Add(new Border { Height = 1, Background = new SolidColorBrush(Color.FromArgb(0x30, 0xFF, 0xFF, 0xFF)) });
+        col.Children.Add(TrendMomentumNote());
 
         // Geen signaal
         if (setup.Direction == "Geen signaal")
@@ -903,6 +905,21 @@ public sealed partial class TradeAnalysisView : Page
         FontSize = 12,
         TextWrapping = TextWrapping.Wrap,
         Foreground = (SolidColorBrush)Application.Current.Resources["SystemControlForegroundBaseMediumBrush"],
+    };
+
+    /// <summary>
+    /// Vaste toelichting dat Trade Advies een trend/momentum-advies is zónder chartpatronen —
+    /// zodat het verschil met Pattern Trading (dat patronen wél meeweegt) duidelijk is.
+    /// </summary>
+    private static TextBlock TrendMomentumNote() => new()
+    {
+        Text = "ℹ️  Trend- & momentum-advies — chartpatronen worden hier níét meegewogen. "
+             + "Voor patroongedreven setups (die tegengesteld kunnen uitvallen): zie Pattern Trading.",
+        FontSize = 11,
+        FontStyle = Windows.UI.Text.FontStyle.Italic,
+        TextWrapping = TextWrapping.Wrap,
+        Foreground = (SolidColorBrush)Application.Current.Resources["SystemControlForegroundBaseMediumBrush"],
+        Margin = new Thickness(0, 0, 0, 8),
     };
 
     // ── Colors ───────────────────────────────────────────────────────────────

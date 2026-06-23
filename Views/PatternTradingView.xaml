@@ -667,6 +667,19 @@
                                                            VerticalAlignment="Center"/>
                                             </StackPanel>
 
+                                            <!-- Counter-trend waarschuwing: setup gaat tegen de daily-trend in -->
+                                            <Border CornerRadius="4" Padding="8,4"
+                                                    Background="#33E67E22"
+                                                    BorderBrush="#FFE67E22" BorderThickness="1"
+                                                    HorizontalAlignment="Left"
+                                                    Visibility="{x:Bind CounterTrendVis}"
+                                                    ToolTipService.ToolTip="{x:Bind CounterTrendToolTip}">
+                                                <TextBlock Text="{x:Bind CounterTrendText}"
+                                                           FontSize="11" FontWeight="SemiBold"
+                                                           Foreground="#FFE6A23C"
+                                                           TextWrapping="Wrap"/>
+                                            </Border>
+
                                             <!-- Price levels grid -->
                                             <Grid ColumnSpacing="20" RowSpacing="2">
                                                 <Grid.ColumnDefinitions>

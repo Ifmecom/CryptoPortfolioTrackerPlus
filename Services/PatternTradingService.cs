@@ -692,6 +692,12 @@ public class PatternTradingService : IPatternTradingService
         if (!setup.Reasoning.Any())
             setup.Reasoning.Add($"Score {score}/100 ({dir}) op basis van gecombineerde indicator- en patroonanalyse.");
 
+        // Counter-trend: gaat de setup-richting tegen de daily-trend in, zet de waarschuwing
+        // bovenaan — het patroon staat dan onder druk van de overkoepelende trend.
+        var counterTrend = TrendAlignment.CounterTrendWarning(dir, daily.TrendBias);
+        if (counterTrend is not null)
+            setup.Reasoning.Insert(0, counterTrend);
+
         return setup;
     }
 

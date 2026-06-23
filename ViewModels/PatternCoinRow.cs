@@ -84,6 +84,15 @@ public class PatternCoinRow
     public string TfConflictText   => HasTfConflict ? "⚠ TF-conflict 1D/4H" : "";
     public Visibility TfConflictVis => HasTfConflict ? Visibility.Visible : Visibility.Collapsed;
 
+    // ── Counter-trend waarschuwing (setup-richting tegen de daily-trend) ──────
+    /// <summary>True wanneer er een setup is die tegen de daily-trend ingaat
+    /// (Long bij een bearish daily-trend / Short bij een bullish daily-trend).</summary>
+    public bool       IsCounterTrend      => HasSetup && TrendAlignment.IsCounterTrend(Direction, DailyBias);
+    public string     CounterTrendText    => IsCounterTrend ? TrendAlignment.ChipLabel : "";
+    /// <summary>Volledige uitleg voor de mouseover-tooltip.</summary>
+    public string     CounterTrendToolTip => TrendAlignment.CounterTrendWarning(Direction, DailyBias) ?? "";
+    public Visibility CounterTrendVis     => IsCounterTrend ? Visibility.Visible : Visibility.Collapsed;
+
     // ── Patterns ────────────────────────────────────────────────────────────
     /// <summary>Top-6 strongest patterns, used as badge chips in the card.</summary>
     public IReadOnlyList<PatternBadge> PatternBadges { get; }

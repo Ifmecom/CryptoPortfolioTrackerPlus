@@ -28,6 +28,16 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.45  —  Trade Advies vs. Pattern Trading: duidelijker onderscheid");
+
+        AddFeature("🧭", "Trade Advies = trend & momentum",
+            "Trade Advies bepaalt de richting zonder chartpatronen (die zitten in Pattern Trading) — nu duidelijk " +
+            "vermeld. Daarom kan dezelfde coin hier short en in Pattern Trading long zijn.");
+
+        AddFeature("⚠️", "Counter-trend waarschuwing",
+            "Pattern Trading waarschuwt nu '⚠ Tegen daily-trend' als een setup tegen de trend ingaat — het patroon " +
+            "staat dan onder druk; wacht op bevestiging en gebruik een kleinere positie.");
+
         AddVersionHeader("v1.44  —  Uitleg, patroon-prestaties en een opgeruimd menu");
 
         AddFeature("ℹ️", "Score-uitleg + patroon-prestaties",

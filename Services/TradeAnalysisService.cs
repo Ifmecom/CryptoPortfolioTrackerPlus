@@ -530,7 +530,7 @@ public class TradeAnalysisService : ITradeAnalysisService
                          :                          "Laag";
 
         // Reasoning — uitgebreid met het hoe en waarom
-        setup.Reasoning.Add($"Gecombineerde score {score:F0}/100: live berekening op basis van vers opgehaalde OHLCV-data — zelfde engine als Pattern Trading (EMA-cross, RSI, MACD, ADX, %B, Squeeze). Boven 60 = Long-bias, onder 40 = Short-bias.");
+        setup.Reasoning.Add($"Gecombineerde score {score:F0}/100: trend- & momentum-advies op basis van vers opgehaalde OHLCV-data (EMA-cross, RSI, MACD, ADX, %B, Squeeze). Chartpatronen worden hier NIET meegewogen — die zitten in Pattern Trading, dat daardoor een afwijkende richting kan geven. Boven 60 = Long-bias, onder 40 = Short-bias.");
 
         if (setup.Direction != "Geen signaal")
         {
