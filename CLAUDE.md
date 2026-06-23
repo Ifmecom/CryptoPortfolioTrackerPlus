@@ -43,7 +43,7 @@ dotnet test "…\CryptoPortfolioTracker.Tests\CryptoPortfolioTracker.Tests.cspro
 
 - Werk op `main`, push per feature.
 - PowerShell-commitmessage via single-quoted here-string `@'…'@` **zonder dubbele aanhalingstekens** (PowerShell 5.1 splitst de message anders).
-- Trailer: `Co-Authored-By: Claude Fable 5 <noreply@anthropic.com>`.
+- Trailer: `Co-Authored-By: Claude Opus 4.8 <noreply@anthropic.com>`.
 
 ---
 
