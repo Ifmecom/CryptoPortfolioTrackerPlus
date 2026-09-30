@@ -39,6 +39,10 @@ public class CoinSignalRow
     public double TaScore        { get; }
     public string Reasoning      { get; }
 
+    // Gemeten kans uit de signal-outcome-tracker (v1.46): hoe vergelijkbare signalen historisch afliepen.
+    public string MeasuredText    { get; }
+    public string MeasuredTooltip { get; }
+
     // Backing coin price (for paper trade)
     public double Price          { get; }
 
@@ -83,7 +87,8 @@ public class CoinSignalRow
     public CoinSignalRow(Coin coin, Signal? latestSignal = null,
                          IReadOnlyList<double>? trend1h  = null,
                          IReadOnlyList<double>? trend4h  = null,
-                         IReadOnlyList<double>? trendDay = null)
+                         IReadOnlyList<double>? trendDay = null,
+                         IReadOnlyList<CryptoPortfolioTracker.Services.SignalCalibrationRow>? calibration = null)
     {
         Rank           = coin.Rank;
         Name           = coin.Name;
@@ -130,5 +135,13 @@ public class CoinSignalRow
             TaScore       = 0;
             Reasoning     = string.Empty;
         }
+
+        // Gemeten kans voor dit signaal (bron Signal, standaard-horizon 7 dagen).
+        var cal = calibration is null
+            ? null
+            : CryptoPortfolioTracker.Services.SignalCalibrationCalculator.Lookup(
+                calibration, CryptoPortfolioTracker.Services.SignalOutcomeSources.Signal, Direction, CombinedScore);
+        MeasuredText    = CryptoPortfolioTracker.Services.SignalCalibrationCalculator.ShortText(cal);
+        MeasuredTooltip = CryptoPortfolioTracker.Services.SignalCalibrationCalculator.Explanation(cal);
     }
 }

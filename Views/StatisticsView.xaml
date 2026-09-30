@@ -74,7 +74,7 @@
             </StackPanel>
         </Border>
 
-        <!-- ── Pivot: Trade Journal | Setup Strategie ──────────────────── -->
+        <!-- ── Pivot: Trade Journal | Setup Strategie | Signaal-kalibratie ── -->
         <Pivot Grid.Row="2" Margin="8,0,8,0">
 
             <!-- ═══════════════════════════════════════════════════════════
@@ -717,6 +717,403 @@
                                     </ListView>
                                 </StackPanel>
                             </Border>
+                        </Grid>
+
+                    </StackPanel>
+                </ScrollViewer>
+            </PivotItem>
+
+            <!-- ═══════════════════════════════════════════════════════════
+                 TAB 3 — Signaal-kalibratie (v1.46): gemeten uitkomst per score
+                 ═══════════════════════════════════════════════════════════ -->
+            <PivotItem Header="Signaal-kalibratie">
+                <ScrollViewer Padding="8,8,8,16">
+                    <StackPanel Spacing="16">
+
+                        <!-- Uitleg + horizon + bijwerken -->
+                        <Grid ColumnSpacing="12">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Grid.Column="0" Spacing="2">
+                                <TextBlock Text="Hoe vaak had een signaal gelijk?"
+                                           Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                <TextBlock TextWrapping="Wrap"
+                                           Style="{ThemeResource CaptionTextBlockStyle}"
+                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                           Text="Elk Long/Short-signaal (één per coin per dag) wordt gevolgd: instap op de slotkoers van de signaaldag, daarna het rendement na 1, 3, 7 en 14 dagen in de richting van het signaal. Zo wordt een score vertaald naar een gemeten trefkans. Minimaal 20 metingen per groep voor een betrouwbare uitspraak (⚠ = nog te weinig)."/>
+                            </StackPanel>
+                            <ComboBox Grid.Column="1"
+                                      MinWidth="130"
+                                      VerticalAlignment="Center"
+                                      Header="Horizon"
+                                      ToolTipService.ToolTip="Na hoeveel dagen wordt het resultaat gemeten?"
+                                      ItemsSource="{x:Bind _viewModel.HorizonOptions}"
+                                      SelectedItem="{x:Bind _viewModel.SelectedHorizon, Mode=TwoWay}"/>
+                            <Button Grid.Column="2"
+                                    VerticalAlignment="Bottom"
+                                    Command="{x:Bind _viewModel.UpdateOutcomesCommand}"
+                                    ToolTipService.ToolTip="Haalt nu de koersdata op voor alle nog lopende signalen (gebeurt anders automatisch, hooguit elke 30 minuten).">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE895;" FontSize="13"/>
+                                    <TextBlock Text="Uitkomsten bijwerken"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+
+                        <!-- Status -->
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <ProgressRing Width="14" Height="14" IsActive="{x:Bind _viewModel.IsUpdatingOutcomes, Mode=OneWay}"/>
+                            <TextBlock Text="{x:Bind _viewModel.CalibrationStatus, Mode=OneWay}"
+                                       Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                        </StackPanel>
+
+                        <!-- Samenvatting per bron + richting -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Alle Long-signalen van de SignalEngine samen, op de gekozen horizon.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Signalen · Long"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SignalLongSummary, Mode=OneWay}"
+                                               FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="1" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Alle Short-signalen van de SignalEngine samen, op de gekozen horizon.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Signalen · Short"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.SignalShortSummary, Mode=OneWay}"
+                                               FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="2" Margin="3,0,3,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Alle Long-setups uit Pattern Trading-scans samen (score ≥ 40), op de gekozen horizon.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Pattern Trading · Long"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.PatternLongSummary, Mode=OneWay}"
+                                               FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                            <Border Grid.Column="3" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12"
+                                    ToolTipService.ToolTip="Alle Short-setups uit Pattern Trading-scans samen (score ≥ 40), op de gekozen horizon.">
+                                <StackPanel Spacing="4">
+                                    <TextBlock Text="Pattern Trading · Short"
+                                               Style="{ThemeResource CaptionTextBlockStyle}"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <TextBlock Text="{x:Bind _viewModel.PatternShortSummary, Mode=OneWay}"
+                                               FontSize="14" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                </StackPanel>
+                            </Border>
+
+                        </Grid>
+
+                        <!-- Per scoreklasse -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Signalen (SignalEngine) -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Signalen (SignalEngine)"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="Per scoreklasse — CombinedScore van TA + sentiment + regime."
+                                               Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="110"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Richting"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
+                                        <TextBlock Grid.Column="1" Text="Score" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Scoreklasse op het moment van het signaal. Signalen: Long ≥ 60, Short ≤ 40 (hoe verder van 50, hoe sterker). Pattern Trading: TradabilityScore (≥ 40 = setup)."/>
+                                        <TextBlock Grid.Column="2" Text="n"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gemeten signalen (één per coin per dag). ⚠ = minder dan 20 metingen: nog geen betrouwbare uitspraak."/>
+                                        <TextBlock Grid.Column="3" Text="Raak"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Trefkans: % van de signalen waarbij de koers na de gekozen horizon in de richting van het signaal stond. Groen ≥ 55%, rood &lt; 45%, grijs = neutraal of te weinig data."/>
+                                        <TextBlock Grid.Column="4" Text="Gem."      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld rendement in de richting van het signaal na de gekozen horizon (instap = slotkoers van de signaaldag)."/>
+                                        <TextBlock Grid.Column="5" Text="Mediaan"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Mediaan rendement — minder gevoelig voor één uitschieter dan het gemiddelde."/>
+                                        <TextBlock Grid.Column="6" Text="Mee / Tegen" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddelde grootste beweging mét het signaal mee / tégen het signaal in binnen 14 dagen (op basis van high/low), in %."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.SignalCalibration, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CalibrationDisplayRow">
+                                                <Grid ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="45"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind DirectionLabel}"   FontSize="12" VerticalAlignment="Center" Foreground="{x:Bind DirectionBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Group}"            FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind CountDisplay}"     FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind HitRateDisplay}"   FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind HitRateBrush}"/>
+                                                    <TextBlock Grid.Column="4" Text="{x:Bind AvgReturnDisplay}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgReturnBrush}"/>
+                                                    <TextBlock Grid.Column="5" Text="{x:Bind MedianDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="6" Text="{x:Bind MfeMaeDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pattern Trading -->
+                            <Border Grid.Column="1" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Pattern Trading"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="Per scoreklasse — TradabilityScore van de patroonscan."
+                                               Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="110"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Richting"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
+                                        <TextBlock Grid.Column="1" Text="Score" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="Scoreklasse op het moment van het signaal. Signalen: Long ≥ 60, Short ≤ 40 (hoe verder van 50, hoe sterker). Pattern Trading: TradabilityScore (≥ 40 = setup)."/>
+                                        <TextBlock Grid.Column="2" Text="n"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gemeten signalen (één per coin per dag). ⚠ = minder dan 20 metingen: nog geen betrouwbare uitspraak."/>
+                                        <TextBlock Grid.Column="3" Text="Raak"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Trefkans: % van de signalen waarbij de koers na de gekozen horizon in de richting van het signaal stond. Groen ≥ 55%, rood &lt; 45%, grijs = neutraal of te weinig data."/>
+                                        <TextBlock Grid.Column="4" Text="Gem."      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld rendement in de richting van het signaal na de gekozen horizon (instap = slotkoers van de signaaldag)."/>
+                                        <TextBlock Grid.Column="5" Text="Mediaan"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Mediaan rendement — minder gevoelig voor één uitschieter dan het gemiddelde."/>
+                                        <TextBlock Grid.Column="6" Text="Mee / Tegen" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddelde grootste beweging mét het signaal mee / tégen het signaal in binnen 14 dagen (op basis van high/low), in %."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.PatternCalibration, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CalibrationDisplayRow">
+                                                <Grid ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="45"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind DirectionLabel}"   FontSize="12" VerticalAlignment="Center" Foreground="{x:Bind DirectionBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Group}"            FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind CountDisplay}"     FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind HitRateDisplay}"   FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind HitRateBrush}"/>
+                                                    <TextBlock Grid.Column="4" Text="{x:Bind AvgReturnDisplay}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgReturnBrush}"/>
+                                                    <TextBlock Grid.Column="5" Text="{x:Bind MedianDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="6" Text="{x:Bind MfeMaeDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
+                        </Grid>
+
+                        <!-- Per marktregime -->
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Signalen per marktregime -->
+                            <Border Grid.Column="0" Margin="0,0,6,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Signalen per marktregime"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="Werkt een signaal beter in een bepaalde marktfase?"
+                                               Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="110"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Richting"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
+                                        <TextBlock Grid.Column="1" Text="Regime" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="BTC-marktregime op het moment van het signaal (RiskOn / Neutral / RiskOff)."/>
+                                        <TextBlock Grid.Column="2" Text="n"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gemeten signalen (één per coin per dag). ⚠ = minder dan 20 metingen: nog geen betrouwbare uitspraak."/>
+                                        <TextBlock Grid.Column="3" Text="Raak"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Trefkans: % van de signalen waarbij de koers na de gekozen horizon in de richting van het signaal stond. Groen ≥ 55%, rood &lt; 45%, grijs = neutraal of te weinig data."/>
+                                        <TextBlock Grid.Column="4" Text="Gem."      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld rendement in de richting van het signaal na de gekozen horizon (instap = slotkoers van de signaaldag)."/>
+                                        <TextBlock Grid.Column="5" Text="Mediaan"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Mediaan rendement — minder gevoelig voor één uitschieter dan het gemiddelde."/>
+                                        <TextBlock Grid.Column="6" Text="Mee / Tegen" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddelde grootste beweging mét het signaal mee / tégen het signaal in binnen 14 dagen (op basis van high/low), in %."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.SignalRegimeCalibration, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CalibrationDisplayRow">
+                                                <Grid ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="45"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind DirectionLabel}"   FontSize="12" VerticalAlignment="Center" Foreground="{x:Bind DirectionBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Group}"            FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind CountDisplay}"     FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind HitRateDisplay}"   FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind HitRateBrush}"/>
+                                                    <TextBlock Grid.Column="4" Text="{x:Bind AvgReturnDisplay}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgReturnBrush}"/>
+                                                    <TextBlock Grid.Column="5" Text="{x:Bind MedianDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="6" Text="{x:Bind MfeMaeDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
+                            <!-- Pattern Trading per marktregime -->
+                            <Border Grid.Column="1" Margin="6,0,0,0"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                    BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                    BorderThickness="1" CornerRadius="8" Padding="16,12">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Pattern Trading per marktregime"
+                                               Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <TextBlock Text="Werkt een setup beter in een bepaalde marktfase?"
+                                               Style="{ThemeResource CaptionTextBlockStyle}" TextWrapping="Wrap"
+                                               Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    <Grid>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="*"/>
+                                            <ColumnDefinition Width="45"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="60"/>
+                                            <ColumnDefinition Width="70"/>
+                                            <ColumnDefinition Width="110"/>
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock Grid.Column="0" Text="Richting"  FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
+                                        <TextBlock Grid.Column="1" Text="Regime" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" ToolTipService.ToolTip="BTC-marktregime op het moment van het signaal (RiskOn / Neutral / RiskOff)."/>
+                                        <TextBlock Grid.Column="2" Text="n"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Aantal gemeten signalen (één per coin per dag). ⚠ = minder dan 20 metingen: nog geen betrouwbare uitspraak."/>
+                                        <TextBlock Grid.Column="3" Text="Raak"      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Trefkans: % van de signalen waarbij de koers na de gekozen horizon in de richting van het signaal stond. Groen ≥ 55%, rood &lt; 45%, grijs = neutraal of te weinig data."/>
+                                        <TextBlock Grid.Column="4" Text="Gem."      FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddeld rendement in de richting van het signaal na de gekozen horizon (instap = slotkoers van de signaaldag)."/>
+                                        <TextBlock Grid.Column="5" Text="Mediaan"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Mediaan rendement — minder gevoelig voor één uitschieter dan het gemiddelde."/>
+                                        <TextBlock Grid.Column="6" Text="Mee / Tegen" FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Gemiddelde grootste beweging mét het signaal mee / tégen het signaal in binnen 14 dagen (op basis van high/low), in %."/>
+                                    </Grid>
+                                    <MenuFlyoutSeparator/>
+                                    <ListView ItemsSource="{x:Bind _viewModel.PatternRegimeCalibration, Mode=OneWay}"
+                                              SelectionMode="None" IsItemClickEnabled="False" MinHeight="20">
+                                        <ListView.ItemContainerStyle>
+                                            <Style TargetType="ListViewItem">
+                                                <Setter Property="Padding" Value="0,3"/>
+                                                <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                                <Setter Property="MinHeight" Value="0"/>
+                                            </Style>
+                                        </ListView.ItemContainerStyle>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate x:DataType="vm:CalibrationDisplayRow">
+                                                <Grid ToolTipService.ToolTip="{x:Bind Tooltip}">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="*"/>
+                                                        <ColumnDefinition Width="45"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="60"/>
+                                                        <ColumnDefinition Width="70"/>
+                                                        <ColumnDefinition Width="110"/>
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Grid.Column="0" Text="{x:Bind DirectionLabel}"   FontSize="12" VerticalAlignment="Center" Foreground="{x:Bind DirectionBrush}"/>
+                                                    <TextBlock Grid.Column="1" Text="{x:Bind Group}"            FontSize="12" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="2" Text="{x:Bind CountDisplay}"     FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                    <TextBlock Grid.Column="3" Text="{x:Bind HitRateDisplay}"   FontSize="12" FontWeight="SemiBold" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind HitRateBrush}"/>
+                                                    <TextBlock Grid.Column="4" Text="{x:Bind AvgReturnDisplay}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" Foreground="{x:Bind AvgReturnBrush}"/>
+                                                    <TextBlock Grid.Column="5" Text="{x:Bind MedianDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                                    <TextBlock Grid.Column="6" Text="{x:Bind MfeMaeDisplay}"    FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center" FontFamily="Consolas"/>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+
                         </Grid>
 
                     </StackPanel>

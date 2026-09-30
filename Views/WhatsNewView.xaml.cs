@@ -27,6 +27,26 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.46 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.46", "Signaal-kalibratie: hoe vaak had een signaal gelijk?");
+
+        AddFeature("🎯", "Gemeten trefkans per score",
+            "Elk Long/Short-signaal van de SignalEngine én elke Pattern Trading-setup (score ≥ 40) wordt nu " +
+            "gevolgd: instap op de slotkoers van de signaaldag, daarna het rendement na 1, 3, 7 en 14 dagen in " +
+            "de richting van het signaal. Eén meting per coin per dag. Bestaande signalen worden met " +
+            "terugwerkende kracht meegenomen, dus je ziet direct resultaten uit je eigen historie.");
+
+        AddFeature("📊", "Nieuw tabblad Statistieken → Signaal-kalibratie",
+            "Per bron (Signalen / Pattern Trading), richting en scoreklasse: trefkans, gemiddeld en mediaan " +
+            "rendement, en de gemiddelde grootste beweging mee/tegen binnen 14 dagen — ook uitgesplitst per " +
+            "BTC-marktregime. Kies de horizon (1/3/7/14 dagen) en gebruik het periodefilter. Groepen met minder " +
+            "dan 20 metingen krijgen een ⚠ en blijven grijs: nog geen betrouwbare uitspraak.");
+
+        AddFeature("🔢", "Gemeten kans naast elk signaal",
+            "Op de Analyse-pagina staat onder de score nu hoe vergelijkbare signalen (zelfde richting en " +
+            "scoreklasse) het na 7 dagen deden, bijvoorbeeld '58% · 43'. Zolang er te weinig metingen zijn zie " +
+            "je 'n=…'. Beweeg met de muis over de score voor de uitleg.");
+
         // ── v1.45 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.45", "Trade Advies vs. Pattern Trading: duidelijker onderscheid");
 

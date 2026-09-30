@@ -24,6 +24,7 @@ public partial class SignalsViewModel : BaseViewModel
     private readonly IIndicatorService _indicatorService;
     private readonly ISignalEngine _signalEngine;
     private readonly ITradeService _tradeService;
+    private readonly ISignalOutcomeService _outcomeService;
 
     [ObservableProperty] private ObservableCollection<CoinSignalRow> rows = new();
     [ObservableProperty] private bool isRefreshing;
@@ -84,6 +85,7 @@ public partial class SignalsViewModel : BaseViewModel
         IIndicatorService indicatorService,
         ISignalEngine signalEngine,
         ITradeService tradeService,
+        ISignalOutcomeService outcomeService,
         Settings appSettings)
         : base(appSettings)
     {
@@ -91,6 +93,7 @@ public partial class SignalsViewModel : BaseViewModel
         _indicatorService = indicatorService;
         _signalEngine     = signalEngine;
         _tradeService     = tradeService;
+        _outcomeService   = outcomeService;
     }
 
     public async Task ViewLoading()
@@ -312,13 +315,26 @@ public partial class SignalsViewModel : BaseViewModel
             .GroupBy(s => s.CoinId)
             .ToDictionary(g => g.Key, g => g.First());
 
+        // Gemeten kans per scoreklasse (v1.46) — alleen DB, geen netwerk. Faalt stil.
+        IReadOnlyList<SignalCalibrationRow> calibration;
+        try
+        {
+            calibration = await _outcomeService.GetCalibrationAsync(
+                SignalOutcomeSources.Signal, SignalCalibrationCalculator.DefaultHorizonDays);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "Signaal-kalibratie laden mislukt");
+            calibration = Array.Empty<SignalCalibrationRow>();
+        }
+
         // Build rows with sparkline trend data
         var rowList = new List<CoinSignalRow>(coins.Count);
         foreach (var coin in coins)
         {
             var (t1h, t4h, tDay) = await LoadTrendDataAsync(coin);
             rowList.Add(new CoinSignalRow(coin, signalMap.GetValueOrDefault(coin.Id),
-                                          t1h, t4h, tDay));
+                                          t1h, t4h, tDay, calibration));
         }
 
         _allRows = rowList;

@@ -1,10 +1,10 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.45
+## CryptoPortfolioTracker Plus — v1.46
 
 | | |
 |---|---|
-| **Versie** | 1.32 |
-| **Datum** | Mei 2026 |
+| **Versie** | 1.46 |
+| **Datum** | September 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
 | **Status** | Actief in ontwikkeling |
@@ -45,6 +45,7 @@ CryptoPortfolioTracker Plus is een desktop-applicatie voor Windows waarmee een i
 - **Trade Journal** — paper trading én live trades, met P&L en R-multiple
 - **Trade Advies** — multi-timeframe analyse per coin met entry/SL/TP-berekening
 - **Statistieken** — geaggregeerde handelsprestaties over meerdere periodes
+- **Signaal-kalibratie** *(v1.46)* — elk signaal en elke Pattern-setup wordt gevolgd; scores worden vertaald naar een gemeten trefkans
 - **Belasting** — Box 3-berekening (NL) met uitbreidbare architectuur voor andere landen
 
 ### 1.2 Primaire gebruiker
@@ -104,6 +105,9 @@ services.AddSingleton<IPatternDetectionService, PatternDetectionService>(); // p
 services.AddScoped<IPatternStateStore, PatternStateStore>();                 // P7 — patroon-geheugen (EF)
 services.AddScoped<IPatternTradingService, PatternTradingService>();         // afhankelijk van PortfolioService
 
+// Signal-outcome-tracker (v1.46):
+services.AddScoped<ISignalOutcomeService, SignalOutcomeService>();           // uitkomst per signaal + kalibratie (EF)
+
 // Setup Tracker (v1.30):
 services.AddScoped<IWatchedSetupService, WatchedSetupService>(); // CRUD + auto-status + stats
 services.AddScoped<SetupTrackerViewModel>();
@@ -116,7 +120,15 @@ services.AddScoped<SetupTrackerView>();
 |---------|-------|-------------|
 | `IPatternDetectionService` | Singleton | Pure berekening: Level 1 + Level 2 patroondetectie, TradabilityScore berekening. Geen I/O, geen state. |
 | `IPatternStateStore` | Scoped | P7 — patroon-geheugen: laadt/persisteert `PatternStateRecord`s, draait de pure `PatternReconciler`, verrijkt detecties met hun levenscyclus. |
-| `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen, patroon-geheugen verzoenen (sequentieel ná de scan). |
+| `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen, patroon-geheugen verzoenen (sequentieel ná de scan), en *(v1.46)* de scan vastleggen via `ISignalOutcomeService.RecordPatternScanAsync`. |
+
+**Signal-outcome-tracker *(v1.46)*:**
+
+| Service | Scope | Omschrijving |
+|---------|-------|-------------|
+| `ISignalOutcomeService` | Scoped | Neemt SignalEngine-signalen op uit `Signals` (ook met terugwerkende kracht), legt Pattern-scans vast, haalt per coin één keer daily klines op (Binance→KuCoin→Gate.io→MEXC, max 3 parallel) en meet openstaande uitkomsten. DB-toegang geserialiseerd via een interne semafoor; één bijwerk-ronde tegelijk. Faalt nooit hard. |
+| `SignalOutcomeEvaluator` | static (puur) | Meting van één signaal op gesloten daily candles (zie §6.10). |
+| `SignalCalibrationCalculator` | static (puur) | Kalibratie per bron/richting/scoreklasse en per regime (zie §6.10). |
 
 ### 2.4 Database-toegang
 
@@ -256,7 +268,7 @@ en een samenvattend verdict. Geen nieuwe databron — hergebruikt de bestaande k
 | StochRSI | Oscillator 0–100 | `CalculateStochRsiAsync` |
 | Sentiment | Gewogen gem. sentimentscore (–1.0 tot +1.0) | `SentimentService` |
 | Regime | Marktregime (RiskOn/Neutral/RiskOff) | `MarketRegimeService` |
-| Score | CombinedScore 0–100 | `SignalEngine` |
+| Score | CombinedScore 0–100, met daaronder *(v1.46)* de gemeten trefkans van vergelijkbare signalen na 7 dagen (`58% · 43`, of `n=…` bij < 20 metingen; tooltip met uitleg) | `SignalEngine` + `SignalCalibrationCalculator` |
 | Richting | Long / Short / Flat | `SignalEngine` |
 | EMA Cross | Bullish/Bearish + dagen geleden | `CalculateExtendedIndicatorsAsync` |
 | RSI | Dagelijks, 14-perioden | `CalculateRsiAsync` |
@@ -541,10 +553,15 @@ Bij "Aangepast" verschijnen twee `DatePicker`-controls voor start- en einddatum.
 |---------|--------|
 | Trade Journal | Bestaande kaarten, taartdiagrammen, toptabel; plus Trade-type (Live/Paper) filter |
 | Setup Strategie | Win Rate TP1/TP2, Profit Factor, Expectancy, gem. P&L%, gem. houdtijd, breakdowntabellen per richting/score/marktregime |
+| Signaal-kalibratie *(v1.46)* | Horizon-keuze (1/3/7/14 dagen) + knop "Uitkomsten bijwerken"; vier samenvattingskaarten (Signalen/Pattern × Long/Short); tabellen per scoreklasse en per BTC-marktregime met n, trefkans, gem. en mediaan rendement, gem. mee-/tegenbeweging (MFE/MAE). Groepen met < 20 metingen krijgen ⚠ en een grijze trefkans. |
 
-De periodefilter (bovenaan de pagina) geldt voor beide tabbladen.
+De periodefilter (bovenaan de pagina) geldt voor alle tabbladen (bij Signaal-kalibratie op `SignalAt`).
 
-**Zie §6.2 voor trade-statistieken en §6.9 voor setup-strategie-statistieken.**
+**Signaal-kalibratie laden *(v1.46)*:** `StatisticsViewModel.LoadCalibrationAsync` roept `ISignalOutcomeService.UpdateAsync`
+automatisch hooguit elke 30 minuten aan (de knop forceert), leest daarna alle `SignalOutcome`s en bouwt de tabellen in
+`BuildCalibration()` (zonder netwerk — ook bij wisselen van horizon). Rijen: `CalibrationDisplayRow` (wrapper met kleuren).
+
+**Zie §6.2 voor trade-statistieken, §6.9 voor setup-strategie-statistieken en §6.10 voor de signaal-kalibratie.**
 
 ---
 
@@ -1039,6 +1056,7 @@ BronSource (standalone)
 ExchangeAccount (standalone)
 FearGreedReading (standalone)
 WatchedSetup (standalone — geen FK naar Coin; coin hoeft niet in portfolio te zijn)
+SignalOutcome (standalone — gedenormaliseerd CoinApiId; SourceRefId verwijst zacht naar Signal.Id)
 ```
 
 ### 5.2 Entiteiten gedetailleerd
@@ -1147,7 +1165,7 @@ Gegenereerd handelssignaal.
 | `Timeframe` | Timeframe | OneHour / FourHour / OneDay |
 | `TaScore` | double | Technische analyse-score (0–100) |
 | `SentimentScore` | double | Genormaliseerde sentimentscore (0–100) |
-| `MarketRegimeMultiplier` | double | Regime-multiplier (0.8 / 1.0 / 1.2) |
+| `MarketRegimeMultiplier` | double | Regime-multiplier: Long 1.0/0.7/0.3 en Short 0.7/1.0/1.3 bij RiskOn/Neutral/RiskOff (eenduidig terug te rekenen naar het regime) |
 | `CombinedScore` | double | Eindscore (0–100) |
 | `Direction` | SignalDirection | Long / Short / Flat |
 | `Reasoning` | string | Uitleg in tekst |
@@ -1272,6 +1290,27 @@ Fundamentele analyse per coin (één rij per coin, upsert op `ApiId`). Tabel aan
 | `Verdict` | string | Exceptional … Avoid |
 | `Confidence` | double | Onderbouwing van het raamwerk (0–100) |
 | `UpdatedAt` | DateTime | Laatste refresh (UTC) |
+
+#### SignalOutcome *(v1.46)*
+Gemeten uitkomst van één signaal — één rij per bron + coin + UTC-dag (unieke index `Source, CoinApiId, SignalDay`).
+Tabel aangemaakt via `ApplyPlusSchemaAsync`; documentatie-migratie `20260930120000_AddSignalOutcomes`.
+
+| Eigenschap | Type | Omschrijving |
+|-----------|------|-------------|
+| `Id` | int | PK |
+| `Source` | string | `"Signal"` (SignalEngine) of `"Pattern"` (Pattern Trading-scan) |
+| `SourceRefId` | int? | `Signal.Id` bij bron Signal |
+| `CoinApiId` / `CoinSymbol` | string | Coin-identificatie (gedenormaliseerd) |
+| `Direction` | string | `"Long"` / `"Short"` (Flat/Neutraal wordt niet gevolgd) |
+| `Score` | double | CombinedScore resp. TradabilityScore op het moment van het signaal |
+| `MarketRegime` | string | BTC-regime bij het signaal (Signal: afgeleid uit de multiplier; Pattern: `IMarketRegimeService`), leeg = onbekend |
+| `SignalAt` / `SignalDay` | DateTime | Tijdstip (UTC) en UTC-datum van het signaal |
+| `EntryPrice` | double | Slotkoers van de signaaldag (0 = nog niet gemeten) |
+| `Return1d` / `Return3d` / `Return7d` / `Return14d` | double? | Richting-gecorrigeerd rendement in % (positief = signaal had gelijk) |
+| `MaxFavorablePct` / `MaxAdversePct` | double? | Grootste beweging mee / tegen binnen 14 dagen (high/low), in % |
+| `IsComplete` | bool | Alle horizons gemeten — wordt daarna niet meer opgehaald |
+| `FailedAttempts` | int | Mislukte metingen (geen koersdata); na 5 wordt de rij overgeslagen |
+| `EvaluatedAt` | DateTime? | Laatste meting |
 
 #### PatternResult *(Models/ — geen DB-entiteit)*
 Één gedetecteerd patroon op een bepaald timeframe.
@@ -1909,6 +1948,39 @@ Berekend in `StatisticsViewModel.LoadSetupStatsAsync()` op basis van gesloten `W
 
 De periodefilter van het Trade Journal-tabblad (SelectedPeriod) geldt ook voor de setup statistieken.
 
+### 6.10 Signaal-kalibratie *(v1.46)*
+
+**Selectie.** SignalEngine: per coin per UTC-dag het eerste Long/Short-signaal (`FirstPerCoinPerDay`; Flat telt niet).
+De engine kan vaker per dag draaien — zonder ontdubbeling zouden dagen met veel klikken zwaarder wegen. Pattern
+Trading: bij elke portfolio-scan per coin de `PrimaryDirection` + `TradabilityScore`, alleen bij Long/Short en score ≥ 40
+(de setup-drempel); de eerste scan van de dag telt.
+
+**Meting** (`SignalOutcomeEvaluator.Measure`, alleen gesloten daily candles, UTC):
+```
+instap      = slotkoers van de candle van de signaaldag  (ligt ná het signaal → geen lookahead)
+teken       = +1 (Long) / −1 (Short)
+rendement_h = teken × (slot_{dag+h} / instap − 1) × 100          h ∈ {1, 3, 7, 14}
+              (ontbreekt candle dag+h: laatste gesloten candle tussen dag+1 en dag+h)
+MFE         = max(0, grootste beweging mee)  over high/low van dag+1 … dag+14
+MAE         = max(0, grootste beweging tegen) over high/low van dag+1 … dag+14
+compleet    = alle vier horizons bekend
+```
+
+**Kalibratie** (`SignalCalibrationCalculator`), per bron × richting × scoreklasse (ook per regime), op één horizon:
+
+| Scoreklassen | Long | Short |
+|---|---|---|
+| Signalen (CombinedScore) | 60–69 · 70–79 · 80–100 | 31–40 · 21–30 · 0–20 |
+| Pattern Trading (TradabilityScore) | 40–59 · 60–79 · 80–100 | 40–59 · 60–79 · 80–100 |
+
+```
+trefkans  = #(rendement_h > 0) / n × 100        (0 telt niet als raak)
+gemiddeld = Σ rendement_h / n        mediaan = middelste waarde
+betrouwbaar als n ≥ ReliabilityThresholds.MinSignalOutcomes (20)
+```
+De drempel is hoger dan bij patronen (10): een rendement na N dagen is ruiziger, en signalen op dezelfde dag bewegen
+vaak samen met de markt mee (onderling afhankelijk).
+
 ---
 
 ## 7. Externe integraties
@@ -2346,7 +2418,7 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | **Tarieven belasting handmatig** | `NetherlandsTaxCalculator` tarieven moeten jaarlijks handmatig bijgewerkt worden in `GetRates()` |
 | **Box 3 vereenvoudigd** | De schuldenaftrek gebruikt proportionele vereenvoudiging; de exacte Belastingdienst-methode voor schuld-fictief-rendement is niet geïmplementeerd |
 | **MarketChart-JSON zonder volume** | De lokale `MarketChart_{id}.json` bevat alleen `[timestamp, prijs]` — geen OHLC en geen volume. `IndicatorService.LoadQuotesAsync` zet daarom `Volume = 0`. Volume-indicatoren (OBV/MFI/VWAP) mogen hier niet op draaien; de Signalen-score gebruikt bewust geen volume. Voor echte volume gebruiken Trade Advies, Pattern Trading en 3% Trading klines via `IBinanceDataService` |
-| **Geen kalibratie van Signalen/Pattern-scores** *(v1.33)* | Alleen de 3%-tool en Setup Strategie kalibreren score → historische hitrate, omdat alleen `WatchedSetup`/backtests forward-uitkomsten vastleggen. De `SignalEngine`-CombinedScore en de Pattern-`TradabilityScore` hebben geen opgeslagen uitkomsthistorie en worden daarom (nog) niet naar een gemeten kans vertaald — dat vereist een aparte signal-outcome-tracker |
+| **Signaal-kalibratie heeft data nodig** *(v1.46, was: geen kalibratie)* | De signal-outcome-tracker vertaalt CombinedScore en TradabilityScore naar een gemeten trefkans, maar alleen op basis van signalen die ooit zijn aangemaakt: de SignalEngine draait alleen op 'Evaluate Signals' en Pattern-scans alleen bij een scan. Pattern-uitkomsten beginnen bij v1.46 op nul (de score werd eerder niet bewaard). Instap = slotkoers van de signaaldag, dus de meting wijkt af van een instap direct op het signaalmoment. Signalen op dezelfde dag zijn onderling afhankelijk (marktbreed), wat de effectieve steekproef kleiner maakt dan n. |
 
 ---
 
@@ -2399,6 +2471,7 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
 | v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
 | v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
+| v1.46 | **Signaal-kalibratie** (signal-outcome-tracker): `SignalOutcome`-entiteit + `SignalOutcomes`-tabel · pure `SignalOutcomeEvaluator` (meting 1/3/7/14 d, MFE/MAE, geen lookahead) + `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime) · `ISignalOutcomeService` (SignalEngine-signalen met terugwerkende kracht, Pattern-scans vanaf nu, daily klines Binance→KuCoin→Gate.io→MEXC) · nieuw tabblad Statistieken → Signaal-kalibratie · gemeten kans onder de score op de Analyse-pagina · `ReliabilityThresholds.MinSignalOutcomes` (20) |
 | v1.33 | **3% Trading-tool** (`ThreePctView`): gekalibreerd 7-factor scoremodel met +3% netto-doel · Fase 1 backtest/kalibratie (`ThreePctBacktestService`, JSON-opslag) · Fase 2 live scan met F6 liquiditeit + F7 positionering als gatekeepers · `CorrelationService` (gediversifieerde shortlist) · `MacroEventService` (FOMC/CPI/NFP/PCE) · `SetupDetailDialog`. **Cross-tool:** `TradeSetupValidator.CheckAdvice` markeert ongeldige/krappe setups in Trade Advies & Pattern Trading · `MarketRegimeService.GetRegimeContextAsync` (EMA50/200 + dominantie) ook in `SignalEngine` · markt-context (liquiditeit/funding/events) in Trade Advies · gedeelde `TtlCache<T>` · geëxtraheerde `TradeLevelCalculator` · nieuwe databronnen (Binance depth/futures, CoinGecko global). Tests: 40 → 183 |
 | v1.31 | Setup Strategie statistieken: nieuw 'Setup Strategie'-tabblad in `StatisticsView` (Pivot) met Win Rate TP1/TP2, Profit Factor, Expectancy, gem. P&L%, gem. houdtijd, breakdowntabellen per richting/score/marktregime · `SetupBreakdownRow` + `LoadSetupStatsAsync` in `StatisticsViewModel` · TP2-detectie in `AutoUpdateStatusesAsync` (`Tp2Hit` flag) · BTC-marktregime vastgelegd bij aanmaken setup (`MarketRegimeAtCreation`) · bidirectionele Setup↔Order koppeling (`WatchedSetup.LinkedOrderId` + `ExchangeOrder.WatchedSetupId`) · `IWatchedSetupService.GetActiveSetupForCoinAsync` + `LinkOrderAsync` + `GetClosedAsync` · migratie `AddStrategyStatisticsFields` |
 | v1.30 | Setup Tracker: `WatchedSetup`-entiteit · `IWatchedSetupService` (CRUD + auto-status + stats) · `SetupTrackerViewModel` + `SetupTrackerView` · automatische entry/TP1/SL-detectie · Open-status bij entry-hit · live koers per kaart (DB-fallback via `GetCoinsFromContext`) · P&L % + Unreal. P&L % per kaart · handmatige Won/Lost/Verlopen knoppen · `ExistsAsync` duplicaatcheck · SL=0 validatie bij aanmaken · auto-refresh via `UpdatePricesMessage` (IMessenger) · prijstijdstempel in UI · tooltips doorvoeren in alle views |
@@ -2411,5 +2484,5 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.33 (juni 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.46 (september 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*

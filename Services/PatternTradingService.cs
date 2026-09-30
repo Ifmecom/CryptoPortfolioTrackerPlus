@@ -36,6 +36,7 @@ public class PatternTradingService : IPatternTradingService
     private readonly IPatternStateStore?     _patternState;
     private readonly INotifierService?       _notifier;
     private readonly Configuration.Settings? _settings;
+    private readonly ISignalOutcomeService?  _outcomes;
 
     // Score-plafond voor coins zonder edge (stablecoin / lage volatiliteit) — onder de setup-drempel
     // van 40 zodat ze niet als kans bovenaan komen en geen setup tonen.
@@ -54,7 +55,8 @@ public class PatternTradingService : IPatternTradingService
         IMexcDataService        mexc,
         IPatternStateStore?     patternState = null,
         INotifierService?       notifier     = null,
-        Configuration.Settings? settings     = null)
+        Configuration.Settings? settings     = null,
+        ISignalOutcomeService?  outcomes     = null)
     {
         _portfolio = portfolio;
         _detector  = detector;
@@ -66,6 +68,7 @@ public class PatternTradingService : IPatternTradingService
         _patternState = patternState;
         _notifier  = notifier;
         _settings  = settings;
+        _outcomes  = outcomes;
     }
 
     /// <summary>Volatiliteitsdrempel (fractie van de koers) uit Settings, met de gate-default als fallback.</summary>
@@ -172,6 +175,11 @@ public class PatternTradingService : IPatternTradingService
         // ── P7: patroon-geheugen bijwerken ───────────────────────────────────
         // Sequentieel ná de parallelle analyse — de gedeelde DB-context is dan vrij.
         await ReconcilePatternMemoryAsync(results, ct);
+
+        // ── v1.46: richting + score vastleggen voor de signal-outcome-tracker ─
+        // Ook sequentieel (gedeelde DB-context); faalt stil.
+        if (_outcomes is not null)
+            await _outcomes.RecordPatternScanAsync(results, ct);
 
         // Sort: highest score first, then isNearBreakout
         return results

@@ -47,6 +47,7 @@ namespace CryptoPortfolioTracker.Infrastructure
         public DbSet<WatchedSetup>    WatchedSetups     { get; set; }
         public DbSet<CoinFundamentals> CoinFundamentals { get; set; }
         public DbSet<PatternStateRecord> PatternStates  { get; set; }
+        public DbSet<SignalOutcome>      SignalOutcomes { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder builder)
@@ -70,6 +71,7 @@ namespace CryptoPortfolioTracker.Infrastructure
             builder.ApplyConfiguration(new WatchedSetupEntityTypeConfiguration());
             builder.ApplyConfiguration(new CoinFundamentalsEntityTypeConfiguration());
             builder.ApplyConfiguration(new PatternStateRecordEntityTypeConfiguration());
+            builder.ApplyConfiguration(new SignalOutcomeEntityTypeConfiguration());
 
         }
 

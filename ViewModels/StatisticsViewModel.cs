@@ -22,6 +22,7 @@ public partial class StatisticsViewModel : BaseViewModel
 
     private readonly PortfolioService       _portfolioService;
     private readonly IWatchedSetupService   _watchedSetupService;
+    private readonly ISignalOutcomeService  _outcomeService;
 
     // ── Period filter ────────────────────────────────────────────────────────
     [ObservableProperty] private string selectedPeriod = "Alles";
@@ -92,16 +93,40 @@ public partial class StatisticsViewModel : BaseViewModel
     [ObservableProperty] private ObservableCollection<SetupBreakdownRow> setupByScore     = new();
     [ObservableProperty] private ObservableCollection<SetupBreakdownRow> setupByRegime    = new();
 
+    // ── Signaal-kalibratie (v1.46) ────────────────────────────────────────────
+    public IReadOnlyList<string> HorizonOptions { get; } =
+        new[] { "1 dag", "3 dagen", "7 dagen", "14 dagen" };
+    [ObservableProperty] private string selectedHorizon = "7 dagen";
+    [ObservableProperty] private bool   isUpdatingOutcomes;
+    [ObservableProperty] private string calibrationStatus = string.Empty;
+
+    [ObservableProperty] private string signalLongSummary   = "–";
+    [ObservableProperty] private string signalShortSummary  = "–";
+    [ObservableProperty] private string patternLongSummary  = "–";
+    [ObservableProperty] private string patternShortSummary = "–";
+
+    [ObservableProperty] private ObservableCollection<CalibrationDisplayRow> signalCalibration        = new();
+    [ObservableProperty] private ObservableCollection<CalibrationDisplayRow> patternCalibration       = new();
+    [ObservableProperty] private ObservableCollection<CalibrationDisplayRow> signalRegimeCalibration  = new();
+    [ObservableProperty] private ObservableCollection<CalibrationDisplayRow> patternRegimeCalibration = new();
+
+    /// <summary>Automatisch bijwerken hooguit elke 30 minuten (de knop forceert altijd).</summary>
+    private static readonly TimeSpan OutcomeAutoUpdateInterval = TimeSpan.FromMinutes(30);
+    private static DateTime _lastOutcomeUpdateUtc = DateTime.MinValue;
+    private IReadOnlyList<SignalOutcome> _outcomes = Array.Empty<SignalOutcome>();
+
     private bool _isDataLoaded;
 
     public StatisticsViewModel(
-        PortfolioService     portfolioService,
-        IWatchedSetupService watchedSetupService,
-        Settings             appSettings)
+        PortfolioService      portfolioService,
+        IWatchedSetupService  watchedSetupService,
+        ISignalOutcomeService outcomeService,
+        Settings              appSettings)
         : base(appSettings)
     {
         _portfolioService    = portfolioService;
         _watchedSetupService = watchedSetupService;
+        _outcomeService      = outcomeService;
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -127,6 +152,13 @@ public partial class StatisticsViewModel : BaseViewModel
 
     partial void OnSelectedTradeKindChanged(string value) =>
         _ = LoadAsync();
+
+    partial void OnSelectedHorizonChanged(string value) =>
+        BuildCalibration();
+
+    /// <summary>Haalt direct de uitkomsten van alle openstaande signalen op (koersdata) en herberekent de kalibratie.</summary>
+    [RelayCommand]
+    private async Task UpdateOutcomes() => await LoadCalibrationAsync(forceUpdate: true);
 
     partial void OnCustomStartDateChanged(DateTimeOffset value) =>
         _ = LoadAsync();
@@ -172,6 +204,7 @@ public partial class StatisticsViewModel : BaseViewModel
             BuildCharts(orders);
             BuildTopSymbols(orders);
             await LoadSetupStatsAsync();
+            await LoadCalibrationAsync(forceUpdate: false);
 
             StatusMessage = $"{orders.Count} orders geladen — periode: {SelectedPeriod} · type: {SelectedTradeKind}";
             _isDataLoaded = true;
@@ -288,6 +321,102 @@ public partial class StatisticsViewModel : BaseViewModel
             DataLabelsFormatter = p => $"{name}: {value:0}",
             ToolTipLabelFormatter = p => $"{name}: {value:0} ({p.StackedValue!.Share:P0})",
         };
+
+    // ── Signaal-kalibratie (v1.46) ────────────────────────────────────────────
+
+    private int SelectedHorizonDays => SelectedHorizon switch
+    {
+        "1 dag"    => 1,
+        "3 dagen"  => 3,
+        "14 dagen" => 14,
+        _          => 7,
+    };
+
+    /// <summary>
+    /// Werkt (zo nodig) de gemeten uitkomsten bij via de signal-outcome-tracker en bouwt de tabellen.
+    /// Automatisch hooguit elke 30 minuten; <paramref name="forceUpdate"/> (knop) haalt altijd op.
+    /// </summary>
+    private async Task LoadCalibrationAsync(bool forceUpdate)
+    {
+        if (IsUpdatingOutcomes) return;
+        try
+        {
+            if (forceUpdate || DateTime.UtcNow - _lastOutcomeUpdateUtc > OutcomeAutoUpdateInterval)
+            {
+                IsUpdatingOutcomes = true;
+                var progress = new Progress<string>(msg => CalibrationStatus = msg);
+                var r = await _outcomeService.UpdateAsync(progress);
+                _lastOutcomeUpdateUtc = DateTime.UtcNow;
+                Logger.Information("Signaal-kalibratie bijgewerkt: {Result}", r);
+            }
+
+            _outcomes = await _outcomeService.GetAllAsync();
+            BuildCalibration();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "StatisticsViewModel.LoadCalibrationAsync failed");
+            CalibrationStatus = "Signaal-kalibratie kon niet worden geladen.";
+        }
+        finally
+        {
+            IsUpdatingOutcomes = false;
+        }
+    }
+
+    /// <summary>Bouwt alle kalibratietabellen voor de gekozen horizon en periode (zonder netwerk).</summary>
+    private void BuildCalibration()
+    {
+        int h = SelectedHorizonDays;
+
+        // Periodefilter op het moment van het signaal — consistent met de andere tabbladen.
+        IEnumerable<SignalOutcome> filtered = _outcomes;
+        if (SelectedPeriod == "Aangepast")
+        {
+            var start = CustomStartDate.UtcDateTime.Date;
+            var end   = CustomEndDate.UtcDateTime.Date.AddDays(1);
+            filtered = filtered.Where(o => o.SignalAt >= start && o.SignalAt < end);
+        }
+        else if (GetCutoff() is { } cutoff)
+        {
+            filtered = filtered.Where(o => o.SignalAt >= cutoff);
+        }
+        var list = filtered.ToList();
+
+        const string sig = SignalOutcomeSources.Signal;
+        const string pat = SignalOutcomeSources.Pattern;
+
+        SignalCalibration = new ObservableCollection<CalibrationDisplayRow>(
+            SignalCalibrationCalculator.Compute(list, sig, h).Select(r => new CalibrationDisplayRow(r)));
+        PatternCalibration = new ObservableCollection<CalibrationDisplayRow>(
+            SignalCalibrationCalculator.Compute(list, pat, h).Select(r => new CalibrationDisplayRow(r)));
+        SignalRegimeCalibration = new ObservableCollection<CalibrationDisplayRow>(
+            SignalCalibrationCalculator.ComputeByRegime(list, sig, h).Select(r => new CalibrationDisplayRow(r)));
+        PatternRegimeCalibration = new ObservableCollection<CalibrationDisplayRow>(
+            SignalCalibrationCalculator.ComputeByRegime(list, pat, h).Select(r => new CalibrationDisplayRow(r)));
+
+        SignalLongSummary   = SummaryText(SignalCalibrationCalculator.Total(list, sig, "Long",  h));
+        SignalShortSummary  = SummaryText(SignalCalibrationCalculator.Total(list, sig, "Short", h));
+        PatternLongSummary  = SummaryText(SignalCalibrationCalculator.Total(list, pat, "Long",  h));
+        PatternShortSummary = SummaryText(SignalCalibrationCalculator.Total(list, pat, "Short", h));
+
+        int tracked  = list.Count;
+        int measured = list.Count(o => o.ReturnFor(h).HasValue);
+        int open     = list.Count(o => !o.IsComplete);
+        CalibrationStatus = tracked == 0
+            ? "Nog geen signalen gevolgd. Draai de SignalEngine (Analyse) of een Pattern Trading-scan; " +
+              "uitkomsten verschijnen zodra de signalen een dag oud zijn."
+            : $"{tracked} signalen gevolgd · {measured} gemeten na {SelectedHorizon} · {open} nog lopend · " +
+              $"periode: {SelectedPeriod}" +
+              (_lastOutcomeUpdateUtc > DateTime.MinValue
+                  ? $" · bijgewerkt {_lastOutcomeUpdateUtc.ToLocalTime():HH:mm}"
+                  : string.Empty);
+    }
+
+    private static string SummaryText(SignalCalibrationRow r)
+        => r.Count == 0
+            ? "–"
+            : $"{r.HitRatePct:0}% raak · {r.AvgReturnPct:+0.0;-0.0;0.0}% gem. · n={r.Count}";
 
     // ── Setup strategy statistics ─────────────────────────────────────────────
 
@@ -542,6 +671,52 @@ file sealed class SymbolStatRowComparer : IEqualityComparer<SymbolStatRow>
     public static readonly SymbolStatRowComparer Instance = new();
     public bool Equals(SymbolStatRow? x, SymbolStatRow? y) => x?.Symbol == y?.Symbol;
     public int GetHashCode(SymbolStatRow obj) => obj.Symbol.GetHashCode();
+}
+
+// ── Signaal-kalibratie rij (v1.46) ────────────────────────────────────────────
+
+/// <summary>Weergave-wrapper rond <see cref="SignalCalibrationRow"/> met kleuren voor de tabel.</summary>
+public class CalibrationDisplayRow
+{
+    public SignalCalibrationRow Row { get; }
+
+    public string DirectionLabel   => Row.DirectionLabel;
+    public string Group            => Row.Group;
+    public string CountDisplay     => Row.CountDisplay;
+    public string HitRateDisplay   => Row.HitRateDisplay;
+    public string AvgReturnDisplay => Row.AvgReturnDisplay;
+    public string MedianDisplay    => Row.MedianDisplay;
+    public string MfeMaeDisplay    => Row.MfeMaeDisplay;
+    public string Tooltip          => SignalCalibrationCalculator.Explanation(Row);
+
+    public Microsoft.UI.Xaml.Media.SolidColorBrush HitRateBrush   { get; }
+    public Microsoft.UI.Xaml.Media.SolidColorBrush AvgReturnBrush { get; }
+    public Microsoft.UI.Xaml.Media.SolidColorBrush DirectionBrush { get; }
+
+    private static readonly Windows.UI.Color Green = Windows.UI.Color.FromArgb(0xFF, 0x3C, 0xB3, 0x71);
+    private static readonly Windows.UI.Color Red   = Windows.UI.Color.FromArgb(0xFF, 0xCD, 0x5C, 0x5C);
+    private static readonly Windows.UI.Color Grey  = Windows.UI.Color.FromArgb(0xFF, 0xA0, 0xA0, 0xA0);
+
+    public CalibrationDisplayRow(SignalCalibrationRow row)
+    {
+        Row = row;
+
+        // Zolang er te weinig metingen zijn blijft de trefkans grijs — geen schijnzekerheid.
+        HitRateBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            !row.IsReliable        ? Grey
+          : row.HitRatePct >= 55   ? Green
+          : row.HitRatePct >= 45   ? Grey
+          :                          Red);
+
+        AvgReturnBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            row.Count == 0       ? Grey
+          : row.AvgReturnPct > 0 ? Green
+          : row.AvgReturnPct < 0 ? Red
+          :                        Grey);
+
+        DirectionBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            row.Direction == "Long" ? Green : Red);
+    }
 }
 
 // ── Setup breakdown row ───────────────────────────────────────────────────────

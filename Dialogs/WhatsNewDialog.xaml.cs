@@ -28,6 +28,16 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.46  —  Signaal-kalibratie: hoe vaak had een signaal gelijk?");
+
+        AddFeature("🎯", "Gemeten trefkans per score",
+            "Signalen en Pattern Trading-setups worden gevolgd: rendement na 1/3/7/14 dagen, ook met " +
+            "terugwerkende kracht voor bestaande signalen.");
+
+        AddFeature("📊", "Statistieken → Signaal-kalibratie",
+            "Trefkans en rendement per scoreklasse en marktregime. Op de Analyse-pagina staat de gemeten kans " +
+            "nu onder elke score.");
+
         AddVersionHeader("v1.45  —  Trade Advies vs. Pattern Trading: duidelijker onderscheid");
 
         AddFeature("🧭", "Trade Advies = trend & momentum",

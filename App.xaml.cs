@@ -288,6 +288,7 @@ public partial class App : Application
         // Pattern Trading (Phase 1 + 2)
         services.AddSingleton<IPatternDetectionService, PatternDetectionService>();
         services.AddScoped<IPatternStateStore, PatternStateStore>();   // P7 — patroon-geheugen
+        services.AddScoped<ISignalOutcomeService, SignalOutcomeService>();   // v1.46 — signal-outcome-tracker
         services.AddScoped<IPatternTradingService, PatternTradingService>();
         services.AddScoped<IWatchlistService, WatchlistService>();
         services.AddScoped<IWatchedSetupService, WatchedSetupService>();

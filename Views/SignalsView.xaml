@@ -183,7 +183,7 @@
                             </Button>
                             <Button Grid.Column="8"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="CombinedScore"
                                     Background="Transparent" BorderThickness="0" Padding="0" HorizontalAlignment="Left"
-                                    ToolTipService.ToolTip="Score — combined signal score (TA + sentiment + regime), 0–100. Above 60 = bullish; below 40 = bearish.">
+                                    ToolTipService.ToolTip="Score — combined signal score (TA + sentiment + regime), 0–100. Above 60 = bullish; below 40 = bearish. Daaronder: gemeten trefkans van vergelijkbare signalen na 7 dagen (% raak · aantal), of n=… zolang er te weinig metingen zijn. Details: Statistieken → Signaal-kalibratie.">
                                 <TextBlock Text="{x:Bind _viewModel.HeaderScore, Mode=OneWay}" Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"/>
                             </Button>
                             <Button Grid.Column="9"  Command="{x:Bind _viewModel.SortByColumnCommand}" CommandParameter="Direction"
@@ -357,12 +357,16 @@
                                                    Foreground="White"/>
                                     </Border>
 
-                                    <!-- Score -->
-                                    <TextBlock Grid.Column="8"
-                                               Text="{x:Bind ScoreDisplay}"
-                                               VerticalAlignment="Center"
-                                               FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"
-                                               Foreground="{x:Bind helpers:AnalysisHelpers.ScoreColor(CombinedScore)}"/>
+                                    <!-- Score + gemeten kans (v1.46) -->
+                                    <StackPanel Grid.Column="8" VerticalAlignment="Center" Spacing="1"
+                                                ToolTipService.ToolTip="{x:Bind MeasuredTooltip}">
+                                        <TextBlock Text="{x:Bind ScoreDisplay}"
+                                                   FontSize="12" FontFamily="Consolas" FontWeight="SemiBold"
+                                                   Foreground="{x:Bind helpers:AnalysisHelpers.ScoreColor(CombinedScore)}"/>
+                                        <TextBlock Text="{x:Bind MeasuredText}"
+                                                   FontSize="10"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                    </StackPanel>
 
                                     <!-- Direction -->
                                     <Border Grid.Column="9"

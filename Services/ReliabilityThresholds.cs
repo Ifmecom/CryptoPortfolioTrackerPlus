@@ -26,4 +26,12 @@ public static class ReliabilityThresholds
     /// meting waarbij statistische ruis pas bij meer samples uitmiddelt.
     /// </summary>
     public const int MinBacktestTrades = 30;
+
+    /// <summary>
+    /// Min. aantal gemeten signaal-uitkomsten per groep (bron + richting + scoreklasse) in de
+    /// signaal-kalibratie (v1.46). Hoger dan <see cref="MinDecisive"/>: een rendement na N dagen is veel
+    /// ruiziger dan een uitgespeeld/mislukt patroon, en signalen op dezelfde dag bewegen vaak samen
+    /// mee met de markt (onderling afhankelijk), dus er zijn meer metingen nodig voordat de trefkans iets zegt.
+    /// </summary>
+    public const int MinSignalOutcomes = 20;
 }

@@ -264,6 +264,15 @@ Wat bijgewerkt moet worden:
 
 ---
 
+## Signaal-kalibratie (subsysteem, v1.46)
+
+- **`Models/SignalOutcome.cs`** (tabel `SignalOutcomes`, uniek op `Source, CoinApiId, SignalDay`) — gemeten uitkomst per signaal: rendement na 1/3/7/14 dagen in de richting van het signaal + MFE/MAE.
+- **Puur + getest:** `SignalOutcomeEvaluator` (meting op gesloten daily candles, instap = slotkoers signaaldag, geen lookahead; ontdubbeling één per coin per dag; regime terugrekenen uit de multiplier) en `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime). Tests: `SignalOutcomeEvaluatorTests`, `SignalCalibrationCalculatorTests`.
+- **`SignalOutcomeService`** — EF-lijm: neemt `Signals` op (met terugwerkende kracht), `PatternTradingService` roept `RecordPatternScanAsync` sequentieel ná de reconciliatie aan, `UpdateAsync` haalt per coin één keer daily klines op. Houd DB-werk kort en binnen de semafoor; netwerk erbuiten.
+- **Wijzig je de SignalEngine-multipliers of de Long/Short-drempels?** Pas dan ook `SignalOutcomeEvaluator.RegimeFromMultiplier` en `SignalCalibrationCalculator.BucketsFor/BucketFor` aan.
+
+---
+
 ## Wishlist — toekomstige indicatoren
 
 Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:

@@ -642,6 +642,37 @@ namespace CryptoPortfolioTracker.Services
                     CREATE INDEX IF NOT EXISTS IX_PatternStates_IsActive
                     ON PatternStates(IsActive)");
 
+                // Signal-outcome-tracker: gemeten uitkomst per signaal (v1.46)
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE TABLE IF NOT EXISTS SignalOutcomes (
+                        Id              INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
+                        Source          TEXT    NOT NULL DEFAULT '',
+                        SourceRefId     INTEGER,
+                        CoinApiId       TEXT    NOT NULL DEFAULT '',
+                        CoinSymbol      TEXT    NOT NULL DEFAULT '',
+                        Direction       TEXT    NOT NULL DEFAULT '',
+                        Score           REAL    NOT NULL DEFAULT 0,
+                        MarketRegime    TEXT    NOT NULL DEFAULT '',
+                        SignalAt        TEXT    NOT NULL,
+                        SignalDay       TEXT    NOT NULL,
+                        EntryPrice      REAL    NOT NULL DEFAULT 0,
+                        Return1d        REAL,
+                        Return3d        REAL,
+                        Return7d        REAL,
+                        Return14d       REAL,
+                        MaxFavorablePct REAL,
+                        MaxAdversePct   REAL,
+                        IsComplete      INTEGER NOT NULL DEFAULT 0,
+                        FailedAttempts  INTEGER NOT NULL DEFAULT 0,
+                        EvaluatedAt     TEXT
+                    )");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE UNIQUE INDEX IF NOT EXISTS IX_SignalOutcomes_Source_CoinApiId_SignalDay
+                    ON SignalOutcomes(Source, CoinApiId, SignalDay)");
+                await db.ExecuteSqlRawAsync(@"
+                    CREATE INDEX IF NOT EXISTS IX_SignalOutcomes_IsComplete
+                    ON SignalOutcomes(IsComplete)");
+
                 Logger?.Information("PLUS schema applied successfully");
             }
             catch (Exception ex)
