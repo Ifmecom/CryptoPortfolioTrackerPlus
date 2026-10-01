@@ -37,7 +37,8 @@ public sealed record BybitOrderInfo(
     decimal StopLoss,
     string  RejectReason,
     long    CreatedTimeMs,
-    long    UpdatedTimeMs);
+    long    UpdatedTimeMs,
+    string  StopOrderType = "");   // leeg = gewone order; anders tpslOrder / TakeProfit / StopLoss / OcoOrder …
 
 /// <summary>Eén uitvoering (fill) bij Bybit (uit <c>/v5/execution/list</c>).</summary>
 public sealed record BybitExecution(

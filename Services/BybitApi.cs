@@ -133,7 +133,8 @@ public static class BybitApi
                 StopLoss:      Dec(o, "stopLoss"),
                 RejectReason:  Str(o, "rejectReason"),
                 CreatedTimeMs: Long(o, "createdTime"),
-                UpdatedTimeMs: Long(o, "updatedTime")))
+                UpdatedTimeMs: Long(o, "updatedTime"),
+                StopOrderType: Str(o, "stopOrderType")))
             .ToList();
 
     public static List<BybitExecution> ParseExecutions(JsonElement result)
@@ -172,6 +173,27 @@ public static class BybitApi
     /// </summary>
     public static decimal ParseSpotAvailable(JsonElement result, bool buy)
         => Dec(result, buy ? "spotMaxTradeAmount" : "spotMaxTradeQty");
+
+    /// <summary>Alle spot-orderFilters, voor het weghalen van gekoppelde TP/SL bij sluiten.</summary>
+    public static readonly IReadOnlyList<string> SpotOrderFilters =
+        new[] { "tpslOrder", "StopOrder", "BidirectionalTpslOrder", "OcoOrder", "Order" };
+
+    /// <summary>
+    /// orderFilters om te proberen bij het annuleren van één open order: de waarschijnlijkste eerst,
+    /// afgeleid van <c>stopOrderType</c> (leeg = gewone order), daarna de rest als vangnet.
+    /// </summary>
+    public static IReadOnlyList<string> CancelFiltersFor(string stopOrderType)
+    {
+        string first = stopOrderType switch
+        {
+            "" => "Order",
+            "tpslOrder" or "TakeProfit" or "StopLoss" or "PartialTakeProfit" or "PartialStopLoss" => "tpslOrder",
+            "BidirectionalTpslOrder" => "BidirectionalTpslOrder",
+            "OcoOrder" => "OcoOrder",
+            _ => "StopOrder",
+        };
+        return SpotOrderFilters.Where(f => f != first).Prepend(first).ToList();
+    }
 
     /// <summary>Cursor voor de volgende pagina, of leeg.</summary>
     public static string NextCursor(JsonElement result)

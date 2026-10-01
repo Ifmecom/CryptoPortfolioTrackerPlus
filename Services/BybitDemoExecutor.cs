@@ -176,23 +176,31 @@ public class BybitDemoExecutor : ILiveOrderExecutor
             ?? throw new InvalidOperationException($"{tracked.Symbol} niet gevonden op Bybit.");
 
         // 1. Gekoppelde TP/SL en open orders op dit paar weghalen (die houden de munten vast).
-        foreach (var filter in new[] { "tpslOrder", "StopOrder", "Order" })
-        {
-            var cancelBody = JsonSerializer.Serialize(new Dictionary<string, string>
-            {
-                ["category"] = "spot", ["symbol"] = tracked.Symbol, ["orderFilter"] = filter,
-            });
-            var (c, m, _) = await PostAsync(api, "/v5/order/cancel-all", cancelBody, _ => true, ct);
-            if (c != 0) Logger.Debug("BybitDemo: cancel-all {Filter} → {Code} {Msg}", filter, c, m);
-        }
-        await Task.Delay(800, ct);
+        var leftover = await CancelOpenOrdersAsync(api, tracked.Symbol, ct);
 
-        // 2. Verkoop wat er van deze positie beschikbaar is.
-        decimal available = await GetSpotAvailableAsync(api, tracked.Symbol, buy: false, ct);
+        // 2. Wachten tot Bybit de munten vrijgeeft; een fee in de basismunt maakt de positie iets kleiner.
+        decimal wanted    = (decimal)tracked.Qty * 0.99m;
+        decimal available = 0;
+        for (int attempt = 0; attempt < 6; attempt++)
+        {
+            await Task.Delay(attempt == 0 ? 800 : 1000, ct);
+            available = await GetSpotAvailableAsync(api, tracked.Symbol, buy: false, ct);
+            if (available >= wanted) break;
+        }
+        Logger.Information("BybitDemo: sluiten {Symbol} — verkoopbaar {Available} van {Qty}",
+            tracked.Symbol, available, tracked.Qty);
+
+        // 3. Verkoop wat er van deze positie beschikbaar is.
         decimal qty = BybitOrderPlanner.RoundDown(Math.Min((decimal)tracked.Qty, available), inst.BasePrecision);
         if (qty <= 0 || qty < inst.MinOrderQty)
+        {
+            var why = leftover.Count > 0
+                ? $"Bybit hield deze orders open: {string.Join(", ", leftover)}."
+                : "Alle open orders zijn weggehaald, maar de munten zijn (nog) niet vrijgegeven.";
             throw new InvalidOperationException(
-                $"Geen verkoopbare {inst.BaseCoin} gevonden (beschikbaar: {BybitApi.Num(available)}). Controleer de positie op Bybit.");
+                $"Geen verkoopbare {inst.BaseCoin} gevonden (beschikbaar: {BybitApi.Num(available)}). {why} " +
+                "Controleer de positie en de TP/SL op Bybit.");
+        }
 
         var sellBody = BybitOrderPlanner.BuildMarketSellBody(tracked.Symbol, qty, BybitOrderPlanner.NewOrderLinkId("cls"));
         var (code, msg, _) = await PostAsync(api, "/v5/order/create", sellBody, _ => true, ct);
@@ -206,6 +214,54 @@ public class BybitDemoExecutor : ILiveOrderExecutor
         await Task.Delay(1500, ct);
         await SyncOrdersAsync(api, new List<ExchangeOrder> { tracked }, ct);
         order.Status = tracked.Status;
+    }
+
+    /// <summary>
+    /// Haalt alle open orders op een paar weg, ook gekoppelde TP/SL (die op Bybit EU als een ander
+    /// ordertype kunnen staan). Eerst cancel-all per orderFilter, daarna wat er nog openstaat per order.
+    /// Retourneert een beschrijving van orders die niet weg te halen waren.
+    /// </summary>
+    private async Task<List<string>> CancelOpenOrdersAsync(ApiContext api, string symbol, CancellationToken ct)
+    {
+        foreach (var filter in BybitApi.SpotOrderFilters)
+        {
+            var body = JsonSerializer.Serialize(new Dictionary<string, string>
+            {
+                ["category"] = "spot", ["symbol"] = symbol, ["orderFilter"] = filter,
+            });
+            var (c, m, _) = await PostAsync(api, "/v5/order/cancel-all", body, _ => true, ct);
+            Logger.Information("BybitDemo: cancel-all {Symbol} {Filter} → {Code} {Msg}", symbol, filter, c, m);
+        }
+
+        // Zonder orderFilter geeft /v5/order/realtime alle soorten open orders terug.
+        var (lc, lm, open) = await GetAsync(api, "/v5/order/realtime",
+            BybitApi.Query(("category", "spot"), ("symbol", symbol)), BybitApi.ParseOrders, signed: true, ct);
+        if (lc != 0)
+        {
+            Logger.Information("BybitDemo: open orders {Symbol} opvragen → {Code} {Msg}", symbol, lc, lm);
+            return new List<string>();
+        }
+
+        var leftover = new List<string>();
+        foreach (var o in open ?? new())
+        {
+            string label = $"{o.Side} {(string.IsNullOrEmpty(o.StopOrderType) ? "order" : o.StopOrderType)} {o.OrderStatus}";
+            Logger.Information("BybitDemo: nog open op {Symbol}: {Id} {Label} qty={Qty}", symbol, o.OrderId, label, o.Qty);
+
+            bool cancelled = false;
+            foreach (var filter in BybitApi.CancelFiltersFor(o.StopOrderType))
+            {
+                var body = JsonSerializer.Serialize(new Dictionary<string, string>
+                {
+                    ["category"] = "spot", ["symbol"] = symbol, ["orderId"] = o.OrderId, ["orderFilter"] = filter,
+                });
+                var (c, m, _) = await PostAsync(api, "/v5/order/cancel", body, _ => true, ct);
+                Logger.Information("BybitDemo: cancel {Id} {Filter} → {Code} {Msg}", o.OrderId, filter, c, m);
+                if (c == 0) { cancelled = true; break; }
+            }
+            if (!cancelled) leftover.Add(label);
+        }
+        return leftover;
     }
 
     // =========================================================================
