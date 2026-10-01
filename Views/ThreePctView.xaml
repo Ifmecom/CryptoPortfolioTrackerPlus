@@ -20,7 +20,7 @@
         </Grid.RowDefinitions>
 
         <!-- ── Header ──────────────────────────────────────────────────────── -->
-        <Grid Grid.Row="0" Padding="16,12,16,4">
+        <Grid Grid.Row="0" Padding="16,12,60,4">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>

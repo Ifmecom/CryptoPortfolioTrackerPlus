@@ -185,7 +185,22 @@
 
             </NavigationView.FooterMenuItems>
 
-            <Frame x:Name="contentFrame" Margin="0"/>
+            <Grid>
+                <Frame x:Name="contentFrame" Margin="0"/>
+
+                <!-- v1.48: uitleg bij de huidige pagina, rechtsboven in de header -->
+                <Button x:Name="PageInfoButton"
+                        Click="PageInfoButton_Click"
+                        HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,8,14,0" Width="34" Height="34" Padding="0"
+                        CornerRadius="17"
+                        Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
+                        BorderBrush="DarkGoldenrod" BorderThickness="1"
+                        ToolTipService.ToolTip="Uitleg: wat zie je op deze pagina en hoe ga je ermee om?"
+                        AutomationProperties.Name="Uitleg bij deze pagina">
+                    <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE946;" FontSize="16" Foreground="DarkGoldenrod"/>
+                </Button>
+            </Grid>
         </NavigationView>
 
     </Grid>

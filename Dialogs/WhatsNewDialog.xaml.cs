@@ -28,6 +28,14 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
+
+        AddFeature("ℹ️", "ⓘ-knop rechtsboven op elke pagina",
+            "Wat zie je hier, hoe lees je het, hoe ga je ermee om en waar moet je op letten — per menu-optie.");
+
+        AddFeature("📨", "Telegram-meldingen komen weer aan",
+            "Meldingen met tekens als '<' (bijv. 'RSI <30') werden door Telegram geweigerd; dat is opgelost.");
+
         AddVersionHeader("v1.47  —  Orders op Bybit EU Demo — 1-klik én automatisch");
 
         AddFeature("🧪", "Bybit EU Demo",

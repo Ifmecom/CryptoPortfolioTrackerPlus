@@ -204,6 +204,24 @@ public partial class MainPage : Page //INotifyPropertyChanged
         }
         lastPageType = pageType;
         contentFrame.Content = App.Container.GetService(pageType);
+        PageInfoButton.Visibility = PageHelpCatalog.For(pageType.Name) is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void PageInfoButton_Click(object sender, RoutedEventArgs e)
+    {
+        var help = PageHelpCatalog.For(lastPageType?.Name);
+        if (help is null) return;
+
+        try
+        {
+            var dialog = new PageHelpDialog(help, _appSettings.AppTheme) { XamlRoot = XamlRoot };
+            await dialog.ShowAsync();
+        }
+        catch (Exception ex)
+        {
+            // Bijv. er staat al een andere dialoog open (WinUI staat er maar één tegelijk toe).
+            Logger.Warning(ex, "Pagina-uitleg kon niet worden geopend");
+        }
     }
 
     public async Task<ContentDialogResult> ShowMessageDialog(string title, string message, string primaryButtonText = "OK", string closeButtonText = "")

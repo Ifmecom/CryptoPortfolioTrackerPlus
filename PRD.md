@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.47
+## CryptoPortfolioTracker Plus — v1.48
 
 | | |
 |---|---|
-| **Versie** | 1.47 |
+| **Versie** | 1.48 |
 | **Datum** | Oktober 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -213,6 +213,15 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 ### 3.3 Conditionele items
 
 `Switch Portfolio` en `Admin` verschijnen alleen in debug of bij specifieke gebruikersinstellingen.
+
+### 3.4 Pagina-uitleg (ⓘ-knop) *(v1.48)*
+
+Rechtsboven in de header van elke pagina staat een gouden ⓘ-knop (`PageInfoButton` in `MainPage.xaml`, als overlay boven het `contentFrame`). Een klik opent `Dialogs/PageHelpDialog` (code-only `ContentDialog`) met de uitleg van de actieve pagina in vaste blokken: **Wat zie je hier · Hoe lees je het · Hoe ga je ermee om · Let op**.
+
+- **Inhoud:** pure `Services/PageHelpCatalog` (sleutel = View-klassenaam = `Tag` in `MainPage.xaml`; `Models/PageHelp` + `PageHelpSection`). `MainPage.LoadView` verbergt de knop voor pagina's zonder uitleg.
+- **Getest:** `PageHelpCatalogTests` leest alle `Tag="…View"` uit `MainPage.xaml` en faalt als een menu-optie geen uitleg heeft; handelspagina's moeten ook ‘Hoe lees je het’ en ‘Let op’ hebben.
+- **Ruimte:** pagina's met eigen knoppen rechtsboven (Pattern Trading, Statistieken, 3% Trading, Setup Tracker, Fundamentals) houden rechts 44–60 px vrij voor de knop.
+- **Onderhoud:** wijzigt een pagina zichtbaar (nieuwe kolom, drempel, knop), werk dan ook de tekst in `PageHelpCatalog` bij. Een nieuwe menu-optie heeft een nieuw catalogus-item nodig, anders faalt de test.
 
 ---
 
@@ -2121,6 +2130,7 @@ vaak samen met de markt mee (onderling afhankelijk).
 | **Configuratie** | Bot Token + Chat ID in Instellingen |
 | **Gebruik** | Push-notificaties bij signalen boven drempelwaarde |
 | **Richting** | Uitsluitend uitgaand (de app leest geen Telegram-berichten) |
+| **HTML** *(v1.48)* | Alle berichten via `NotifierService.SendHtmlAsync`: `TelegramHtml.Sanitize` laat ondersteunde tags staan en codeert losse `<`/`>`/`&`; weigert Telegram het toch (‘can't parse entities’), dan volgt een platte-tekstversie (`TelegramHtml.ToPlainText`). |
 
 ### 7.12 Binance Spot Order Book *(v1.33)*
 
@@ -2521,6 +2531,7 @@ Voor `ExchangeKind.Bybit` (echt geld) gooit de methode bewust een fout. Vrijgeve
 | v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
 | v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
 | v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
+| v1.48 | **Pagina-uitleg**: ⓘ-knop rechtsboven op elke pagina (`PageInfoButton`) · pure `PageHelpCatalog` met per menu-optie wat zie je / hoe lees je het / hoe ga je ermee om / let op · `PageHelpDialog` · test die elke `Tag` in `MainPage.xaml` afdekt · **Telegram**: `TelegramHtml.Sanitize` + platte-tekst-vangnet (losse `<` gaf ‘can't parse entities’) · **Bybit EU Demo**: saldo via `/v5/order/spot-borrow-check`, sluiten annuleert alle TP/SL-ordertypes |
 | v1.47 | **Bybit EU Demo**: `ExchangeKind.BybitDemo` · `ILiveOrderExecutor`/`BybitDemoExecutor` (spot, limit-instap met gekoppelde TP/SL, cancel, close, sync) · pure `BybitApi`, `BybitOrderPlanner`, `LiveOrderReconciler`, `AutoTradeSelector` · `AutoTraderService` na Pattern-scan (schakelaar, standaard uit) · order-dialoog 'Paper / Bybit EU Demo' · Trade Journal-sync + 'Demo'-label · instellingen voor demo-sleutel (domein-detectie EU/global) en automatisch handelen · `IGuardrailService.CheckNewLiveTradeAsync` · echt geld geblokkeerd |
 | v1.46 | **Signaal-kalibratie** (signal-outcome-tracker): `SignalOutcome`-entiteit + `SignalOutcomes`-tabel · pure `SignalOutcomeEvaluator` (meting 1/3/7/14 d, MFE/MAE, geen lookahead) + `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime) · `ISignalOutcomeService` (SignalEngine-signalen met terugwerkende kracht, Pattern-scans vanaf nu, daily klines Binance→KuCoin→Gate.io→MEXC) · nieuw tabblad Statistieken → Signaal-kalibratie · gemeten kans onder de score op de Analyse-pagina · `ReliabilityThresholds.MinSignalOutcomes` (20) |
 | v1.33 | **3% Trading-tool** (`ThreePctView`): gekalibreerd 7-factor scoremodel met +3% netto-doel · Fase 1 backtest/kalibratie (`ThreePctBacktestService`, JSON-opslag) · Fase 2 live scan met F6 liquiditeit + F7 positionering als gatekeepers · `CorrelationService` (gediversifieerde shortlist) · `MacroEventService` (FOMC/CPI/NFP/PCE) · `SetupDetailDialog`. **Cross-tool:** `TradeSetupValidator.CheckAdvice` markeert ongeldige/krappe setups in Trade Advies & Pattern Trading · `MarketRegimeService.GetRegimeContextAsync` (EMA50/200 + dominantie) ook in `SignalEngine` · markt-context (liquiditeit/funding/events) in Trade Advies · gedeelde `TtlCache<T>` · geëxtraheerde `TradeLevelCalculator` · nieuwe databronnen (Binance depth/futures, CoinGecko global). Tests: 40 → 183 |

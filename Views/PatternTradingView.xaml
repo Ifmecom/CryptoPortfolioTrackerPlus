@@ -30,7 +30,7 @@
                                           Height="260" VerticalAlignment="Top" Opacity="0.08"/>
 
             <!-- ═══════════════════════════════════════════ Row 0 — Header -->
-            <RelativePanel Grid.Row="0" Margin="10,0,10,0">
+            <RelativePanel Grid.Row="0" Margin="10,0,56,0">
 
                 <TextBlock x:Name="txtPageTitle"
                            Text="Pattern Trading"

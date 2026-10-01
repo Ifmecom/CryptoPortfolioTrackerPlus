@@ -27,6 +27,24 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.48 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.48", "Uitleg bij elke pagina");
+
+        AddFeature("ℹ️", "ⓘ-knop rechtsboven in de header van elke pagina",
+            "Elke menu-optie heeft nu een gouden ⓘ-knop rechtsboven. Een klik opent een uitleg in vier delen: " +
+            "wat zie je op deze pagina, hoe lees en interpreteer je het (drempels, scores, kleuren), hoe ga je " +
+            "ermee om en handel je ernaar, en waar moet je op letten. Voor de handelspagina's staan de echte " +
+            "drempels erin, zoals Long vanaf score 60 op Analyse en de score-banden van Pattern Trading.");
+
+        AddFeature("📨", "Telegram-meldingen komen weer aan",
+            "Meldingen waarin tekens als '<' of '&' stonden (bijv. 'RSI <30' bij een patroon-alert) werden door " +
+            "Telegram geweigerd en kwamen nooit aan. De app maakt elke melding nu eerst veilig, en valt bij een " +
+            "weigering terug op platte tekst.");
+
+        AddFeature("🧪", "Bybit EU Demo: saldo en sluiten werken",
+            "Het EU-demodomein kent de standaard saldo-opvraag niet; de app gebruikt nu een endpoint dat er wél is. " +
+            "Een positie sluiten haalt nu betrouwbaar eerst de gekoppelde stop-loss/take-profit weg.");
+
         // ── v1.47 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.47", "Orders op Bybit EU Demo — 1-klik én automatisch");
 

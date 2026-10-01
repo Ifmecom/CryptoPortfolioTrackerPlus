@@ -216,6 +216,18 @@ De kaart hoort in de logisch passende `ct:SettingsExpander`-sectie:
 
 ---
 
+## Pagina-uitleg bijhouden (ⓘ-knop, v1.48)
+
+Elke pagina heeft rechtsboven een ⓘ-knop (`PageInfoButton` in `MainPage.xaml`) die de uitleg uit **`Services/PageHelpCatalog.cs`** toont (sleutel = View-klassenaam = `Tag`).
+
+**Verplichte regel: werk de uitleg van een pagina bij als je zichtbaar iets wijzigt** (nieuwe kolom, knop, drempel, score-band, betekenis van een kleur). Een **nieuwe menu-optie** heeft een nieuw catalogus-item nodig — `PageHelpCatalogTests` leest alle `Tag="…View"` uit `MainPage.xaml` en faalt anders.
+
+- Vaste blokken: `Wat zie je hier` · `Hoe lees je het` · `Hoe ga je ermee om` · `Let op` (handelspagina's: alle vier verplicht).
+- Noem echte drempels uit de code (bijv. `SignalEngine.ScoreToDirection`: Long ≥ 60, Short ≤ 40), geen geschatte.
+- Nieuwe pagina met eigen knoppen rechtsboven in de header? Houd rechts ~44 px vrij, anders valt de ⓘ-knop eroverheen.
+
+---
+
 ## PRD bijhouden (`PRD.md`)
 
 De `PRD.md` in de projectroot is de centrale ontwikkelaarsdocumentatie. **Werk deze altijd bij na elke wijziging die je doorvoert.**
@@ -251,6 +263,7 @@ Wat bijgewerkt moet worden:
 - Geen hardcoded paden — gebruik `AppConstants.*`
 - **Geen nieuwe databron toevoegen zonder de Databronnen-tab in `SettingsView.xaml` bij te werken**
 - **Geen zichtbare gebruikersfunctie toevoegen zonder `WhatsNewView.xaml.cs` (`BuildContent`) bij te werken**
+- **Geen pagina zichtbaar wijzigen of toevoegen zonder de uitleg in `PageHelpCatalog.cs` bij te werken**
 - **`PRD.md` nooit verouderd laten — altijd bijwerken na elke wijziging (zie § PRD bijhouden)**
 
 ---

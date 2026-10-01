@@ -17,7 +17,7 @@
         </Grid.RowDefinitions>
 
         <!-- ── Toolbar ─────────────────────────────────────────────────── -->
-        <Grid Grid.Row="0" Padding="16,12,16,8">
+        <Grid Grid.Row="0" Padding="16,12,60,8">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <ColumnDefinition Width="Auto"/>
