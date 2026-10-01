@@ -59,7 +59,7 @@ public class NotifierService : INotifierService
             try
             {
                 var message = BuildMessage(signal, name, symbol);
-                await client.SendTextMessageAsync(chatId, message, parseMode: ParseMode.Html, cancellationToken: ct);
+                await SendHtmlAsync(client, chatId, message, ct);
                 Logger.Information("Telegram: sent signal alert for {Symbol} ({Direction}, score={Score:F1})",
                     symbol, signal.Direction, signal.CombinedScore);
             }
@@ -117,7 +117,7 @@ public class NotifierService : INotifierService
 
         try
         {
-            await client.SendTextMessageAsync(chatId, htmlMessage, parseMode: ParseMode.Html, cancellationToken: ct);
+            await SendHtmlAsync(client, chatId, htmlMessage, ct);
             Logger.Information("Telegram: alert verzonden");
         }
         catch (Exception ex)
@@ -130,6 +130,23 @@ public class NotifierService : INotifierService
     // -----------------------------------------------------------------------
     // Helpers
     // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Verstuurt een HTML-bericht na sanering (losse '&lt;' zoals in "RSI &lt;30" laten Telegram anders
+    /// het hele bericht weigeren). Weigert Telegram het alsnog, dan als platte tekst.
+    /// </summary>
+    private static async Task SendHtmlAsync(TelegramBotClient client, string chatId, string html, CancellationToken ct)
+    {
+        try
+        {
+            await client.SendTextMessageAsync(chatId, TelegramHtml.Sanitize(html), parseMode: ParseMode.Html, cancellationToken: ct);
+        }
+        catch (Telegram.Bot.Exceptions.ApiRequestException ex) when (ex.Message.Contains("parse entities"))
+        {
+            Logger.Warning("Telegram: HTML geweigerd ({Msg}) — opnieuw als platte tekst", ex.Message);
+            await client.SendTextMessageAsync(chatId, TelegramHtml.ToPlainText(html), cancellationToken: ct);
+        }
+    }
 
     private TelegramBotClient? GetClient()
     {
@@ -163,7 +180,7 @@ public class NotifierService : INotifierService
         };
 
         var lines = new System.Text.StringBuilder();
-        lines.AppendLine($"{directionEmoji} <b>{symbol} — {name}</b>");
+        lines.AppendLine($"{directionEmoji} <b>{TelegramHtml.Escape(symbol)} — {TelegramHtml.Escape(name)}</b>");
         lines.AppendLine($"Score: <b>{signal.CombinedScore:F1}</b>  |  Richting: <b>{signal.Direction}</b>");
         lines.AppendLine($"Regime: {regimeLabel}");
 
@@ -175,7 +192,7 @@ public class NotifierService : INotifierService
                 .Split('\n', StringSplitOptions.RemoveEmptyEntries)
                 .Take(4);
             foreach (var line in reasonLines)
-                lines.AppendLine(line.Trim());
+                lines.AppendLine(TelegramHtml.Escape(line.Trim()));   // bijv. "RSI <30"
         }
 
         lines.Append($"\n<i>{signal.CreatedAt:dd-MM-yyyy HH:mm} UTC</i>");
