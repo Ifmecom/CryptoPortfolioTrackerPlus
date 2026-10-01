@@ -279,7 +279,8 @@ Wat bijgewerkt moet worden:
 - **Puur + getest:** `BybitApi` (sign/parse), `BybitOrderPlanner` (afronden, minima, SL/TP, JSON), `LiveOrderReconciler` (fills → status), `AutoTradeSelector`. Tests: `BybitTradingTests.cs`.
 - **`BybitDemoExecutor`** (`ILiveOrderExecutor`) — alleen HTTP + EF. Instap altijd Limit+GTC met `takeProfit`/`stopLoss`; "market" = ask × 1,005. Eén open order per paar. Sync via `orderLinkId` (= `ExchangeOrder.ExternalOrderId`) + `/v5/execution/list`.
 - **`AutoTraderService`** draait sequentieel ná de Pattern-scan (net als de outcome-tracker) en alleen als `Settings.IsAutoTradeEnabled`. Markeert orders met `[AUTO]` in `Notes` (telt voor het dagmaximum).
-- Demo-domein en sleutel: `Settings.BybitDemoBaseUrl` wordt gezet door 'Verbinding testen' (`ExchangeAccountService.TestBybitDemoAsync`).
+- Demo-domein en sleutel: `Settings.BybitDemoBaseUrl` wordt gezet door 'Verbinding testen' (`ExchangeAccountService.TestBybitDemoAsync`, valideert via `/v5/account/info`).
+- **`api-demo.bybit.eu` kent `/v5/account/wallet-balance` niet (lege HTTP 404).** Saldo komt uit `/v5/order/spot-borrow-check` (`BybitApi.ParseSpotAvailable`). Lege 401/404-antwoorden = sleutel onbekend / endpoint niet gerouteerd.
 
 ---
 

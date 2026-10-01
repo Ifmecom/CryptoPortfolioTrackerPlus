@@ -188,9 +188,7 @@ public class BybitDemoExecutor : ILiveOrderExecutor
         await Task.Delay(800, ct);
 
         // 2. Verkoop wat er van deze positie beschikbaar is.
-        var balances = await GetWalletAsync(api, ct);
-        decimal available = balances.FirstOrDefault(b =>
-            string.Equals(b.Coin, inst.BaseCoin, StringComparison.OrdinalIgnoreCase))?.Available ?? 0;
+        decimal available = await GetSpotAvailableAsync(api, tracked.Symbol, buy: false, ct);
         decimal qty = BybitOrderPlanner.RoundDown(Math.Min((decimal)tracked.Qty, available), inst.BasePrecision);
         if (qty <= 0 || qty < inst.MinOrderQty)
             throw new InvalidOperationException(
@@ -286,9 +284,8 @@ public class BybitDemoExecutor : ILiveOrderExecutor
     public async Task<decimal> GetAvailableQuoteAsync(CancellationToken ct = default)
     {
         var api = await GetApiAsync();
-        var balances = await GetWalletAsync(api, ct);
-        return balances.FirstOrDefault(b =>
-            string.Equals(b.Coin, _settings.BybitQuoteCoin, StringComparison.OrdinalIgnoreCase))?.Available ?? 0;
+        // Besteedbaar quote-saldo is voor elk paar met die quote gelijk; BTC is altijd genoteerd.
+        return await GetSpotAvailableAsync(api, BybitOrderPlanner.SymbolFor("BTC", _settings.BybitQuoteCoin), buy: true, ct);
     }
 
     // =========================================================================
@@ -340,13 +337,18 @@ public class BybitDemoExecutor : ILiveOrderExecutor
         return ask;
     }
 
-    private async Task<List<BybitCoinBalance>> GetWalletAsync(ApiContext api, CancellationToken ct)
+    /// <summary>
+    /// Verhandelbaar saldo zonder lenen via <c>/v5/order/spot-borrow-check</c>: bij Buy het quote-bedrag,
+    /// bij Sell de hoeveelheid basismunt. (Bybit EU Demo kent <c>wallet-balance</c> niet.)
+    /// </summary>
+    private static async Task<decimal> GetSpotAvailableAsync(ApiContext api, string symbol, bool buy, CancellationToken ct)
     {
-        var (code, msg, list) = await GetAsync(api, "/v5/account/wallet-balance",
-            BybitApi.Query(("accountType", "UNIFIED")), BybitApi.ParseWallet, signed: true, ct);
+        var (code, msg, available) = await GetAsync(api, "/v5/order/spot-borrow-check",
+            BybitApi.Query(("category", "spot"), ("symbol", symbol), ("side", buy ? "Buy" : "Sell")),
+            r => BybitApi.ParseSpotAvailable(r, buy), signed: true, ct);
         if (code != 0)
             throw new InvalidOperationException($"Saldo ophalen mislukt: {BybitApi.ExplainError(code, msg)}");
-        return list ?? new();
+        return available;
     }
 
     /// <summary>Zoekt een order op orderLinkId: eerst actief, dan recent gesloten, dan de historie.</summary>

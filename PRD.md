@@ -2070,7 +2070,7 @@ vaak samen met de markt mee (onderling afhankelijk).
 |---|---|
 | **Domein** | Automatisch bepaald bij 'Verbinding testen': eerst `https://api-demo.bybit.eu` (bij `BybitIsEu`), dan `https://api-demo.bybit.com`; het werkende domein staat in `Settings.BybitDemoBaseUrl` |
 | **Authenticatie** | HMAC-sleutel van het demo-account (aparte `ExchangeAccount` met `Exchange = BybitDemo`, DPAPI-versleuteld); headers `X-BAPI-*`, sign-type 2 |
-| **Endpoints** | `GET /v5/market/instruments-info`, `GET /v5/market/tickers`, `POST /v5/order/create`, `POST /v5/order/cancel`, `POST /v5/order/cancel-all`, `GET /v5/order/realtime`, `GET /v5/order/history`, `GET /v5/execution/list`, `GET /v5/account/wallet-balance` |
+| **Endpoints** | `GET /v5/market/instruments-info`, `GET /v5/market/tickers`, `POST /v5/order/create`, `POST /v5/order/cancel`, `POST /v5/order/cancel-all`, `GET /v5/order/realtime`, `GET /v5/order/history`, `GET /v5/execution/list`, `GET /v5/account/info` (sleuteltest), `GET /v5/order/spot-borrow-check` (saldo: `spotMaxTradeAmount` bij Buy, `spotMaxTradeQty` bij Sell — `api-demo.bybit.eu` kent `wallet-balance` niet, HTTP 404) |
 | **Product** | Alleen spot (Bybit EU Demo ondersteunt geen margin/derivatives); quote-munt `Settings.BybitQuoteCoin` (USDC — MiCA) |
 | **Instaporder** | Altijd `Limit` + `GTC` met `takeProfit`/`stopLoss` (`tpOrderType`/`slOrderType = Market`); "Market" = limit op ask × 1,005 |
 | **Beperkingen** | Demo-orders blijven max. 7 dagen staan; demo-account wordt na 30 dagen inactiviteit gereset; executions max. 7 dagen per query |

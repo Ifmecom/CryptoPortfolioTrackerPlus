@@ -164,6 +164,15 @@ public static class BybitApi
         return balances;
     }
 
+    /// <summary>
+    /// Wat er zonder lenen verhandelbaar is, uit <c>/v5/order/spot-borrow-check</c>:
+    /// bij Buy het besteedbare quote-saldo (<c>spotMaxTradeAmount</c>), bij Sell de verkoopbare
+    /// basismunt (<c>spotMaxTradeQty</c>). Bybit EU Demo kent <c>wallet-balance</c> niet (HTTP 404),
+    /// dit endpoint wel — daarom de saldobron voor de demo-uitvoering.
+    /// </summary>
+    public static decimal ParseSpotAvailable(JsonElement result, bool buy)
+        => Dec(result, buy ? "spotMaxTradeAmount" : "spotMaxTradeQty");
+
     /// <summary>Cursor voor de volgende pagina, of leeg.</summary>
     public static string NextCursor(JsonElement result)
         => result.TryGetProperty("nextPageCursor", out var c) ? c.GetString() ?? string.Empty : string.Empty;
@@ -181,6 +190,8 @@ public static class BybitApi
         170131 => "Onvoldoende saldo.",
         170136 => "Order is groter dan het maximum voor dit paar.",
         170140 => "Orderwaarde is lager dan het minimum voor dit paar.",
+        401 => "Sleutel onbekend op dit domein (HTTP 401) — hoort bij een ander domein of account.",
+        404 => "Dit endpoint bestaat niet op dit domein (HTTP 404).",
         _ => retMsg,
     } + $" (Bybit {retCode})";
 }

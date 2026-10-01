@@ -299,44 +299,76 @@ public class ExchangeAccountService : IExchangeAccountService
         var failures = new List<string>();
         foreach (var baseUrl in candidates)
         {
-            const string query = "accountType=UNIFIED";
-            long ts   = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
-            var  sign = BybitApi.Sign(apiSecret, ts, apiKey, BybitApi.RecvWindow, query);
-
-            using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/v5/account/wallet-balance?{query}");
-            request.Headers.Add("X-BAPI-API-KEY",     apiKey);
-            request.Headers.Add("X-BAPI-TIMESTAMP",   ts.ToString());
-            request.Headers.Add("X-BAPI-SIGN",        sign);
-            request.Headers.Add("X-BAPI-SIGN-TYPE",   "2");
-            request.Headers.Add("X-BAPI-RECV-WINDOW", BybitApi.RecvWindow.ToString());
-
-            try
+            // 1. Sleutel valideren met /v5/account/info — dat endpoint geeft op elk demo-domein JSON terug.
+            var (code, msg, _) = await SignedGetAsync(baseUrl, "/v5/account/info", string.Empty, apiKey, apiSecret);
+            if (code != 0)
             {
-                var response = await _http.SendAsync(request);
-                var body     = await response.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(body);
-                var (code, msg, result) = BybitApi.ReadEnvelope(doc);
-
-                if (code == 0 && result is not null)
-                {
-                    _appSettings.BybitDemoBaseUrl = baseUrl;
-                    var quote   = _appSettings.BybitQuoteCoin;
-                    var balance = BybitApi.ParseWallet(result.Value)
-                        .FirstOrDefault(b => string.Equals(b.Coin, quote, StringComparison.OrdinalIgnoreCase));
-                    Logger.Information("Bybit Demo verbinding OK via {Url}", baseUrl);
-                    return (true, $"✅ Demo-verbinding geslaagd via {baseUrl}\n" +
-                                  $"Beschikbaar: {BybitApi.Num(Math.Round(balance?.Available ?? 0, 2))} {quote} (demo)");
-                }
                 failures.Add($"{baseUrl}: {BybitApi.ExplainError(code, msg)}");
+                continue;
             }
-            catch (Exception ex)
+
+            _appSettings.BybitDemoBaseUrl = baseUrl;
+            Logger.Information("Bybit Demo verbinding OK via {Url}", baseUrl);
+
+            // 2. Saldo los ophalen: een fout hier maakt de sleutel niet ongeldig.
+            var quote = _appSettings.BybitQuoteCoin;
+            // Via spot-borrow-check: Bybit EU Demo kent wallet-balance niet (HTTP 404).
+            var balanceQuery = BybitApi.Query(
+                ("category", "spot"), ("symbol", BybitOrderPlanner.SymbolFor("BTC", quote)), ("side", "Buy"));
+            var (wCode, wMsg, wallet) = await SignedGetAsync(
+                baseUrl, "/v5/order/spot-borrow-check", balanceQuery, apiKey, apiSecret);
+            string balanceLine;
+            if (wCode == 0 && wallet is not null)
             {
-                failures.Add($"{baseUrl}: {ex.Message}");
+                var available = BybitApi.ParseSpotAvailable(wallet.Value, buy: true);
+                balanceLine = $"Beschikbaar: {BybitApi.Num(Math.Round(available, 2))} {quote} (demo)";
             }
+            else
+            {
+                Logger.Warning("Bybit Demo saldo via {Url} mislukt: {Code} {Msg}", baseUrl, wCode, wMsg);
+                balanceLine = $"⚠ Sleutel is geldig, maar saldo ophalen lukte niet: {BybitApi.ExplainError(wCode, wMsg)}";
+            }
+
+            return (true, $"✅ Demo-sleutel geldig via {baseUrl}\n{balanceLine}");
         }
 
         Logger.Warning("Bybit Demo test mislukt: {Failures}", string.Join(" | ", failures));
         return (false, "❌ Geen werkend demo-domein gevonden.\n" + string.Join("\n", failures));
+    }
+
+    /// <summary>
+    /// Ondertekende GET (HMAC, sign-type 2). Een leeg antwoord (Bybit geeft soms 401/404 zonder body)
+    /// wordt vertaald naar de HTTP-status in plaats van een JSON-parsefout.
+    /// </summary>
+    private static async Task<(int Code, string Msg, JsonElement? Result)> SignedGetAsync(
+        string baseUrl, string path, string query, string apiKey, string apiSecret)
+    {
+        long ts   = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+        var  sign = BybitApi.Sign(apiSecret, ts, apiKey, BybitApi.RecvWindow, query);
+        var  url  = string.IsNullOrEmpty(query) ? $"{baseUrl}{path}" : $"{baseUrl}{path}?{query}";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, url);
+        request.Headers.Add("X-BAPI-API-KEY",     apiKey);
+        request.Headers.Add("X-BAPI-TIMESTAMP",   ts.ToString());
+        request.Headers.Add("X-BAPI-SIGN",        sign);
+        request.Headers.Add("X-BAPI-SIGN-TYPE",   "2");
+        request.Headers.Add("X-BAPI-RECV-WINDOW", BybitApi.RecvWindow.ToString());
+
+        try
+        {
+            using var response = await _http.SendAsync(request);
+            var body = await response.Content.ReadAsStringAsync();
+            if (string.IsNullOrWhiteSpace(body))
+                return ((int)response.StatusCode, $"HTTP {(int)response.StatusCode} {response.ReasonPhrase} zonder inhoud", null);
+
+            using var doc = JsonDocument.Parse(body);
+            var (code, msg, result) = BybitApi.ReadEnvelope(doc);
+            return (code, msg, result?.Clone());
+        }
+        catch (Exception ex)
+        {
+            return (-1, ex.Message, null);
+        }
     }
 
     // -----------------------------------------------------------------------
