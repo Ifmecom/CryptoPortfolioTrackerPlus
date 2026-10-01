@@ -11,4 +11,11 @@ namespace CryptoPortfolioTracker.Services;
 public interface IGuardrailService
 {
     Task<GuardrailVerdict> CheckNewTradeAsync(CancellationToken ct = default);
+
+    /// <summary>
+    /// Zelfde controle voor een live/demo-order op <paramref name="exchange"/> (v1.47): telt alleen de
+    /// open posities en dag-P&amp;L van die exchange (niet de paper trades).
+    /// </summary>
+    Task<GuardrailVerdict> CheckNewLiveTradeAsync(Enums.ExchangeKind exchange, CancellationToken ct = default)
+        => CheckNewTradeAsync(ct);
 }

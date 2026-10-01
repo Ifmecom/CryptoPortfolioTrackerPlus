@@ -345,7 +345,7 @@
 
                         <!-- ── Exchanges (API-sleutels) ──────────────────── -->
                         <ct:SettingsExpander Header="Exchanges (API-sleutels)"
-                            Description="Versleutelde koppeling met Bybit en/of MEXC voor live orders."
+                            Description="Versleutelde koppeling met Bybit (live en demo) en/of MEXC."
                             HeaderIcon="{ui:FontIcon Glyph=&#xE8C8;}"
                             IsExpanded="True">
                             <ct:SettingsExpander.Items>
@@ -471,6 +471,88 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <!-- Bybit Demo (v1.47) -->
+                                <ct:SettingsCard Header="Bybit Demo (testomgeving)"
+                                    Description="Orders met nepgeld op Bybit Demo Trading · alleen spot · HMAC-sleutel van je demo-account"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE7BE;}">
+                                    <StackPanel MaxWidth="360" Spacing="10">
+
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsBybitDemoConfigured), Mode=OneWay}">
+                                            <FontIcon Glyph="&#xE930;" Foreground="#FF4CAF50" FontSize="14"/>
+                                            <TextBlock FontSize="12" Foreground="#FF4CAF50" TextWrapping="Wrap">
+                                                <Run Text="Actief · "/>
+                                                <Run Text="{x:Bind _viewModel.BybitDemoDomain, Mode=OneWay}"/>
+                                            </TextBlock>
+                                        </StackPanel>
+
+                                        <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}"
+                                                BorderThickness="1" CornerRadius="4" Padding="10">
+                                            <StackPanel Spacing="8">
+                                                <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                           Text="Log in op bybit.eu → schakel over naar Demo Trading → profielicoon → API → maak een System-generated sleutel met rechten voor Spot-handel. Plak hier de API Key en Secret van dát demo-account."/>
+                                                <PasswordBox Header="Demo API Key" Width="280" HorizontalAlignment="Left"
+                                                             Password="{x:Bind _viewModel.BybitDemoApiKey, Mode=TwoWay}"
+                                                             PlaceholderText="Plak hier de demo API Key"/>
+                                                <PasswordBox Header="Demo API Secret" Width="280" HorizontalAlignment="Left"
+                                                             Password="{x:Bind _viewModel.BybitDemoApiSecret, Mode=TwoWay}"
+                                                             PlaceholderText="Plak hier de demo API Secret"/>
+                                                <Button Content="Opslaan en testen"
+                                                        Command="{x:Bind _viewModel.SaveBybitDemoKeyCommand}"
+                                                        Style="{StaticResource AccentButtonStyle}"/>
+                                            </StackPanel>
+                                        </Border>
+
+                                        <StackPanel Orientation="Horizontal" Spacing="8"
+                                                    Visibility="{x:Bind converters:Functions.TrueToVisible(_viewModel.IsBybitDemoConfigured), Mode=OneWay}">
+                                            <Button Content="Verbinding testen"
+                                                    Command="{x:Bind _viewModel.TestBybitDemoConnectionCommand}"/>
+                                            <Button Content="Verwijderen"
+                                                    Command="{x:Bind _viewModel.DeleteBybitDemoAccountCommand}"/>
+                                        </StackPanel>
+
+                                        <StackPanel Orientation="Horizontal" Spacing="6"
+                                                    Visibility="{x:Bind converters:Functions.StringToVisibility(_viewModel.BybitDemoStatus), Mode=OneWay}">
+                                            <ProgressRing IsActive="{x:Bind _viewModel.IsBybitDemoTesting, Mode=OneWay}"
+                                                          Width="16" Height="16"/>
+                                            <TextBlock FontSize="12" TextWrapping="Wrap" MaxWidth="330"
+                                                       Text="{x:Bind _viewModel.BybitDemoStatus, Mode=OneWay}"/>
+                                        </StackPanel>
+
+                                        <TextBox Header="Quote-munt (Bybit EU: USDC)" Width="140" HorizontalAlignment="Left"
+                                                 Text="{x:Bind _viewModel.BybitQuoteCoin, Mode=TwoWay}"
+                                                 ToolTipService.ToolTip="Orders worden geplaatst op paren als SOLUSDC. Onder MiCA biedt Bybit EU geen USDT-paren; demo-tegoed is in USDC."/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <!-- Automatisch handelen (v1.47) -->
+                                <ct:SettingsCard Header="Automatisch handelen (alleen Bybit Demo)"
+                                    Description="Na elke Pattern Trading-scan plaatst de app zelf Long-orders op Bybit Demo voor de sterkste setups, met stop-loss en take-profit op Bybit. Risk-guardrails en kill-switch gelden. Echt geld is uitgesloten."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE99A;}">
+                                    <StackPanel MaxWidth="360" Spacing="10">
+                                        <ToggleSwitch IsOn="{x:Bind _viewModel.IsAutoTradeEnabled, Mode=TwoWay}"
+                                                      OnContent="Aan — automatisch" OffContent="Uit — alleen 1-klik"/>
+                                        <NumberBox Header="Minimale score (TradabilityScore)" Width="200" HorizontalAlignment="Left"
+                                                   Value="{x:Bind _viewModel.AutoTradeMinScore, Mode=TwoWay}"
+                                                   Minimum="50" Maximum="100" SmallChange="5" SpinButtonPlacementMode="Compact"/>
+                                        <NumberBox Header="Maximaal aantal orders per dag" Width="200" HorizontalAlignment="Left"
+                                                   Value="{x:Bind _viewModel.AutoTradeMaxPerDay, Mode=TwoWay}"
+                                                   Minimum="1" Maximum="20" SmallChange="1" SpinButtonPlacementMode="Compact"/>
+                                        <NumberBox Header="Risico per trade (% van demo-saldo)" Width="200" HorizontalAlignment="Left"
+                                                   Value="{x:Bind _viewModel.AutoTradeRiskPct, Mode=TwoWay}"
+                                                   Minimum="0.1" Maximum="5" SmallChange="0.5" SpinButtonPlacementMode="Compact"
+                                                   ToolTipService.ToolTip="Positiegrootte zó dat verlies bij de stop-loss gelijk is aan dit percentage van je beschikbare demo-saldo."/>
+                                        <NumberBox Header="Maximale inleg per trade (% van saldo)" Width="200" HorizontalAlignment="Left"
+                                                   Value="{x:Bind _viewModel.AutoTradeMaxPositionPct, Mode=TwoWay}"
+                                                   Minimum="5" Maximum="50" SmallChange="5" SpinButtonPlacementMode="Compact"/>
+                                        <TextBlock FontSize="11" TextWrapping="Wrap"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Alleen Long (spot kan niet shorten). Maximaal één positie per munt; het maximum aantal open posities volgt de risk-guardrails. Telegram meldt elke geplaatste, gevulde en gesloten order."/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                                 <!-- MEXC -->
                                 <ct:SettingsCard Header="MEXC"
                                     Description="api.mexc.com — V3 REST API  ·  HMAC-SHA256"
@@ -573,6 +655,19 @@
                                                    Text="Gebruikt voor: Technische indicatoren (RSI · MACD · Bollinger · StochRSI · ATR) · Trendgrafieken (sparklines) op de Analyse-pagina"/>
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                                    Text="Update: via Windows Task Scheduler (MarketChartsUpdateService.exe)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="Bybit Demo Trading API (orders)"
+                                    Description="api-demo.bybit.eu / api-demo.bybit.com — V5 REST"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE7BE;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Plaatst, annuleert en sluit spot-orders met nepgeld op Bybit Demo Trading, en haalt orderstatus, fills en saldo op. Vereist een HMAC API-sleutel van het demo-account (versleuteld opgeslagen)."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Gebruikt voor: order-dialoog (Bybit EU Demo) · Trade Journal-sync · automatisch handelen"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Update: bij plaatsen/sluiten, en bij elke vernieuwing van het Trade Journal"/>
                                     </StackPanel>
                                 </ct:SettingsCard>
 

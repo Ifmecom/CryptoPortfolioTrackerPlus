@@ -203,8 +203,10 @@ public partial class SignalsViewModel : BaseViewModel
                 Reasoning = "Manual paper trade (no prior signal evaluation)",
             };
 
-            await _tradeService.PlacePaperAsync(coin, signal, req);
-            StatusMessage = $"Paper {req.Side} order placed for {row.Symbol} — {req.AmountUsdt:F0} USDT.";
+            var placed = await _tradeService.PlacePaperAsync(coin, signal, req);
+            StatusMessage = placed.IsPaper
+                ? $"Paper {req.Side} order placed for {row.Symbol} — {req.AmountUsdt:F0} USDT."
+                : $"🧪 Order geplaatst op Bybit Demo: {placed.Qty:0.########} {placed.Symbol} — status {placed.Status}.";
         }
         catch (Exception ex)
         {

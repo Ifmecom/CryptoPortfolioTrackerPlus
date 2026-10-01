@@ -25,7 +25,9 @@ public enum Timeframe
 public enum ExchangeKind
 {
     Mexc,
-    Bybit
+    Bybit,
+    /// <summary>Bybit Demo Trading (testomgeving met nepgeld, v1.47). Aparte API-sleutel en domein.</summary>
+    BybitDemo
 }
 
 public enum OrderSide

@@ -350,6 +350,62 @@ public partial class Settings : ObservableObject
     }
 
     // -----------------------------------------------------------------------
+    // Bybit Demo Trading + automatisch handelen (v1.47)
+    // -----------------------------------------------------------------------
+
+    /// <summary>
+    /// Gevonden API-domein voor Bybit Demo Trading (bv. https://api-demo.bybit.eu). Leeg = nog niet
+    /// bepaald; 'Verbinding testen' probeert de kandidaten en slaat het werkende domein hier op.
+    /// </summary>
+    public string BybitDemoBaseUrl
+    {
+        get => _store.Get("BybitDemoBaseUrl", string.Empty);
+        set { _store.Set("BybitDemoBaseUrl", value ?? string.Empty); OnPropertyChanged(nameof(BybitDemoBaseUrl)); }
+    }
+
+    /// <summary>Quote-munt voor spot-paren op Bybit EU (MiCA: standaard USDC, niet USDT).</summary>
+    public string BybitQuoteCoin
+    {
+        get => _store.Get("BybitQuoteCoin", "USDC");
+        set { _store.Set("BybitQuoteCoin", string.IsNullOrWhiteSpace(value) ? "USDC" : value.Trim().ToUpperInvariant()); OnPropertyChanged(nameof(BybitQuoteCoin)); }
+    }
+
+    /// <summary>Automatisch orders plaatsen op Bybit Demo na een Pattern Trading-scan (standaard uit).</summary>
+    public bool IsAutoTradeEnabled
+    {
+        get => _store.Get("IsAutoTradeEnabled", false);
+        set { _store.Set("IsAutoTradeEnabled", value); OnPropertyChanged(nameof(IsAutoTradeEnabled)); }
+    }
+
+    /// <summary>Minimale TradabilityScore voor een automatische order (50-100).</summary>
+    public int AutoTradeMinScore
+    {
+        get => _store.Get("AutoTradeMinScore", 75);
+        set { _store.Set("AutoTradeMinScore", Math.Clamp(value, 50, 100)); OnPropertyChanged(nameof(AutoTradeMinScore)); }
+    }
+
+    /// <summary>Maximaal aantal automatische orders per dag (1-20).</summary>
+    public int AutoTradeMaxPerDay
+    {
+        get => _store.Get("AutoTradeMaxPerDay", 3);
+        set { _store.Set("AutoTradeMaxPerDay", Math.Clamp(value, 1, 20)); OnPropertyChanged(nameof(AutoTradeMaxPerDay)); }
+    }
+
+    /// <summary>Risico per automatische trade als % van het demo-saldo (verlies bij stop-loss, 0,1-5%).</summary>
+    public double AutoTradeRiskPct
+    {
+        get => _store.Get("AutoTradeRiskPct", 1.0);
+        set { _store.Set("AutoTradeRiskPct", Math.Clamp(value, 0.1, 5.0)); OnPropertyChanged(nameof(AutoTradeRiskPct)); }
+    }
+
+    /// <summary>Maximale inleg per automatische trade als % van het beschikbare saldo (5-50%).</summary>
+    public double AutoTradeMaxPositionPct
+    {
+        get => _store.Get("AutoTradeMaxPositionPct", 20.0);
+        set { _store.Set("AutoTradeMaxPositionPct", Math.Clamp(value, 5.0, 50.0)); OnPropertyChanged(nameof(AutoTradeMaxPositionPct)); }
+    }
+
+    // -----------------------------------------------------------------------
     // Fundamentele analyse
     // -----------------------------------------------------------------------
 

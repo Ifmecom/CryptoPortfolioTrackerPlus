@@ -284,6 +284,8 @@ public partial class App : Application
         services.AddScoped<ITradeAnalysisService, TradeAnalysisService>();
 
         services.AddScoped<IExchangeAccountService, ExchangeAccountService>();
+        services.AddScoped<ILiveOrderExecutor, BybitDemoExecutor>();          // v1.47 — Bybit EU Demo (spot)
+        services.AddScoped<IAutoTraderService, AutoTraderService>();          // v1.47 — automatisch handelen (demo)
 
         // Pattern Trading (Phase 1 + 2)
         services.AddSingleton<IPatternDetectionService, PatternDetectionService>();

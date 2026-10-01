@@ -13,6 +13,7 @@ public class TradeService : ITradeService
     private readonly PortfolioService  _portfolioService;
     private readonly IGuardrailService? _guardrails;
     private readonly INotifierService?  _notifier;
+    private readonly ILiveOrderExecutor? _live;
 
     // Per-dag flag zodat de verlieslimiet-alert maar één keer per dag wordt verstuurd.
     private static DateTime _lastDailyLossAlertDay = DateTime.MinValue;
@@ -20,11 +21,13 @@ public class TradeService : ITradeService
     public TradeService(
         PortfolioService portfolioService,
         IGuardrailService? guardrails = null,
-        INotifierService?  notifier   = null)
+        INotifierService?  notifier   = null,
+        ILiveOrderExecutor? live      = null)
     {
         _portfolioService = portfolioService;
         _guardrails       = guardrails;
         _notifier         = notifier;
+        _live             = live;
     }
 
     // -----------------------------------------------------------------------
@@ -33,6 +36,10 @@ public class TradeService : ITradeService
 
     public async Task<ExchangeOrder> PlacePaperAsync(Coin coin, Signal signal, OrderRequest req)
     {
+        // v1.47: in de order-dialoog gekozen voor uitvoeren op Bybit Demo → echte (demo-)order.
+        if (req.Exchange == ExchangeKind.BybitDemo)
+            return await PlaceLiveAsync(coin, signal, req);
+
         var context = _portfolioService.Context
             ?? throw new InvalidOperationException("No DB context available.");
 
@@ -107,8 +114,50 @@ public class TradeService : ITradeService
     // Live trading — Sprint 2
     // -----------------------------------------------------------------------
 
-    public Task<ExchangeOrder> PlaceLiveAsync(Coin coin, Signal signal, OrderRequest req)
-        => throw new NotImplementedException("Live trading is not available in Sprint 1.4.");
+    /// <summary>
+    /// Plaatst een order op de exchange via de <see cref="ILiveOrderExecutor"/> (v1.47).
+    /// Voorlopig alleen Bybit Demo: live handelen met echt geld blijft geblokkeerd tot het in de demo
+    /// getest en bewust vrijgegeven is.
+    /// </summary>
+    public async Task<ExchangeOrder> PlaceLiveAsync(Coin coin, Signal signal, OrderRequest req)
+    {
+        if (req.Exchange != ExchangeKind.BybitDemo)
+            throw new InvalidOperationException(
+                "Handelen met echt geld is nog niet vrijgegeven. Test eerst met Bybit Demo.");
+        if (_live is null || _live.Exchange != req.Exchange)
+            throw new InvalidOperationException("Order-uitvoering voor Bybit Demo is niet beschikbaar.");
+
+        if (_guardrails is not null)
+        {
+            var verdict = await _guardrails.CheckNewLiveTradeAsync(req.Exchange);
+            if (verdict.IsBlocked)
+                throw new InvalidOperationException($"⛔ Geblokkeerd door risk-guardrails: {verdict.ReasonText}");
+        }
+
+        return await _live.PlaceAsync(coin, signal, req);
+    }
+
+    /// <summary>Sluit een open live/demo-positie tegen marktprijs (TP/SL op de exchange worden weggehaald).</summary>
+    public async Task CloseLiveAsync(ExchangeOrder order)
+    {
+        if (order.IsPaper) throw new InvalidOperationException("CloseLiveAsync is alleen voor live/demo-orders.");
+        if (_live is null || _live.Exchange != order.Exchange)
+            throw new InvalidOperationException($"Geen order-uitvoering beschikbaar voor {order.Exchange}.");
+        await _live.CloseAsync(order);
+    }
+
+    /// <summary>Synchroniseert live/demo-orders met de exchange; retourneert wat er veranderde.</summary>
+    public async Task<IReadOnlyList<string>> SyncLiveOrdersAsync()
+    {
+        if (_live is null) return Array.Empty<string>();
+        try { return await _live.SyncAsync(); }
+        catch (InvalidOperationException ex)
+        {
+            // Bijv. geen demo-sleutel ingesteld — niet fataal voor het journaal.
+            Logger.Debug(ex, "TradeService: live-sync overgeslagen");
+            return Array.Empty<string>();
+        }
+    }
 
     // -----------------------------------------------------------------------
     // Shared
@@ -130,7 +179,9 @@ public class TradeService : ITradeService
             return true;
         }
 
-        throw new NotImplementedException("Live order cancellation not available in Sprint 1.4.");
+        if (_live is null || _live.Exchange != order.Exchange)
+            throw new InvalidOperationException($"Geen order-uitvoering beschikbaar voor {order.Exchange}.");
+        return await _live.CancelAsync(order);
     }
 
     public async Task<bool> ClosePaperAsync(ExchangeOrder order, double closePrice)
@@ -184,7 +235,7 @@ public class TradeService : ITradeService
         return closed;
     }
 
-    public Task SyncFillsAsync() => Task.CompletedTask; // Sprint 2
+    public async Task SyncFillsAsync() => await SyncLiveOrdersAsync();
 
     // -----------------------------------------------------------------------
     // Automatic fill monitoring (Pending → Filled)

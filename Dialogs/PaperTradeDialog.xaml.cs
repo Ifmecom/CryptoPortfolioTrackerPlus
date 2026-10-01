@@ -447,6 +447,35 @@ public sealed partial class PaperTradeDialog : ContentDialog
     // Action buttons
     // ────────────────────────────────────────────────────────────────────────
 
+    // ────────────────────────────────────────────────────────────────────────
+    // Uitvoeren: Paper of Bybit EU Demo (v1.47)
+    // ────────────────────────────────────────────────────────────────────────
+
+    private bool IsDemoSelected =>
+        cmbExchange?.SelectedItem is ComboBoxItem { Tag: string tag } && tag == "BybitDemo";
+
+    private void Exchange_Changed(object sender, SelectionChangedEventArgs e)
+    {
+        // Tijdens InitializeComponent bestaan nog niet alle controls.
+        if (rdSpot is null || rdFutures is null || rdMargin is null || btnShort is null
+            || btnLong is null || chkTP2 is null || demoBar is null) return;
+
+        bool demo = IsDemoSelected;
+
+        // Bybit EU Demo = alleen spot en alleen kopen.
+        if (demo) rdSpot.IsChecked = true;
+        rdFutures.IsEnabled = !demo;
+        rdMargin.IsEnabled  = !demo;
+        btnShort.IsEnabled  = !demo;
+
+        // Eén take-profit op Bybit; TP2 uit.
+        if (demo) chkTP2.IsChecked = false;
+        chkTP2.IsEnabled = !demo;
+
+        demoBar.IsOpen  = demo;
+        btnLong.Content = demo ? "📈  Koop op Bybit Demo" : "📈  Open Long";
+    }
+
     private void OpenLong_Click(object sender, RoutedEventArgs e)
     {
         SelectedSide = OrderSide.Buy;
@@ -470,15 +499,8 @@ public sealed partial class PaperTradeDialog : ContentDialog
     {
         if (!Confirmed) return null;
 
-        var exchange = cmbExchange.SelectedItem is ComboBoxItem exItem
-            ? exItem.Tag?.ToString() switch
-            {
-                "Mexc"    => ExchangeKind.Mexc,
-                "Binance" => ExchangeKind.Bybit,   // map unknown → Bybit for now
-                "KuCoin"  => ExchangeKind.Bybit,
-                _         => ExchangeKind.Bybit,
-            }
-            : ExchangeKind.Bybit;
+        // Paper blijft (zoals voorheen) als Bybit gelabeld; BybitDemo = echte demo-order (v1.47).
+        var exchange = IsDemoSelected ? ExchangeKind.BybitDemo : ExchangeKind.Bybit;
 
         var marketType = rdFutures.IsChecked == true ? MarketType.Futures
                        : rdMargin.IsChecked  == true ? MarketType.Margin

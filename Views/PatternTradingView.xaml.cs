@@ -253,11 +253,13 @@ public sealed partial class PatternTradingView : Page
             if (activeSetup != null && watchedSetupService != null)
                 await watchedSetupService.LinkOrderAsync(activeSetup.Id, order.Id);
 
-            _viewModel.StatusText = $"✓ Paper {req.Side} order geplaatst voor {row.Symbol} — {req.AmountUsdt:F0} USDT.";
+            _viewModel.StatusText = order.IsPaper
+                ? $"✓ Paper {req.Side} order geplaatst voor {row.Symbol} — {req.AmountUsdt:F0} USDT."
+                : $"🧪 Order geplaatst op Bybit Demo: {order.Qty:0.########} {order.Symbol} — status {order.Status}.";
         }
         catch (Exception ex)
         {
-            _viewModel.StatusText = $"Paper trade mislukt: {ex.Message}";
+            _viewModel.StatusText = $"Order mislukt: {ex.Message}";
         }
     }
 }

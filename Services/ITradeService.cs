@@ -34,8 +34,19 @@ public interface ITradeService
     Task<List<(int OrderId, string Symbol, string Reason)>> AutoCloseTriggeredAsync(
         Dictionary<string, double> priceMap);
 
-    /// <summary>Sync live fill statuses from exchange. (Sprint 2)</summary>
+    /// <summary>Sync live fill statuses from exchange.</summary>
     Task SyncFillsAsync();
+
+    /// <summary>
+    /// Synchroniseert live/demo-orders met de exchange (vullingen, TP/SL-sluitingen) en retourneert
+    /// mensgerichte regels over wat er veranderde (v1.47).
+    /// </summary>
+    Task<IReadOnlyList<string>> SyncLiveOrdersAsync()
+        => Task.FromResult<IReadOnlyList<string>>(Array.Empty<string>());
+
+    /// <summary>Sluit een open live/demo-positie tegen marktprijs (v1.47).</summary>
+    Task CloseLiveAsync(ExchangeOrder order)
+        => throw new NotSupportedException("Live sluiten wordt door deze implementatie niet ondersteund.");
 
     /// <summary>Persist a free-text note on an existing order.</summary>
     Task UpdateNotesAsync(int orderId, string notes);

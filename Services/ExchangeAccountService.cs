@@ -245,12 +245,98 @@ public class ExchangeAccountService : IExchangeAccountService
 
         return exchange switch
         {
+            ExchangeKind.BybitDemo => await TestBybitDemoAsync(apiKey, account.ApiSecretEncrypted),
             ExchangeKind.Bybit => account.AuthMethod == "RSA"
                 ? await TestBybitRsaAsync(apiKey, account.ApiSecretEncrypted, BybitBaseUrl)
                 : await TestBybitHmacAsync(apiKey, account.ApiSecretEncrypted, BybitBaseUrl),
             ExchangeKind.Mexc => await TestMexcHmacAsync(apiKey, account.ApiSecretEncrypted),
             _                 => (false, "Onbekende exchange.")
         };
+    }
+
+    // -----------------------------------------------------------------------
+    // Bybit Demo Trading (v1.47) — sleutels + domein-detectie
+    // -----------------------------------------------------------------------
+
+    public async Task<ExchangeCredentials?> GetCredentialsAsync(ExchangeKind exchange)
+    {
+        var context = _portfolioService.Context;
+        if (context is null) return null;
+
+        var account = await context.ExchangeAccounts
+            .AsNoTracking()
+            .FirstOrDefaultAsync(a => a.Exchange == exchange && a.IsActive);
+        if (account is null || account.AuthMethod != "HMAC") return null;
+
+        try
+        {
+            return new ExchangeCredentials(
+                Decrypt(account.ApiKeyEncrypted), Decrypt(account.ApiSecretEncrypted), account.AuthMethod);
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "ExchangeAccountService: sleutels voor {Exchange} niet te ontsleutelen", exchange);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Test de demo-sleutel op de kandidaat-domeinen (EU eerst bij een EU-account) met een
+    /// alleen-lezen saldo-opvraging, en onthoudt het domein dat werkt in de instellingen.
+    /// </summary>
+    private async Task<(bool, string)> TestBybitDemoAsync(string apiKey, string secretEncrypted)
+    {
+        string apiSecret;
+        try { apiSecret = Decrypt(secretEncrypted); }
+        catch { return (false, "❌ Secret kan niet worden ontsleuteld."); }
+
+        var candidates = new List<string>();
+        if (!string.IsNullOrWhiteSpace(_appSettings.BybitDemoBaseUrl))
+            candidates.Add(_appSettings.BybitDemoBaseUrl);
+        candidates.AddRange(BybitApi.DemoBaseUrlCandidates(_appSettings.BybitIsEu)
+            .Where(c => !candidates.Contains(c)));
+
+        var failures = new List<string>();
+        foreach (var baseUrl in candidates)
+        {
+            const string query = "accountType=UNIFIED";
+            long ts   = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            var  sign = BybitApi.Sign(apiSecret, ts, apiKey, BybitApi.RecvWindow, query);
+
+            using var request = new HttpRequestMessage(HttpMethod.Get, $"{baseUrl}/v5/account/wallet-balance?{query}");
+            request.Headers.Add("X-BAPI-API-KEY",     apiKey);
+            request.Headers.Add("X-BAPI-TIMESTAMP",   ts.ToString());
+            request.Headers.Add("X-BAPI-SIGN",        sign);
+            request.Headers.Add("X-BAPI-SIGN-TYPE",   "2");
+            request.Headers.Add("X-BAPI-RECV-WINDOW", BybitApi.RecvWindow.ToString());
+
+            try
+            {
+                var response = await _http.SendAsync(request);
+                var body     = await response.Content.ReadAsStringAsync();
+                using var doc = JsonDocument.Parse(body);
+                var (code, msg, result) = BybitApi.ReadEnvelope(doc);
+
+                if (code == 0 && result is not null)
+                {
+                    _appSettings.BybitDemoBaseUrl = baseUrl;
+                    var quote   = _appSettings.BybitQuoteCoin;
+                    var balance = BybitApi.ParseWallet(result.Value)
+                        .FirstOrDefault(b => string.Equals(b.Coin, quote, StringComparison.OrdinalIgnoreCase));
+                    Logger.Information("Bybit Demo verbinding OK via {Url}", baseUrl);
+                    return (true, $"✅ Demo-verbinding geslaagd via {baseUrl}\n" +
+                                  $"Beschikbaar: {BybitApi.Num(Math.Round(balance?.Available ?? 0, 2))} {quote} (demo)");
+                }
+                failures.Add($"{baseUrl}: {BybitApi.ExplainError(code, msg)}");
+            }
+            catch (Exception ex)
+            {
+                failures.Add($"{baseUrl}: {ex.Message}");
+            }
+        }
+
+        Logger.Warning("Bybit Demo test mislukt: {Failures}", string.Join(" | ", failures));
+        return (false, "❌ Geen werkend demo-domein gevonden.\n" + string.Join("\n", failures));
     }
 
     // -----------------------------------------------------------------------

@@ -86,14 +86,14 @@
 
             <!-- Exchange ComboBox -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                <TextBlock Text="Exchange" FontSize="12"
+                <TextBlock Text="Uitvoeren" FontSize="12"
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                            VerticalAlignment="Center"/>
-                <ComboBox x:Name="cmbExchange" Width="130" VerticalAlignment="Center">
-                    <ComboBoxItem Content="Bybit"   Tag="Bybit"   IsSelected="True"/>
-                    <ComboBoxItem Content="MEXC"    Tag="Mexc"/>
-                    <ComboBoxItem Content="Binance" Tag="Binance"/>
-                    <ComboBoxItem Content="KuCoin"  Tag="KuCoin"/>
+                <ComboBox x:Name="cmbExchange" Width="170" VerticalAlignment="Center"
+                          SelectionChanged="Exchange_Changed"
+                          ToolTipService.ToolTip="Paper = simulatie in de app. Bybit EU Demo = echte order met nepgeld op Bybit Demo Trading (alleen spot Long).">
+                    <ComboBoxItem Content="Paper (simulatie)" Tag="Paper"     IsSelected="True"/>
+                    <ComboBoxItem Content="Bybit EU Demo"     Tag="BybitDemo"/>
                 </ComboBox>
             </StackPanel>
         </Grid>
@@ -173,6 +173,11 @@
             </StackPanel>
 
             <!-- Kill-switch waarschuwing -->
+            <!-- Bybit EU Demo (v1.47) -->
+            <InfoBar x:Name="demoBar" IsOpen="False" IsClosable="False" Severity="Informational"
+                     Title="Order op Bybit EU Demo"
+                     Message="Spot-kooporder met nepgeld (USDC). Stop-loss en TP1 worden direct op Bybit gezet en bewaakt; TP2 en gedeeltelijk sluiten worden niet ondersteund. Market = limit 0,5% boven de vraagprijs."/>
+
             <InfoBar x:Name="killSwitchBar" IsOpen="False" IsClosable="False" Severity="Error"
                      Title="Kill-switch actief"
                      Message="Het plaatsen van nieuwe trades is geblokkeerd. Zet de kill-switch uit in Instellingen → Risk-guardrails om weer te kunnen handelen."/>

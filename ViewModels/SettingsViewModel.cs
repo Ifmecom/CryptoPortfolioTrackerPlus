@@ -158,6 +158,107 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
     [ObservableProperty] private double paperVirtualCapital;
     partial void OnPaperVirtualCapitalChanged(double value) => AppSettings.PaperVirtualCapital = value;
 
+    // -----------------------------------------------------------------------
+    // Bybit Demo Trading + automatisch handelen (v1.47)
+    // -----------------------------------------------------------------------
+
+    [ObservableProperty] private bool   isAutoTradeEnabled;
+    partial void OnIsAutoTradeEnabledChanged(bool value) => AppSettings.IsAutoTradeEnabled = value;
+
+    [ObservableProperty] private double autoTradeMinScore;
+    partial void OnAutoTradeMinScoreChanged(double value)
+    {
+        if (double.IsNaN(value)) return;
+        AppSettings.AutoTradeMinScore = (int)Math.Round(value);
+    }
+
+    [ObservableProperty] private double autoTradeMaxPerDay;
+    partial void OnAutoTradeMaxPerDayChanged(double value)
+    {
+        if (double.IsNaN(value)) return;
+        AppSettings.AutoTradeMaxPerDay = (int)Math.Round(value);
+    }
+
+    [ObservableProperty] private double autoTradeRiskPct;
+    partial void OnAutoTradeRiskPctChanged(double value)
+    {
+        if (double.IsNaN(value)) return;
+        AppSettings.AutoTradeRiskPct = value;
+    }
+
+    [ObservableProperty] private double autoTradeMaxPositionPct;
+    partial void OnAutoTradeMaxPositionPctChanged(double value)
+    {
+        if (double.IsNaN(value)) return;
+        AppSettings.AutoTradeMaxPositionPct = value;
+    }
+
+    [ObservableProperty] private string bybitQuoteCoin = "USDC";
+    partial void OnBybitQuoteCoinChanged(string value) => AppSettings.BybitQuoteCoin = value;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(TestBybitDemoConnectionCommand))]
+    private bool isBybitDemoConfigured;
+
+    [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(TestBybitDemoConnectionCommand))]
+    private bool isBybitDemoTesting;
+
+    [ObservableProperty] private string bybitDemoApiKey      = string.Empty;
+    [ObservableProperty] private string bybitDemoApiSecret   = string.Empty;
+    [ObservableProperty] private string bybitDemoStatus      = string.Empty;
+    [ObservableProperty] private string bybitDemoDomain      = string.Empty;
+
+    [RelayCommand]
+    private async Task SaveBybitDemoKey()
+    {
+        if (string.IsNullOrWhiteSpace(BybitDemoApiKey) || string.IsNullOrWhiteSpace(BybitDemoApiSecret))
+        {
+            await ShowMessageDialog("Ontbrekende gegevens",
+                "Vul de API Key en API Secret van je Bybit Demo-account in.", "OK");
+            return;
+        }
+
+        await _exchangeAccountService.SaveHmacAccountAsync(
+            ExchangeKind.BybitDemo, BybitDemoApiKey.Trim(), BybitDemoApiSecret.Trim());
+        AppSettings.BybitDemoBaseUrl = string.Empty;   // nieuw domein bepalen bij de volgende test
+        IsBybitDemoConfigured = true;
+        BybitDemoApiKey       = string.Empty;
+        BybitDemoApiSecret    = string.Empty;
+        BybitDemoDomain       = string.Empty;
+
+        // Meteen testen: dat bepaalt ook het juiste demo-domein (EU of global).
+        await TestBybitDemoConnection();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanTestBybitDemo))]
+    private async Task TestBybitDemoConnection()
+    {
+        IsBybitDemoTesting = true;
+        BybitDemoStatus    = "Bezig met testen…";
+        var (_, msg) = await _exchangeAccountService.TestConnectionAsync(ExchangeKind.BybitDemo);
+        BybitDemoStatus    = msg;
+        BybitDemoDomain    = AppSettings.BybitDemoBaseUrl;
+        IsBybitDemoTesting = false;
+    }
+    private bool CanTestBybitDemo() => IsBybitDemoConfigured && !IsBybitDemoTesting;
+
+    [RelayCommand]
+    private async Task DeleteBybitDemoAccount()
+    {
+        var result = await ShowMessageDialog(
+            "Bybit Demo-koppeling verwijderen",
+            "Weet je zeker dat je de Bybit Demo-sleutel wilt verwijderen? Automatisch handelen stopt dan ook.",
+            "Verwijderen", "Annuleren");
+        if (result != ContentDialogResult.Primary) return;
+
+        await _exchangeAccountService.DeleteAccountAsync(ExchangeKind.BybitDemo);
+        AppSettings.BybitDemoBaseUrl = string.Empty;
+        IsBybitDemoConfigured = false;
+        BybitDemoStatus       = string.Empty;
+        BybitDemoDomain       = string.Empty;
+    }
+
     private readonly INotifierService _notifierService;
     private readonly IExchangeAccountService _exchangeAccountService;
 
@@ -424,6 +525,9 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
             BybitRsaKeyGenerated = !string.IsNullOrEmpty(pem);
         }
 
+        IsBybitDemoConfigured = await _exchangeAccountService.IsConfiguredAsync(ExchangeKind.BybitDemo);
+        BybitDemoDomain       = AppSettings.BybitDemoBaseUrl;
+
         IsMexcConfigured = await _exchangeAccountService.IsConfiguredAsync(ExchangeKind.Mexc);
         if (IsMexcConfigured)
             MexcKeyPreview = "···????"; // preview laden kan later uitgebreid worden
@@ -467,6 +571,13 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         IsKillSwitchActive       = AppSettings.IsKillSwitchActive;
         UseRealPortfolioForRisk  = AppSettings.UseRealPortfolioForRisk;
         PaperVirtualCapital      = AppSettings.PaperVirtualCapital;
+
+        IsAutoTradeEnabled       = AppSettings.IsAutoTradeEnabled;
+        AutoTradeMinScore        = AppSettings.AutoTradeMinScore;
+        AutoTradeMaxPerDay       = AppSettings.AutoTradeMaxPerDay;
+        AutoTradeRiskPct         = AppSettings.AutoTradeRiskPct;
+        AutoTradeMaxPositionPct  = AppSettings.AutoTradeMaxPositionPct;
+        BybitQuoteCoin           = AppSettings.BybitQuoteCoin;
 
         CheckPasswordCredentials();
         _ = LoadExchangeStatusAsync();

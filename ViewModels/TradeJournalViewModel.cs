@@ -115,6 +115,20 @@ public partial class TradeJournalViewModel : BaseViewModel
 
         try
         {
+            if (!row.Order.IsPaper)
+            {
+                // v1.47: Bybit Demo — TP/SL weghalen en tegen marktprijs verkopen op Bybit.
+                var context = _portfolioService.Context;
+                var tracked = context is null ? null : await context.ExchangeOrders.FindAsync(row.Id);
+                if (tracked is null) return;
+                await _tradeService.CloseLiveAsync(tracked);
+                await LoadRowsAsync();
+                StatusMessage = tracked.Status == OrderStatus.Closed
+                    ? $"Positie {row.Symbol} gesloten op Bybit Demo @ {tracked.ClosePrice:#,0.########}"
+                    : $"Verkooporder voor {row.Symbol} geplaatst op Bybit Demo — status wordt bijgewerkt bij vernieuwen.";
+                return;
+            }
+
             await _tradeService.ClosePaperAsync(row.Order, currentPrice);
             await LoadRowsAsync();
             StatusMessage = $"Positie {row.Symbol} gesloten @ {currentPrice:#,0.########} — P&L: {pnl:+0.00;-0.00} USDT";
@@ -171,7 +185,9 @@ public partial class TradeJournalViewModel : BaseViewModel
         var dialog = new ContentDialog
         {
             Title             = "Cancel Order",
-            Content           = $"Cancel paper order for {row.Symbol}?",
+            Content           = row.Order.IsPaper
+                ? $"Cancel paper order for {row.Symbol}?"
+                : $"Order voor {row.Symbol} annuleren op Bybit Demo?",
             PrimaryButtonText = "Yes, cancel",
             CloseButtonText   = "No",
             XamlRoot          = MainPage.Current?.XamlRoot,
@@ -250,6 +266,9 @@ public partial class TradeJournalViewModel : BaseViewModel
         IsLoading = true;
         try
         {
+            // v1.47: eerst live/demo-orders bijwerken met Bybit (vullingen, TP/SL-sluitingen).
+            var liveEvents = await _tradeService.SyncLiveOrdersAsync();
+
             var query = context.ExchangeOrders.AsNoTracking().AsQueryable();
 
             query = _activeFilter switch
@@ -268,7 +287,7 @@ public partial class TradeJournalViewModel : BaseViewModel
 
             // Load current coin prices for PnL estimate
             var coinSymbols = orders
-                .Select(o => o.Symbol.Replace("USDT", "").ToLowerInvariant())
+                .Select(o => TradeJournalRow.BaseSymbol(o.Symbol).ToLowerInvariant())
                 .Distinct()
                 .ToList();
 
@@ -325,6 +344,8 @@ public partial class TradeJournalViewModel : BaseViewModel
             StatusMessage        = Rows.Count == 0
                 ? "No trades found."
                 : $"{Rows.Count} trade(s) — filter: {_activeFilter}";
+            if (liveEvents.Count > 0)
+                StatusMessage = "🧪 Bybit Demo: " + string.Join(" · ", liveEvents);
             LastRefreshedDisplay = $"Prijzen: {DateTime.Now:HH:mm:ss}";
             _isDataLoaded = true;
         }
@@ -392,7 +413,17 @@ public class TradeJournalRow
     public bool IsCancellable => Status is "Pending" or "PartiallyFilled";
 
     /// <summary>True for open paper positions that the user can close at current price.</summary>
-    public bool IsCloseable => Status == "Filled" && Order.IsPaper && CurrentPrice > 0;
+    public bool IsCloseable => Status == "Filled"
+        && ((Order.IsPaper && CurrentPrice > 0) || Order.Exchange == ExchangeKind.BybitDemo);
+
+    /// <summary>Basismunt uit een paar-symbool: "SOLUSDT"/"SOLUSDC" → "SOL".</summary>
+    public static string BaseSymbol(string pair)
+    {
+        var s = (pair ?? string.Empty).ToUpperInvariant();
+        foreach (var quote in new[] { "USDT", "USDC" })
+            if (s.Length > quote.Length && s.EndsWith(quote)) return s[..^quote.Length];
+        return s;
+    }
 
     /// <summary>True for open or pending paper trades whose SL/TP can be edited.</summary>
     public bool IsEditable => Status is "Filled" or "Pending" && Order.IsPaper;
@@ -416,14 +447,14 @@ public class TradeJournalRow
         TakeProfit = order.TakeProfit;
         Qty        = order.Qty;
         Status     = order.Status.ToString();
-        Kind       = order.IsPaper ? "Paper" : "Live";
+        Kind       = order.Exchange == ExchangeKind.BybitDemo ? "Demo" : order.IsPaper ? "Paper" : "Live";
         Exchange   = order.Exchange.ToString();
         CreatedAt  = order.CreatedAt.ToLocalTime();
         FilledAt   = order.FilledAt?.ToLocalTime();
         ClosePrice = order.ClosePrice;
         Notes      = order.Notes ?? string.Empty;
 
-        var baseSymbol = order.Symbol.Replace("USDT", "").ToUpperInvariant();
+        var baseSymbol = BaseSymbol(order.Symbol);
         CurrentPrice = priceMap.GetValueOrDefault(baseSymbol);
 
         // For manually closed positions: use recorded ClosePrice for realised P&L

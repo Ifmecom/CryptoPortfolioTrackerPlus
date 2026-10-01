@@ -28,6 +28,15 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.47  —  Orders op Bybit EU Demo — 1-klik én automatisch");
+
+        AddFeature("🧪", "Bybit EU Demo",
+            "Kies in de order-dialoog 'Bybit EU Demo': een echte spot-order met nepgeld, met SL/TP direct op Bybit.");
+
+        AddFeature("🤖", "Automatisch handelen (standaard uit)",
+            "Schakelaar in Instellingen: na elke Pattern-scan plaatst de app zelf de sterkste Long-setups op de demo. " +
+            "Echt geld blijft geblokkeerd.");
+
         AddVersionHeader("v1.46  —  Signaal-kalibratie: hoe vaak had een signaal gelijk?");
 
         AddFeature("🎯", "Gemeten trefkans per score",

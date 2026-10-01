@@ -1,10 +1,10 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.46
+## CryptoPortfolioTracker Plus — v1.47
 
 | | |
 |---|---|
-| **Versie** | 1.46 |
-| **Datum** | September 2026 |
+| **Versie** | 1.47 |
+| **Datum** | Oktober 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
 | **Status** | Actief in ontwikkeling |
@@ -45,6 +45,7 @@ CryptoPortfolioTracker Plus is een desktop-applicatie voor Windows waarmee een i
 - **Trade Journal** — paper trading én live trades, met P&L en R-multiple
 - **Trade Advies** — multi-timeframe analyse per coin met entry/SL/TP-berekening
 - **Statistieken** — geaggregeerde handelsprestaties over meerdere periodes
+- **Bybit EU Demo** *(v1.47)* — echte spot-orders met nepgeld (1-klik én automatisch na een Pattern-scan), SL/TP op Bybit, sync in het Trade Journal
 - **Signaal-kalibratie** *(v1.46)* — elk signaal en elke Pattern-setup wordt gevolgd; scores worden vertaald naar een gemeten trefkans
 - **Belasting** — Box 3-berekening (NL) met uitbreidbare architectuur voor andere landen
 
@@ -54,7 +55,8 @@ Eén persoon: de eigenaar van het portfolio. Er is geen multi-user functionalite
 
 ### 1.3 Niet in scope
 
-- Geautomatiseerd handelen (market orders via exchange-API)
+- Handelen met echt geld via een exchange-API (*v1.47:* geblokkeerd in `TradeService.PlaceLiveAsync`; alleen Bybit EU Demo is toegestaan)
+- Shorten op Bybit EU (spot-only demo; margin pas na vrijgave live)
 - Mobiele app of web-interface
 - Belastingaangifte exporteren naar officiële formulieren
 
@@ -105,6 +107,10 @@ services.AddSingleton<IPatternDetectionService, PatternDetectionService>(); // p
 services.AddScoped<IPatternStateStore, PatternStateStore>();                 // P7 — patroon-geheugen (EF)
 services.AddScoped<IPatternTradingService, PatternTradingService>();         // afhankelijk van PortfolioService
 
+// Bybit EU Demo + automatisch handelen (v1.47):
+services.AddScoped<ILiveOrderExecutor, BybitDemoExecutor>();   // TradeService delegeert niet-paper orders hierheen
+services.AddScoped<IAutoTraderService, AutoTraderService>();   // aangeroepen door PatternTradingService ná de scan
+
 // Signal-outcome-tracker (v1.46):
 services.AddScoped<ISignalOutcomeService, SignalOutcomeService>();           // uitkomst per signaal + kalibratie (EF)
 
@@ -121,6 +127,21 @@ services.AddScoped<SetupTrackerView>();
 | `IPatternDetectionService` | Singleton | Pure berekening: Level 1 + Level 2 patroondetectie, TradabilityScore berekening. Geen I/O, geen state. |
 | `IPatternStateStore` | Scoped | P7 — patroon-geheugen: laadt/persisteert `PatternStateRecord`s, draait de pure `PatternReconciler`, verrijkt detecties met hun levenscyclus. |
 | `IPatternTradingService` | Scoped | Portfolio-analyse: OHLCV ophalen (Binance→KuCoin→Gate.io→MEXC), indicatoren berekenen, detectie aanroepen, setup bouwen, patroon-geheugen verzoenen (sequentieel ná de scan), en *(v1.46)* de scan vastleggen via `ISignalOutcomeService.RecordPatternScanAsync`. |
+
+**Order-uitvoering Bybit EU Demo *(v1.47)*:**
+
+| Service | Scope | Omschrijving |
+|---------|-------|-------------|
+| `ILiveOrderExecutor` / `BybitDemoExecutor` | Scoped | HTTP + EF: plaatst spot-kooporders (met gekoppelde TP/SL) op Bybit Demo, annuleert, sluit (cancel-all TP/SL + market-verkoop) en synchroniseert vullingen/sluitingen. Instrument-cache 6 u; fills per venster van 7 dagen; één sync tegelijk. |
+| `IAutoTraderService` / `AutoTraderService` | Scoped | Na elke Pattern-scan (als `IsAutoTradeEnabled`): kiest via `AutoTradeSelector`, bepaalt de inleg via `PositionSizeCalculator` op het demo-saldo, plaatst via `ITradeService.PlaceLiveAsync` (guardrails gelden), meldt via Telegram. |
+| `BybitApi` | static (puur) | Ondertekenen (HMAC, sign-type 2), query bouwen, antwoorden parsen, foutcodes uitleggen. |
+| `BybitOrderPlanner` | static (puur) | `OrderRequest` → spot-order: afronden op tick/lot, minima, SL/TP-controle, JSON-body. |
+| `LiveOrderReconciler` | static (puur) | Bybit-orderstatus + fills → status/instap/hoeveelheid/sluiting van de `ExchangeOrder`. |
+| `AutoTradeSelector` | static (puur) | Welke Pattern-setups automatisch geplaatst worden (Long, score, geldig, limieten, één per munt). |
+
+`TradeService.PlacePaperAsync` stuurt een request met `Exchange = BybitDemo` door naar `PlaceLiveAsync`, zodat alle
+bestaande order-dialoog-aanroepen (Signalen, Pattern Trading, Trade Advies) zonder wijziging werken.
+`IGuardrailService.CheckNewLiveTradeAsync(exchange)` (default-interfacemethode) telt alleen posities/P&L van die exchange.
 
 **Signal-outcome-tracker *(v1.46)*:**
 
@@ -335,6 +356,12 @@ Dezelfde validatie draait in Pattern Trading.
 ### 4.7 Trade Journal
 
 **Doel:** Overzicht en beheer van alle orders (paper én live).
+
+**Bybit Demo *(v1.47)*:** demo-orders hebben `Kind = "Demo"` (`Exchange = BybitDemo`, `IsPaper = false`) en vallen
+onder het filter "Live". `LoadRowsAsync` roept eerst `ITradeService.SyncLiveOrdersAsync()` aan (vullingen en TP/SL-
+sluitingen van Bybit) en toont veranderingen in de statusregel. Sluiten = `CloseLiveAsync` (TP/SL weghalen + market-
+verkoop op Bybit); annuleren gaat via Bybit. SL/TP bewerken is voor demo-orders (nog) niet mogelijk. Paper auto-fill/
+auto-close raken alleen `IsPaper`-orders. `TradeJournalRow.BaseSymbol` herkent zowel USDT- als USDC-paren.
 
 **Kolommen per order:**
 
@@ -1131,7 +1158,7 @@ Handelsorder (paper of live).
 |-----------|------|-------------|
 | `Id` | int | PK |
 | `SignalId` | int? | Koppeling met Signal (optioneel) |
-| `Exchange` | ExchangeKind | MEXC / Bybit |
+| `Exchange` | ExchangeKind | MEXC / Bybit / BybitDemo *(v1.47)* |
 | `Symbol` | string | Handelspaar (bijv. "BTCUSDT") |
 | `Side` | OrderSide | Buy / Sell |
 | `Type` | OrderType | Market / Limit / StopLimit |
@@ -1205,7 +1232,7 @@ Versleutelde API-sleutels per exchange.
 | Eigenschap | Type | Omschrijving |
 |-----------|------|-------------|
 | `Id` | int | PK |
-| `Exchange` | ExchangeKind | MEXC / Bybit |
+| `Exchange` | ExchangeKind | MEXC / Bybit / BybitDemo *(v1.47)* |
 | `ApiKeyEncrypted` | string | DPAPI-versleutelde API-key |
 | `ApiSecretEncrypted` | string | DPAPI-versleuteld secret (HMAC) |
 | `AuthMethod` | string | "HMAC" of "RSA" |
@@ -2037,6 +2064,17 @@ vaak samen met de markt mee (onderling afhankelijk).
 | **Gebruik** | Balans-verificatie en (toekomstig) live orders |
 | **Regio** | EU-endpoint instelbaar via `Settings.BybitIsEu` |
 
+#### 7.6.1 Bybit Demo Trading *(v1.47)*
+
+| | |
+|---|---|
+| **Domein** | Automatisch bepaald bij 'Verbinding testen': eerst `https://api-demo.bybit.eu` (bij `BybitIsEu`), dan `https://api-demo.bybit.com`; het werkende domein staat in `Settings.BybitDemoBaseUrl` |
+| **Authenticatie** | HMAC-sleutel van het demo-account (aparte `ExchangeAccount` met `Exchange = BybitDemo`, DPAPI-versleuteld); headers `X-BAPI-*`, sign-type 2 |
+| **Endpoints** | `GET /v5/market/instruments-info`, `GET /v5/market/tickers`, `POST /v5/order/create`, `POST /v5/order/cancel`, `POST /v5/order/cancel-all`, `GET /v5/order/realtime`, `GET /v5/order/history`, `GET /v5/execution/list`, `GET /v5/account/wallet-balance` |
+| **Product** | Alleen spot (Bybit EU Demo ondersteunt geen margin/derivatives); quote-munt `Settings.BybitQuoteCoin` (USDC — MiCA) |
+| **Instaporder** | Altijd `Limit` + `GTC` met `takeProfit`/`stopLoss` (`tpOrderType`/`slOrderType = Market`); "Market" = limit op ask × 1,005 |
+| **Beperkingen** | Demo-orders blijven max. 7 dagen staan; demo-account wordt na 30 dagen inactiviteit gereset; executions max. 7 dagen per query |
+
 ### 7.7 alternative.me Fear & Greed API
 
 | | |
@@ -2188,6 +2226,13 @@ Het `Settings`-object is de centrale configuratieklasse, opgeslagen in `prefs.xm
 | `DailyLossLimit` | Dagelijkse verliesgrens in USDT |
 | `KillSwitchEnabled` | Kill-switch actief bij limietoverschrijding |
 | `BybitIsEu` | Gebruik EU-endpoint voor Bybit |
+| `BybitDemoBaseUrl` *(v1.47)* | Gevonden demo-domein (leeg = nog niet getest) |
+| `BybitQuoteCoin` *(v1.47)* | Quote-munt voor spot-paren (standaard USDC) |
+| `IsAutoTradeEnabled` *(v1.47)* | Automatisch handelen op Bybit Demo na een Pattern-scan (standaard uit) |
+| `AutoTradeMinScore` *(v1.47)* | Minimale TradabilityScore (50–100, standaard 75) |
+| `AutoTradeMaxPerDay` *(v1.47)* | Max. automatische orders per dag (1–20, standaard 3) |
+| `AutoTradeRiskPct` *(v1.47)* | Risico per trade, % van het demo-saldo (0,1–5, standaard 1) |
+| `AutoTradeMaxPositionPct` *(v1.47)* | Max. inleg per trade, % van het saldo (5–50, standaard 20) |
 
 ### 9.2 Portfoliosysteem
 
@@ -2397,10 +2442,14 @@ Telegram Bot Token en Chat ID worden opgeslagen in `prefs.xml`. Bij productie-ge
 3. `SentimentService.cs`: connector inroepen in de verzamelcyclus
 4. `Views/SettingsView.xaml` (Databronnen-tab): kaart toevoegen
 
-### 12.5 Live trading (Sprint 2)
+### 12.5 Live trading *(v1.47: demo actief, echt geld op slot)*
 
-`ITradeService.PlaceLiveAsync()` is al gedefinieerd maar niet geïmplementeerd.  
-Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
+`ITradeService.PlaceLiveAsync()` is geïmplementeerd voor `ExchangeKind.BybitDemo` via `ILiveOrderExecutor`.
+Voor `ExchangeKind.Bybit` (echt geld) gooit de methode bewust een fout. Vrijgeven vraagt minimaal:
+1. een `BybitLiveExecutor` (of de demo-executor parametriseren op domein + `ExchangeKind.Bybit`), met live-sleutel;
+2. een expliciete, bevestigde instelling "Live handelen toestaan" + aparte limieten;
+3. margin (`isLeverage = 1`) als Short gewenst is — Bybit EU live ondersteunt spot-margin, de demo niet;
+4. TP2/gedeeltelijk sluiten (losse `tpslOrder`'s) als dat nodig blijkt.
 
 ---
 
@@ -2408,7 +2457,8 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 
 | Beperking | Details |
 |-----------|---------|
-| **Geen realtime fill-sync** | Live orders worden niet automatisch gesynct met de exchange |
+| **Fill-sync alleen bij vernieuwen** *(v1.47)* | Demo-orders worden gesynchroniseerd bij plaatsen/sluiten en bij elke vernieuwing van het Trade Journal (geen WebSocket). Bybit bewaakt SL/TP zelf, dus de positie is beschermd; alleen de weergave loopt achter tot de volgende sync. |
+| **Bybit Demo: spot-only, één TP** *(v1.47)* | Geen Short, geen hefboom, geen TP2/gedeeltelijk sluiten op Bybit; SL/TP van een demo-order zijn niet aan te passen vanuit de app. Gekoppelde TP/SL op spot-limitorders is niet in de demo getest vóór v1.47 — controleer bij de eerste order op Bybit dat beide zichtbaar zijn. |
 | **Binance/KuCoin geen API-key** | Publieke endpoints; geen privé accountdata |
 | **Sentimentanalyse** | Eenvoudige NLP, geen BERT/LLM; nauwkeurigheid beperkt |
 | **WinUI 3 x:Bind beperking** | `{x:Bind}` werkt niet binnen `ct:SettingsExpander.Items` — gebruik altijd `{Binding}` of losse `ct:SettingsCard` elementen |
@@ -2429,7 +2479,7 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | `TaxCountry` | Netherlands *(+ toekomstig: Germany, Belgium, UnitedKingdom, UnitedStates)* |
 | `SignalDirection` | Long · Short · Flat |
 | `Timeframe` | OneHour · FourHour · OneDay |
-| `ExchangeKind` | Mexc · Bybit |
+| `ExchangeKind` | Mexc · Bybit · BybitDemo *(v1.47)* |
 | `OrderSide` | Buy · Sell |
 | `OrderType` | Market · Limit · StopLimit |
 | `OrderStatus` | Pending · Filled · PartiallyFilled · Cancelled · Rejected · Closed |
@@ -2471,6 +2521,7 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 | v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
 | v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
 | v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
+| v1.47 | **Bybit EU Demo**: `ExchangeKind.BybitDemo` · `ILiveOrderExecutor`/`BybitDemoExecutor` (spot, limit-instap met gekoppelde TP/SL, cancel, close, sync) · pure `BybitApi`, `BybitOrderPlanner`, `LiveOrderReconciler`, `AutoTradeSelector` · `AutoTraderService` na Pattern-scan (schakelaar, standaard uit) · order-dialoog 'Paper / Bybit EU Demo' · Trade Journal-sync + 'Demo'-label · instellingen voor demo-sleutel (domein-detectie EU/global) en automatisch handelen · `IGuardrailService.CheckNewLiveTradeAsync` · echt geld geblokkeerd |
 | v1.46 | **Signaal-kalibratie** (signal-outcome-tracker): `SignalOutcome`-entiteit + `SignalOutcomes`-tabel · pure `SignalOutcomeEvaluator` (meting 1/3/7/14 d, MFE/MAE, geen lookahead) + `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime) · `ISignalOutcomeService` (SignalEngine-signalen met terugwerkende kracht, Pattern-scans vanaf nu, daily klines Binance→KuCoin→Gate.io→MEXC) · nieuw tabblad Statistieken → Signaal-kalibratie · gemeten kans onder de score op de Analyse-pagina · `ReliabilityThresholds.MinSignalOutcomes` (20) |
 | v1.33 | **3% Trading-tool** (`ThreePctView`): gekalibreerd 7-factor scoremodel met +3% netto-doel · Fase 1 backtest/kalibratie (`ThreePctBacktestService`, JSON-opslag) · Fase 2 live scan met F6 liquiditeit + F7 positionering als gatekeepers · `CorrelationService` (gediversifieerde shortlist) · `MacroEventService` (FOMC/CPI/NFP/PCE) · `SetupDetailDialog`. **Cross-tool:** `TradeSetupValidator.CheckAdvice` markeert ongeldige/krappe setups in Trade Advies & Pattern Trading · `MarketRegimeService.GetRegimeContextAsync` (EMA50/200 + dominantie) ook in `SignalEngine` · markt-context (liquiditeit/funding/events) in Trade Advies · gedeelde `TtlCache<T>` · geëxtraheerde `TradeLevelCalculator` · nieuwe databronnen (Binance depth/futures, CoinGecko global). Tests: 40 → 183 |
 | v1.31 | Setup Strategie statistieken: nieuw 'Setup Strategie'-tabblad in `StatisticsView` (Pivot) met Win Rate TP1/TP2, Profit Factor, Expectancy, gem. P&L%, gem. houdtijd, breakdowntabellen per richting/score/marktregime · `SetupBreakdownRow` + `LoadSetupStatsAsync` in `StatisticsViewModel` · TP2-detectie in `AutoUpdateStatusesAsync` (`Tp2Hit` flag) · BTC-marktregime vastgelegd bij aanmaken setup (`MarketRegimeAtCreation`) · bidirectionele Setup↔Order koppeling (`WatchedSetup.LinkedOrderId` + `ExchangeOrder.WatchedSetupId`) · `IWatchedSetupService.GetActiveSetupForCoinAsync` + `LinkOrderAsync` + `GetClosedAsync` · migratie `AddStrategyStatisticsFields` |
@@ -2484,5 +2535,5 @@ Vereist: exchange API-verbinding, orderbeheer, fill-synchronisatie.
 
 ---
 
-*Dit document beschrijft de toestand van de applicatie per versie 1.46 (september 2026).*  
+*Dit document beschrijft de toestand van de applicatie per versie 1.47 (oktober 2026).*  
 *Broncode: `CryptoPortfolioTrackerPlus-main/` · Database: `sqlCPT.db` · Platform: Windows 11 x64*

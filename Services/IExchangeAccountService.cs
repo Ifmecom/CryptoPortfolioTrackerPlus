@@ -1,3 +1,4 @@
+using CryptoPortfolioTracker.Models;
 using CryptoPortfolioTracker.Enums;
 
 namespace CryptoPortfolioTracker.Services;
@@ -39,6 +40,12 @@ public interface IExchangeAccountService
 
     /// <summary>Makes a read-only API call to verify the key is valid.</summary>
     Task<(bool Success, string Message)> TestConnectionAsync(ExchangeKind exchange);
+
+    /// <summary>
+    /// Ontsleutelde sleutels voor intern gebruik door de order-uitvoering (v1.47). Alleen in het
+    /// geheugen; null als er geen actief account is of ontsleutelen mislukt. Alleen HMAC wordt teruggegeven.
+    /// </summary>
+    Task<ExchangeCredentials?> GetCredentialsAsync(ExchangeKind exchange);
 
     /// <summary>
     /// Haalt de live balansen op van de exchange en vergelijkt ze met de assets

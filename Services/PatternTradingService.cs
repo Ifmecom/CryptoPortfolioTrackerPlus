@@ -37,6 +37,7 @@ public class PatternTradingService : IPatternTradingService
     private readonly INotifierService?       _notifier;
     private readonly Configuration.Settings? _settings;
     private readonly ISignalOutcomeService?  _outcomes;
+    private readonly IAutoTraderService?     _autoTrader;
 
     // Score-plafond voor coins zonder edge (stablecoin / lage volatiliteit) — onder de setup-drempel
     // van 40 zodat ze niet als kans bovenaan komen en geen setup tonen.
@@ -56,7 +57,8 @@ public class PatternTradingService : IPatternTradingService
         IPatternStateStore?     patternState = null,
         INotifierService?       notifier     = null,
         Configuration.Settings? settings     = null,
-        ISignalOutcomeService?  outcomes     = null)
+        ISignalOutcomeService?  outcomes     = null,
+        IAutoTraderService?     autoTrader   = null)
     {
         _portfolio = portfolio;
         _detector  = detector;
@@ -69,6 +71,7 @@ public class PatternTradingService : IPatternTradingService
         _notifier  = notifier;
         _settings  = settings;
         _outcomes  = outcomes;
+        _autoTrader = autoTrader;
     }
 
     /// <summary>Volatiliteitsdrempel (fractie van de koers) uit Settings, met de gate-default als fallback.</summary>
@@ -180,6 +183,11 @@ public class PatternTradingService : IPatternTradingService
         // Ook sequentieel (gedeelde DB-context); faalt stil.
         if (_outcomes is not null)
             await _outcomes.RecordPatternScanAsync(results, ct);
+
+        // ── v1.47: automatisch handelen op Bybit Demo (alleen als de schakelaar aan staat) ─
+        // Sequentieel na de scan; faalt stil (besluiten staan in het log en in Telegram).
+        if (_autoTrader is not null)
+            await _autoTrader.ProcessPatternScanAsync(results, ct);
 
         // Sort: highest score first, then isNearBreakout
         return results

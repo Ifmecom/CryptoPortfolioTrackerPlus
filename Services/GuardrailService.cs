@@ -33,20 +33,34 @@ public class GuardrailService : IGuardrailService
         _capital          = capital;
     }
 
-    public async Task<GuardrailVerdict> CheckNewTradeAsync(CancellationToken ct = default)
+    public Task<GuardrailVerdict> CheckNewTradeAsync(CancellationToken ct = default)
+        => CheckAsync(paper: true, exchange: null, ct);
+
+    /// <summary>Guardrails voor een live/demo-order: alleen posities en P&amp;L van die exchange tellen mee (v1.47).</summary>
+    public Task<GuardrailVerdict> CheckNewLiveTradeAsync(ExchangeKind exchange, CancellationToken ct = default)
+        => CheckAsync(paper: false, exchange: exchange, ct);
+
+    private async Task<GuardrailVerdict> CheckAsync(bool paper, ExchangeKind? exchange, CancellationToken ct)
     {
         try
         {
             var ctx = _portfolioService.Context;
             if (ctx is null) return GuardrailVerdict.Allowed;   // geen DB → niet blokkeren
 
-            int openCount = await ctx.ExchangeOrders.AsNoTracking()
-                .CountAsync(o => o.IsPaper && o.Status == OrderStatus.Filled, ct);
+            var scope = ctx.ExchangeOrders.AsNoTracking().Where(o => o.IsPaper == paper);
+            if (exchange is { } ex)
+                scope = scope.Where(o => o.Exchange == ex);
+
+            // Live: ook een nog niet gevulde order telt als (bijna) open positie.
+            int openCount = paper
+                ? await scope.CountAsync(o => o.Status == OrderStatus.Filled, ct)
+                : await scope.CountAsync(o => o.Status == OrderStatus.Filled
+                                           || o.Status == OrderStatus.Pending
+                                           || o.Status == OrderStatus.PartiallyFilled, ct);
 
             var todayUtc = DateTime.UtcNow.Date;
-            var closedToday = await ctx.ExchangeOrders.AsNoTracking()
-                .Where(o => o.IsPaper && o.Status == OrderStatus.Closed
-                         && o.ClosedAt != null && o.ClosedAt >= todayUtc)
+            var closedToday = await scope
+                .Where(o => o.Status == OrderStatus.Closed && o.ClosedAt != null && o.ClosedAt >= todayUtc)
                 .ToListAsync(ct);
 
             double dayPnl = closedToday
@@ -63,7 +77,8 @@ public class GuardrailService : IGuardrailService
                 _settings.IsKillSwitchActive, openCount, _settings.MaxOpenPositions, dayPnl, limitUsd);
 
             if (verdict.IsBlocked)
-                Logger.Information("Guardrails blokkeren nieuwe trade: {Reasons}", verdict.ReasonText);
+                Logger.Information("Guardrails blokkeren nieuwe {Scope} trade: {Reasons}",
+                    paper ? "paper" : exchange?.ToString() ?? "live", verdict.ReasonText);
             return verdict;
         }
         catch (Exception ex)

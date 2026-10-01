@@ -27,6 +27,29 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.47 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.47", "Orders op Bybit EU Demo — 1-klik én automatisch");
+
+        AddFeature("🧪", "Echte orders met nepgeld op Bybit EU Demo",
+            "In de order-dialoog kies je nu 'Uitvoeren: Paper' of 'Bybit EU Demo'. Bij Demo gaat de order echt " +
+            "naar Bybit Demo Trading: een spot-kooporder op het USDC-paar (MiCA: geen USDT op Bybit EU). Stop-loss " +
+            "en take-profit worden direct aan de order gekoppeld, zodat Bybit ze zelf bewaakt — ook als je pc uit " +
+            "staat. 'Market' wordt een limit-order tot 0,5% boven de vraagprijs, zodat je nooit veel te duur koopt.");
+
+        AddFeature("🤖", "Automatisch handelen (schakelaar, standaard uit)",
+            "Instellingen → Exchanges → Automatisch handelen. Na elke Pattern Trading-scan plaatst de app zelf " +
+            "Long-orders voor de sterkste setups (minimale score, max. per dag, risico % per trade, max. inleg). " +
+            "Eén positie per munt; kill-switch en max. open posities gelden. Telegram meldt plaatsen, vullen en sluiten.");
+
+        AddFeature("📒", "Demo-orders in het Trade Journal",
+            "Demo-orders staan met het label 'Demo' in het journal. Bij elke vernieuwing worden vullingen en " +
+            "TP/SL-sluitingen van Bybit opgehaald. Sluiten haalt TP/SL weg en verkoopt tegen marktprijs; een " +
+            "openstaande order annuleer je direct op Bybit.");
+
+        AddFeature("🔒", "Echt geld blijft op slot",
+            "Handelen met echt geld op Bybit EU is bewust nog geblokkeerd. Eerst testen in de demo; vrijgeven " +
+            "gebeurt later als aparte, bewuste stap. Shorten kan niet op spot (Bybit EU Demo ondersteunt geen margin).");
+
         // ── v1.46 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.46", "Signaal-kalibratie: hoe vaak had een signaal gelijk?");
 

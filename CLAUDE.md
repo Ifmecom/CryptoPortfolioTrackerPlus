@@ -273,6 +273,16 @@ Wat bijgewerkt moet worden:
 
 ---
 
+## Order-uitvoering Bybit EU Demo (subsysteem, v1.47)
+
+- **Echt geld staat op slot:** `TradeService.PlaceLiveAsync` accepteert alleen `ExchangeKind.BybitDemo`. Niet versoepelen zonder expliciete opdracht van Remko.
+- **Puur + getest:** `BybitApi` (sign/parse), `BybitOrderPlanner` (afronden, minima, SL/TP, JSON), `LiveOrderReconciler` (fills → status), `AutoTradeSelector`. Tests: `BybitTradingTests.cs`.
+- **`BybitDemoExecutor`** (`ILiveOrderExecutor`) — alleen HTTP + EF. Instap altijd Limit+GTC met `takeProfit`/`stopLoss`; "market" = ask × 1,005. Eén open order per paar. Sync via `orderLinkId` (= `ExchangeOrder.ExternalOrderId`) + `/v5/execution/list`.
+- **`AutoTraderService`** draait sequentieel ná de Pattern-scan (net als de outcome-tracker) en alleen als `Settings.IsAutoTradeEnabled`. Markeert orders met `[AUTO]` in `Notes` (telt voor het dagmaximum).
+- Demo-domein en sleutel: `Settings.BybitDemoBaseUrl` wordt gezet door 'Verbinding testen' (`ExchangeAccountService.TestBybitDemoAsync`).
+
+---
+
 ## Wishlist — toekomstige indicatoren
 
 Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:
