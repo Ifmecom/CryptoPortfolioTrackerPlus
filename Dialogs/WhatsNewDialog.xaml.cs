@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("🛠️", "Start voortaan in één keer op",
+            "De willekeurige crash direct na het opstarten (0xC0000374) is opgelost.");
+
         AddFeature("ℹ️", "ⓘ-knop rechtsboven op elke pagina",
             "Wat zie je hier, hoe lees je het, hoe ga je ermee om en waar moet je op letten — per menu-optie.");
 

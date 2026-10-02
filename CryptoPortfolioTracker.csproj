@@ -20,6 +20,8 @@
     <Nullable>enable</Nullable>
 	<LangVersion>preview</LangVersion>
 	<WindowsSdkPackageVersion>10.0.26100.52</WindowsSdkPackageVersion>
+	<!-- Eigen Program.Main (Program.cs): omzeilt heapcorruptie in WinAppSDK-MRM bij het opstarten -->
+	<DefineConstants>$(DefineConstants);DISABLE_XAML_GENERATED_MAIN</DefineConstants>
   </PropertyGroup>
   <PropertyGroup Label="MultilingualAppToolkit">
     <MultilingualAppToolkitVersion>4.0</MultilingualAppToolkitVersion>

@@ -30,6 +30,12 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("🛠️", "Geen willekeurige crash meer bij het opstarten",
+            "De app viel ongeveer de helft van de keren direct na het opstarten weg (fout 0xC0000374). Met een " +
+            "debugger is de oorzaak gevonden: een geheugenfout in een onderdeel van Microsoft (de resource-manager " +
+            "van de Windows App SDK) die bij elke start een stukje geheugen overschreef. De app omzeilt die fout " +
+            "nu, waardoor hij in één keer opstart.");
+
         AddFeature("ℹ️", "ⓘ-knop rechtsboven in de header van elke pagina",
             "Elke menu-optie heeft nu een gouden ⓘ-knop rechtsboven. Een klik opent een uitleg in vier delen: " +
             "wat zie je op deze pagina, hoe lees en interpreteer je het (drempels, scores, kleuren), hoe ga je " +

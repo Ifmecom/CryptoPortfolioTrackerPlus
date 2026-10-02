@@ -22,7 +22,10 @@ Of: Ctrl+Shift+B in Visual Studio. F5 om te runnen (Unpackaged profiel).
 - `token recognition error at: '!'` = onschadelijke ruis, geen fout.
 - Command-line MSBuild **verifieert** compilatie maar levert geen runnende build (ontbrekende `.pri`/WebView2Loader/e_sqlite3); een runnende deploy maak je in Visual Studio. **Nooit `bin`/`obj` verwijderen** — dat brak de build eerder.
 
-**Bekende crash:** `0xc0000374` (ntdll heap) bij standalone start is een intermittent, latent WinUI-probleem (~1 op 3), géén codefout → opnieuw starten / Ctrl+F5.
+**Opstartcrash `0xc0000374` (heapcorruptie) — opgelost in v1.48, oorzaak bekend:** heap-bufferoverloop in Windows App SDK **MRM** (`MrmGetFilePathFromName`, upstream microsoft/WindowsAppSDK#4873) zodra `MICROSOFT_WINDOWSAPPRUNTIME_BASE_DIRECTORY` gezet is. De meegeleverde `MRM.dll` van **1.5.x én 1.6.x** bevat de fout nog (machinecode geverifieerd) — een SDK-upgrade lost het dus niet op. Workaround: eigen **`Program.cs`** (`DISABLE_XAML_GENERATED_MAIN`) wist die variabele vóór `Application.Start`.
+- **Niet verwijderen** zonder vervanging; bij PublishSingleFile is de variabele wél nodig (zie commentaar in `Program.cs`).
+- Komt `0xc0000374` toch terug: onderzoek met WinDbg (`cdbX64.exe`, Store-alias) + page heap (IFEO `GlobalFlag=0x02000000`, `PageHeapFlags=3`, admin); met page heap faalt de foute schrijfactie direct met de schuldige in de stack.
+- Ander gedrag **alleen onder F5**? Dat is de debug-heap → `_NO_DEBUG_HEAP=1` staat in `launchSettings.json`.
 
 ---
 
