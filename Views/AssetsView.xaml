@@ -98,7 +98,8 @@
                 </helpers:CustomBtn>
             </RelativePanel>
 
-            <RelativePanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" >
+            <!-- Rechts 44 px vrij voor de ⓘ-knop (v1.48) -->
+            <RelativePanel Grid.Row="0" Grid.RowSpan="3" Grid.Column="1" Margin="0,0,44,0">
                 <TextBlock x:Name="txtTotalAssetsValue" RelativePanel.AlignRightWithPanel="True"
                     Text="{x:Bind converters:Functions.FormatValueToString(_viewModel.TotalPortfolioValue,'$ {0:N0}'), Mode=OneWay}" 
                     Foreground="DarkGoldenrod" 
