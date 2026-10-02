@@ -30,6 +30,12 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("🧺", "3% Trading: shortlist-limieten instelbaar",
+            "Het maximum aantal setups in de aanbevolen shortlist (was vast 5) en de maximale onderlinge correlatie " +
+            "(was vast 0,80) stel je nu zelf in bij Instellingen. Op 1,00 staat het correlatiefilter uit, zodat ook " +
+            "een groep sterk samenbewegende munten met momentum samen in de shortlist kan. Het risico per trade geldt " +
+            "per munt, en 'Max. open posities' bij de risicobewakers blijft bepalen hoeveel trades je echt open kunt hebben.");
+
         AddFeature("⚡", "Pagina's openen veel sneller",
             "Analyse en Prijsniveaus openden de eerste keer pas na ~10 seconden; nu binnen een halve seconde " +
             "(er werd per coin miljoenen keren onnodig gerekend aan de koersgrafiek). Statistieken en het Trade " +

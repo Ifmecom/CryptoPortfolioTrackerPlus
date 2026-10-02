@@ -136,6 +136,22 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
     [ObservableProperty] private double minSetupAtrPercent;
     partial void OnMinSetupAtrPercentChanged(double value) => AppSettings.MinSetupAtrPercent = value;
 
+    // 3% Trading-shortlist (v1.48)
+    [ObservableProperty] private double threePctShortlistMax;
+    partial void OnThreePctShortlistMaxChanged(double value) => AppSettings.ThreePctShortlistMax = (int)Math.Round(value);
+
+    [ObservableProperty] private double threePctShortlistMaxCorrelation;
+    partial void OnThreePctShortlistMaxCorrelationChanged(double value)
+    {
+        AppSettings.ThreePctShortlistMaxCorrelation = value;
+        OnPropertyChanged(nameof(ThreePctCorrelationText));
+    }
+
+    /// <summary>Weergave van de correlatiegrens; 1,00 = filter uit.</summary>
+    public string ThreePctCorrelationText => ThreePctShortlistMaxCorrelation >= 0.995
+        ? "uit (geen filter)"
+        : ThreePctShortlistMaxCorrelation.ToString("0.00");
+
     // -----------------------------------------------------------------------
     // Risk-guardrails
     // -----------------------------------------------------------------------
@@ -565,6 +581,8 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         IsPaperTradingEnabled    = AppSettings.IsPaperTradingEnabled;
         SignalScoreThreshold     = AppSettings.SignalScoreThreshold;
         MinSetupAtrPercent       = AppSettings.MinSetupAtrPercent;
+        ThreePctShortlistMax            = AppSettings.ThreePctShortlistMax;
+        ThreePctShortlistMaxCorrelation = AppSettings.ThreePctShortlistMaxCorrelation;
         MaxPortfolioPercPerTrade = AppSettings.MaxPortfolioPercPerTrade;
         MaxOpenPositions         = AppSettings.MaxOpenPositions;
         DailyLossLimitPerc       = AppSettings.DailyLossLimitPerc;

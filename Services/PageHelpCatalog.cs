@@ -240,13 +240,15 @@ public static class PageHelpCatalog
                     "Hitrate = hoe vaak het doel gehaald werd. Expectancy = gemiddelde opbrengst per trade in R. Positief = de strategie verdiende historisch geld.",
                     "Een scoreklasse met minder dan 30 trades is onbetrouwbaar (gemarkeerd).",
                     "Liquiditeit en positionering zijn poortwachters: scoort een coin daar te laag, dan valt hij af, hoe goed de rest ook is.",
-                    "De shortlist kiest max. 5 setups die niet sterk met elkaar meebewegen, zodat je niet vijf keer dezelfde gok neemt."),
+                    "De shortlist kiest de beste setups die niet sterk met elkaar meebewegen (standaard max. 5, correlatie < 0,80), zodat je niet vijf keer dezelfde gok neemt. Beide grenzen stel je in bij Instellingen; op 1,00 staat het correlatiefilter uit en kan een heel thema met momentum samen in de shortlist."),
                 S(Act, "Hoe ga je ermee om",
                     "Draai eerst de kalibratie. Zonder kalibratie zegt de score niets.",
                     "Handel alleen in scoreklassen met een positieve expectancy en voldoende trades.",
                     "Test het eerst met paper trades. Klik 'Vernieuwen' om ze te laten vullen en sluiten. Pas na een overtuigende reeks heeft het zin om verder te gaan."),
                 S(Watch, "Let op",
-                    "Een backtest is het verleden. Markten veranderen. Blijf meten met paper trades."),
+                    "Een backtest is het verleden. Markten veranderen. Blijf meten met paper trades.",
+                    "Zet je het correlatiefilter uit, dan gedragen sterk samenbewegende posities zich als één grote positie: breekt het momentum, dan raken ze vaak tegelijk hun stop-loss. Je risico per trade geldt dan per munt.",
+                    "Hoeveel trades je echt open kunt hebben, bepaalt 'Max. open posities' bij de risicobewakers in Instellingen — los van de grootte van de shortlist."),
             }),
 
         ["FundamentalsView"] = new(

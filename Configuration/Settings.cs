@@ -286,6 +286,23 @@ public partial class Settings : ObservableObject
         set { _store.Set("MinSetupAtrPercent", Math.Clamp(value, 0.5, 5.0)); OnPropertyChanged(nameof(MinSetupAtrPercent)); }
     }
 
+    /// <summary>3% Trading: maximum aantal setups in de aanbevolen shortlist (1–20, standaard 5). (v1.48)</summary>
+    public int ThreePctShortlistMax
+    {
+        get => _store.Get("ThreePctShortlistMax", 5);
+        set { _store.Set("ThreePctShortlistMax", Math.Clamp(value, 1, 20)); OnPropertyChanged(nameof(ThreePctShortlistMax)); }
+    }
+
+    /// <summary>
+    /// 3% Trading: maximale onderlinge correlatie binnen de shortlist (0,50–1,00, standaard 0,80).
+    /// 1,00 = geen correlatiefilter: ook sterk samenbewegende munten mogen samen in de shortlist. (v1.48)
+    /// </summary>
+    public double ThreePctShortlistMaxCorrelation
+    {
+        get => _store.Get("ThreePctShortlistMaxCorrelation", 0.80);
+        set { _store.Set("ThreePctShortlistMaxCorrelation", Math.Round(Math.Clamp(value, 0.5, 1.0), 2)); OnPropertyChanged(nameof(ThreePctShortlistMaxCorrelation)); }
+    }
+
     // -----------------------------------------------------------------------
     // Risk-guardrails
     // -----------------------------------------------------------------------

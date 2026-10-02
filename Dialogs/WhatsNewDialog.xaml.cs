@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("🧺", "3% Trading: shortlist instelbaar",
+            "Max. aantal setups en correlatiegrens zelf kiezen; op 1,00 mogen ook samenbewegende munten samen.");
+
         AddFeature("⚡", "Pagina's openen veel sneller",
             "Analyse en Prijsniveaus van ~10 s naar < 0,5 s; Statistieken en Trade Journal tonen direct de laatste gegevens.");
 

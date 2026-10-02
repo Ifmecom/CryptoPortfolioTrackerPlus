@@ -408,8 +408,14 @@ public partial class ThreePctViewModel : BaseViewModel
                 .ToList();
 
             // ── Sprint C: diversified shortlist ─────────────────────────────────
+            // v1.48: limieten instelbaar (Instellingen → 3% Trading). Correlatie 1,00 = filter uit; dan ook
+            // identiek bewegende munten (correlatie precies 1) toelaten, vandaar +∞ i.p.v. 1,0.
+            int    maxPicks = AppSettings.ThreePctShortlistMax;
+            double maxCorr  = AppSettings.ThreePctShortlistMaxCorrelation;
+            bool   corrOff  = maxCorr >= 0.995;
             var diversifiedPicks = _correlation.BuildDiversifiedShortlist(
-                qualified, _barsCache, _btcBarsCache, maxPositions: 5, maxCorrelation: 0.80);
+                qualified, _barsCache, _btcBarsCache, maxPositions: maxPicks,
+                maxCorrelation: corrOff ? double.PositiveInfinity : maxCorr);
             var diversifiedSymbols = diversifiedPicks.Select(r => r.Symbol).ToHashSet();
 
             // Mark diversified picks in the main list
@@ -438,8 +444,11 @@ public partial class ThreePctViewModel : BaseViewModel
             LiveRows = new ObservableCollection<ThreePctLiveRow>(sortedWithBadge);
             DiversifiedRows = new ObservableCollection<ThreePctLiveRow>(diversifiedPicks);
             DiversifiedInfo = diversifiedPicks.Count > 0
-                ? $"Aanbevolen shortlist: {string.Join(", ", diversifiedPicks.Select(r => r.Symbol))}  (max correlatie 0.80, gesorteerd op expectancy)"
-                : "Geen gediversifieerde shortlist (te weinig data of te hoge correlaties)";
+                ? $"Aanbevolen shortlist: {string.Join(", ", diversifiedPicks.Select(r => r.Symbol))}  " +
+                  $"(max {maxPicks}, {(corrOff ? "geen correlatiefilter" : $"max correlatie {maxCorr:0.00}")}, gesorteerd op expectancy)"
+                : corrOff
+                    ? "Geen shortlist (te weinig data)"
+                    : "Geen gediversifieerde shortlist (te weinig data of te hoge correlaties)";
 
             var sorted = sortedWithBadge;
 

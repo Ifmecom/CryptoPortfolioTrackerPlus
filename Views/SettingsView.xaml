@@ -261,6 +261,31 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <!-- v1.48: limieten van de 3% Trading-shortlist -->
+                                <ct:SettingsCard Header="3% Trading: max. setups in shortlist"
+                                    Description="Hoeveel setups de aanbevolen shortlist maximaal toont (standaard 5). Let op: 'Max. open posities' bij de risicobewakers blijft gelden voor het aantal trades dat je echt open kunt hebben."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8FD;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.ThreePctShortlistMax, Mode=TwoWay}"
+                                                Minimum="1" Maximum="20" StepFrequency="1"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.ThreePctShortlistMax, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="3% Trading: max. onderlinge correlatie"
+                                    Description="Twee munten die sterker dan deze waarde samen bewegen komen niet samen in de shortlist (standaard 0,80). Op 1,00 staat het filter uit: dan mogen ook sterk gecorreleerde munten — bijv. een heel thema met momentum — samen in de shortlist. Die bewegen vaak tegelijk, ook richting de stop-loss."
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE9D2;}">
+                                    <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                        <Slider Value="{x:Bind _viewModel.ThreePctShortlistMaxCorrelation, Mode=TwoWay}"
+                                                Minimum="0.5" Maximum="1" StepFrequency="0.05"
+                                                Width="200" VerticalAlignment="Center"/>
+                                        <TextBlock VerticalAlignment="Center" FontWeight="SemiBold"
+                                                   Text="{x:Bind _viewModel.ThreePctCorrelationText, Mode=OneWay}"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 
