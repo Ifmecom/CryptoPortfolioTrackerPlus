@@ -13,10 +13,18 @@ namespace CryptoPortfolioTracker.ViewModels;
 /// Lightweight display model for a single coin in the Pattern Trading list.
 /// Wraps <see cref="PatternCoinAnalysis"/> and exposes pre-computed XAML-friendly properties.
 /// </summary>
-public class PatternCoinRow
+public class PatternCoinRow : ITopPickRow
 {
     // ── Source data (kept for drill-down / share) ───────────────────────────
     public PatternCoinAnalysis Analysis { get; }
+
+    // ── Top X (v1.48) — gezet door OpportunityRanker.Apply vóór weergave ─────
+    public int    TopRank        { get; set; }
+    public double KansScore      { get; set; }
+    public string TopExplanation { get; set; } = string.Empty;
+    public bool   IsTopPick      { get; set; }
+    public string     TopBadgeText      => IsTopPick ? $"🏆 #{TopRank}" : string.Empty;
+    public Visibility TopPickVisibility => IsTopPick ? Visibility.Visible : Visibility.Collapsed;
 
     // ── Identity ────────────────────────────────────────────────────────────
     public string Name        => Analysis.Coin.Name;

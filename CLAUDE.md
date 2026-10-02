@@ -302,6 +302,16 @@ Wat bijgewerkt moet worden:
 
 ---
 
+## Top X — kansscore (subsysteem, v1.48)
+
+- **Puur + getest:** `Services/OpportunityRanker.cs` (`OpportunityRankerTests`). Kansscore = kwaliteit × R/R-factor (R/R÷2, 0,25–1,4) × bewijsfactor (alleen bij een *betrouwbare* gemeten trefkans: 1 + E/2, E = p·R/R − (1−p)) × waarschuwingen (tegen trend 0,85 · TF-conflict 0,90 · dunne liquiditeit 0,80 · bijna breakout 1,05). `HowItWorks` is de uitlegtekst achter de ?-knop.
+- **UI:** gedeelde code-only `Controls/TopPicksBar` (TopCount/OnlyTop/Summary). Rijen implementeren `ITopPickRow`; VM: `OpportunityRanker.Apply(rows, ToOpportunity, TopPickCount)` → `Visible(rows, …, OnlyTopPicks)`. Keuze per pagina in `Settings.Get/SetTopPickCount(page)` en `Get/SetTopPicksOnly(page)`.
+- **Pagina's:** Analyse (sterkte in eigen richting + signaal-kalibratie, geen R/R, stablecoins uit), Trade Advies (score in eigen richting — Short = 100 − score — + R/R, rangschikking in de VM, view tekent), Pattern Trading (+ pattern-kalibratie, liquiditeit, TF-conflict, breakout), Setup Tracker (alleen *Watching* + eigen win-rate per scoreklasse), 3% Trading (score + backtest-hitrate, F6/F7-gefilterd en stablecoins tellen niet mee).
+- **Models blijven WinUI-vrij** (tests compileren `Models/**`): in modellen alleen `bool IsTopPick`; XAML bindt `Visibility="{x:Bind IsTopPick}"`.
+- Nieuwe pagina met setups? Implementeer `ITopPickRow`, voeg de `TopPicksBar` toe en noem de factoren in `PageHelpCatalog`.
+
+---
+
 ## Wishlist — toekomstige indicatoren
 
 Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:

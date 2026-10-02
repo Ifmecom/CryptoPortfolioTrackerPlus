@@ -30,6 +30,14 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("🏆", "Top X: welke setups eerst beoordelen",
+            "Op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading staat boven de lijst een " +
+            "Top-balk: kies 3, 5, 10 of 20 en de meest kansrijke setups krijgen een gouden rand en een 🏆-badge — of " +
+            "zet 'Alleen top' aan om alleen die te zien, op volgorde. De rangorde is een kansscore: de eigen score van " +
+            "de pagina × de winst/risico-verhouding × de gemeten trefkans van vergelijkbare setups (alleen bij genoeg " +
+            "metingen) × waarschuwingen (tegen de trend, TF-conflict, dunne liquiditeit). Beweeg over 🏆 voor de " +
+            "opbouw, of klik ? voor de uitleg. Je keuze wordt per pagina onthouden.");
+
         AddFeature("🧺", "3% Trading: shortlist-limieten instelbaar",
             "Het maximum aantal setups in de aanbevolen shortlist (was vast 5) en de maximale onderlinge correlatie " +
             "(was vast 0,80) stel je nu zelf in bij Instellingen. Op 1,00 staat het correlatiefilter uit, zodat ook " +

@@ -60,6 +60,59 @@ public partial class PatternTradingViewModel : BaseViewModel
     // Full result list — filtered copy goes to DisplayItems
     private List<PatternCoinAnalysis> _allResults = new();
 
+    // ── Top X (v1.48) ─────────────────────────────────────────────────────────
+    private const string TopPage = "PatternTrading";
+    private readonly ISignalOutcomeService? _outcomes;
+    private bool _initializingTop;
+    /// <summary>Gemeten trefkans per scoreklasse voor Pattern-setups (signaal-kalibratie, alleen DB).</summary>
+    private IReadOnlyList<SignalCalibrationRow> _patternCalibration = Array.Empty<SignalCalibrationRow>();
+    /// <summary>Liquiditeit per coin uit 'Check liquiditeit' — blijft bewaard bij filteren (telt mee in de top).</summary>
+    private readonly Dictionary<string, LiquidityClassifier.Level> _liquidity = new(StringComparer.OrdinalIgnoreCase);
+
+    [ObservableProperty] private int    topPickCount;
+    [ObservableProperty] private bool   onlyTopPicks;
+    [ObservableProperty] private string topPickSummary = string.Empty;
+
+    partial void OnTopPickCountChanged(int value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPickCount(TopPage, value);
+        ApplyFilter(ActiveFilter);
+    }
+
+    partial void OnOnlyTopPicksChanged(bool value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPicksOnly(TopPage, value);
+        ApplyFilter(ActiveFilter);
+    }
+
+    private OpportunityInput ToOpportunity(PatternCoinRow r)
+    {
+        var setup = r.Analysis.Setup;
+        var cal   = SignalCalibrationCalculator.Lookup(_patternCalibration, SignalOutcomeSources.Pattern, r.Direction, r.Score);
+        return new OpportunityInput(
+            Key:             string.IsNullOrEmpty(r.ApiId) ? r.Symbol : r.ApiId,
+            Direction:       r.Direction,
+            Quality:         r.Score,
+            RiskReward:      setup?.RiskReward1,
+            HitRate:         cal is { Count: > 0 } ? cal.HitRatePct / 100.0 : null,
+            HitRateSamples:  cal?.Count ?? 0,
+            HitRateReliable: cal?.IsReliable ?? false,
+            CounterTrend:    r.IsCounterTrend,
+            TfConflict:      r.HasTfConflict,
+            ThinLiquidity:   r.LiquidityLevel == LiquidityClassifier.Level.Thin,
+            NearBreakout:    r.IsNearBreakout,
+            Eligible:        r.HasSetup && (setup?.IsValid ?? false));
+    }
+
+    private async Task LoadPatternCalibrationAsync()
+    {
+        if (_outcomes is null) return;
+        try { _patternCalibration = await _outcomes.GetCalibrationAsync(SignalOutcomeSources.Pattern); }
+        catch (Exception ex) { Logger.Warning(ex, "PatternTrading: kalibratie voor Top X laden mislukt"); }
+    }
+
     private CancellationTokenSource? _cts;
 
     // Debounce timer for live search
@@ -92,8 +145,16 @@ public partial class PatternTradingViewModel : BaseViewModel
         IOrderBookService      orderBook,
         IBinanceDataService    binance,
         Settings               appSettings,
-        IPatternStateStore?    patternState = null) : base(appSettings)
+        IPatternStateStore?    patternState = null,
+        ISignalOutcomeService? outcomes     = null) : base(appSettings)
     {
+        _outcomes = outcomes;
+        // Top X (v1.48): keuze per pagina onthouden — zonder via de Changed-handlers op te slaan/te filteren.
+        _initializingTop = true;
+        TopPickCount  = appSettings.GetTopPickCount(TopPage);
+        OnlyTopPicks  = appSettings.GetTopPicksOnly(TopPage);
+        _initializingTop = false;
+
         Current               = this;
         _patternService       = patternService;
         _watchlistService     = watchlistService;
@@ -120,6 +181,7 @@ public partial class PatternTradingViewModel : BaseViewModel
     {
         await LoadWatchlistItemsAsync();
         await RefreshPatternHistoryAsync();
+        await LoadPatternCalibrationAsync();
         try { _fundMap = await _fundamentals.GetScoreMapAsync(); }
         catch (Exception ex) { Logger.Warning(ex, "PatternTrading: fundamentals-map laden mislukt"); }
     }
@@ -154,16 +216,12 @@ public partial class PatternTradingViewModel : BaseViewModel
                     row.LiquidityLevel = LiquidityClassifier.Level.Unknown;
                 }
                 row.LiquidityChecked = true;
+                _liquidity[LiquidityKey(row)] = row.LiquidityLevel;
                 await Task.Delay(120);
             }
 
-            // Herbouw DisplayItems zodat de (OneTime-gebonden) badges de nieuwe waarden tonen.
-            _dispatcherQueue?.TryEnqueue(() =>
-            {
-                var snapshot = DisplayItems.ToList();
-                DisplayItems.Clear();
-                foreach (var r in snapshot) DisplayItems.Add(r);
-            });
+            // Herbouw de lijst (OneTime-gebonden badges) — dunne liquiditeit telt ook mee in de Top X.
+            ApplyFilter(ActiveFilter);
         }
         finally { IsCheckingLiquidity = false; }
     }
@@ -230,6 +288,7 @@ public partial class PatternTradingViewModel : BaseViewModel
                 StatusText += $"  ·  {updated} setup(s) automatisch bijgewerkt.";
 
             RebuildPatternOptions();   // vul de patroon-dropdown met wat er nú gevonden is
+            await LoadPatternCalibrationAsync();   // gemeten trefkans voor de Top X
             ApplyFilter(ActiveFilter);
             await RefreshPatternHistoryAsync();   // patroon-prestaties bijwerken (item 10)
         }
@@ -597,15 +656,33 @@ public partial class PatternTradingViewModel : BaseViewModel
                 row.FundamentalVerdict = f.Verdict;
                 row.HasFundamental     = true;
             }
+
+            // Liquiditeit uit een eerdere 'Check liquiditeit' blijft staan bij filteren (v1.48)
+            if (_liquidity.TryGetValue(LiquidityKey(row), out var level))
+            {
+                row.LiquidityLevel   = level;
+                row.LiquidityChecked = true;
+            }
         }
+
+        // Top X (v1.48): rangschik binnen de gefilterde lijst; bij "alleen top" alleen de top op volgorde.
+        OpportunityRanker.Apply(rows, ToOpportunity, TopPickCount);
+        int candidates = rows.Count(r => r.TopRank > 0);
+        rows = OpportunityRanker.Visible(rows, TopPickCount, OnlyTopPicks);
+        var summary = TopPickCount == 0 || candidates == 0
+            ? (candidates == 0 && _allResults.Count > 0 ? "geen beoordeelbare setups in deze lijst" : string.Empty)
+            : $"top {Math.Min(TopPickCount, candidates)} van {candidates} setups";
 
         _dispatcherQueue?.TryEnqueue(() =>
         {
+            TopPickSummary = summary;
             DisplayItems.Clear();
             foreach (var row in rows)
                 DisplayItems.Add(row);
         });
     }
+
+    private static string LiquidityKey(PatternCoinRow r) => string.IsNullOrEmpty(r.ApiId) ? r.Symbol : r.ApiId;
 
     /// <summary>
     /// Vult de patroon-dropdown met de patroontypes die in de huidige scan voorkomen (Strength ≥ 60),

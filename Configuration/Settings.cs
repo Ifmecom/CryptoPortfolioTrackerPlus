@@ -286,6 +286,14 @@ public partial class Settings : ObservableObject
         set { _store.Set("MinSetupAtrPercent", Math.Clamp(value, 0.5, 5.0)); OnPropertyChanged(nameof(MinSetupAtrPercent)); }
     }
 
+    /// <summary>Top X-keuze per pagina (v1.48): aantal te markeren setups (0 = uit, standaard 5).</summary>
+    public int GetTopPickCount(string page) => _store.Get($"TopPicks.{page}.Count", 5);
+    public void SetTopPickCount(string page, int value) => _store.Set($"TopPicks.{page}.Count", Math.Clamp(value, 0, 50));
+
+    /// <summary>Top X per pagina: alleen de top tonen (true) of alleen markeren (false, standaard).</summary>
+    public bool GetTopPicksOnly(string page) => _store.Get($"TopPicks.{page}.Only", false);
+    public void SetTopPicksOnly(string page, bool value) => _store.Set($"TopPicks.{page}.Only", value);
+
     /// <summary>3% Trading: maximum aantal setups in de aanbevolen shortlist (1–20, standaard 5). (v1.48)</summary>
     public int ThreePctShortlistMax
     {

@@ -113,8 +113,10 @@ public sealed partial class TradeAnalysisView : Page
                 });
                 break;
 
-            // Direction filter changed → re-render the overview (stay on the current tab)
+            // Direction filter or Top X changed → re-render the overview (stay on the current tab)
             case nameof(_vm.OverviewDir):
+            case nameof(_vm.TopPickCount):
+            case nameof(_vm.OnlyTopPicks):
                 DispatcherQueue.TryEnqueue(() =>
                 {
                     if (_vm.AllResults is null) return;
@@ -197,7 +199,9 @@ public sealed partial class TradeAnalysisView : Page
             "None"  => allResults.Where(r => r.Direction != "Long" && r.Direction != "Short"),
             _       => allResults,
         };
-        var results = view.ToList();
+        // Top X (v1.48): rangschikking in de VM; bij "alleen top" alleen de top op rang.
+        var results = _vm.PrepareOverview(view);
+        bool onlyTop = _vm.OnlyTopPicks && _vm.TopPickCount > 0;
 
         // Section header row: title + timestamp
         var headerRow = new Grid();
@@ -240,11 +244,24 @@ public sealed partial class TradeAnalysisView : Page
         OverviewPanel.Children.Add(headerRow);
         OverviewPanel.Children.Add(TrendMomentumNote());
 
+        if (onlyTop)
+        {
+            OverviewPanel.Children.Add(new Border { Height = 10 });
+            OverviewPanel.Children.Add(new TextBlock
+            {
+                Text       = $"🏆  Top {_vm.TopPickCount} — op kansscore",
+                FontSize   = 12,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = DarkGold(),
+                Margin     = new Thickness(0, 0, 0, 4),
+            });
+        }
+
         string? lastDir = null;
         foreach (var s in results)
         {
-            // Direction group header
-            if (s.Direction != lastDir)
+            // Direction group header (niet bij "alleen top": dan één groep op rang)
+            if (!onlyTop && s.Direction != lastDir)
             {
                 lastDir = s.Direction;
                 var groupLabel = s.Direction == "Long"  ? "▲  Long signalen"  :
@@ -264,9 +281,25 @@ public sealed partial class TradeAnalysisView : Page
                 });
             }
 
-            OverviewPanel.Children.Add(BuildSummaryCard(s));
+            OverviewPanel.Children.Add(WithTopPickFrame(BuildSummaryCard(s), s));
             OverviewPanel.Children.Add(new Border { Height = 4 });
         }
+    }
+
+    /// <summary>Top X (v1.48): gouden rand als overlay om een top-kaart; anders de kaart ongewijzigd.</summary>
+    private static UIElement WithTopPickFrame(Border card, CoinAnalysisSummary s)
+    {
+        if (!s.IsTopPick) return card;
+        var host = new Grid();
+        host.Children.Add(card);
+        host.Children.Add(new Border
+        {
+            CornerRadius     = new CornerRadius(6),
+            BorderThickness  = new Thickness(2),
+            BorderBrush      = new SolidColorBrush(Microsoft.UI.Colors.DarkGoldenrod),
+            IsHitTestVisible = false,
+        });
+        return host;
     }
 
     private Border BuildSummaryCard(CoinAnalysisSummary s)
@@ -300,6 +333,25 @@ public sealed partial class TradeAnalysisView : Page
 
         // Col 1 — naam + symbool
         var nameStack = new StackPanel { VerticalAlignment = VerticalAlignment.Center };
+        if (s.IsTopPick)
+        {
+            // Top X-badge (v1.48); tooltip = opbouw van de kansscore
+            var topBadge = new Border
+            {
+                Background   = new SolidColorBrush(Microsoft.UI.Colors.DarkGoldenrod),
+                CornerRadius = new CornerRadius(3),
+                Padding      = new Thickness(5, 0, 5, 0),
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Margin       = new Thickness(0, 0, 0, 2),
+                Child        = new TextBlock
+                {
+                    Text = $"🏆 #{s.TopRank}", FontSize = 10, FontWeight = FontWeights.SemiBold,
+                    Foreground = new SolidColorBrush(Microsoft.UI.Colors.White),
+                },
+            };
+            ToolTipService.SetToolTip(topBadge, s.TopExplanation);
+            nameStack.Children.Add(topBadge);
+        }
         nameStack.Children.Add(new TextBlock { Text = s.Coin.Name, FontSize = 13, FontWeight = FontWeights.SemiBold });
         nameStack.Children.Add(new TextBlock
         {

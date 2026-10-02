@@ -206,8 +206,16 @@ public sealed record MarketRegimeContext(
 // ─────────────────────────────────────────────────────────────────────────────
 
 /// <summary>Één rij in de live-scan overzichtstabel.</summary>
-public sealed class ThreePctLiveRow
+public sealed class ThreePctLiveRow : CryptoPortfolioTracker.Services.ITopPickRow
 {
+    // ── Top X (v1.48) — gezet door OpportunityRanker.Apply vóór weergave ─────
+    public int    TopRank        { get; set; }
+    public double KansScore      { get; set; }
+    public string TopExplanation { get; set; } = string.Empty;
+    public bool   IsTopPick      { get; set; }
+    public string TopBadgeText => IsTopPick ? $"🏆 #{TopRank}" : string.Empty;
+    // Zichtbaarheid in XAML via converters:Functions.TrueToVisible(IsTopPick) — Models blijft WinUI-vrij (tests).
+
     public string Symbol          { get; init; } = string.Empty;
     public string CoinName        { get; init; } = string.Empty;
     public double Score           { get; init; }

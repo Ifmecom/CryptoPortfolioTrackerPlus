@@ -275,7 +275,14 @@
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto"/>
                     <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
                 </Grid.RowDefinitions>
+
+                <!-- Row 3c (v1.48): Top X — welke setups eerst beoordelen -->
+                <controls:TopPicksBar Grid.Row="2"
+                                      TopCount="{x:Bind _viewModel.TopPickCount, Mode=TwoWay}"
+                                      OnlyTop="{x:Bind _viewModel.OnlyTopPicks, Mode=TwoWay}"
+                                      Summary="{x:Bind _viewModel.TopPickSummary, Mode=OneWay}"/>
 
                 <!-- Row 3a: category filters + handbook -->
                 <StackPanel Grid.Row="0" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
@@ -409,7 +416,7 @@
                 </ListView.ItemContainerStyle>
                 <ListView.ItemTemplate>
                     <DataTemplate x:DataType="viewmodels:PatternCoinRow">
-
+                      <Grid>
                         <!-- ── Coin card ── -->
                         <Border CornerRadius="8"
                                 Background="{ThemeResource SystemControlBackgroundChromeMediumLowBrush}"
@@ -442,6 +449,13 @@
                                     <!-- Name + symbol + TF biases -->
                                     <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                         <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <!-- v1.48 Top X-badge; tooltip = opbouw van de kansscore -->
+                                            <Border CornerRadius="3" Padding="5,1" Background="DarkGoldenrod"
+                                                    VerticalAlignment="Center"
+                                                    Visibility="{x:Bind TopPickVisibility}"
+                                                    ToolTipService.ToolTip="{x:Bind TopExplanation}">
+                                                <TextBlock Text="{x:Bind TopBadgeText}" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                            </Border>
                                             <TextBlock Text="{x:Bind Name}"
                                                        FontSize="14" FontWeight="SemiBold"
                                                        TextTrimming="CharacterEllipsis"/>
@@ -794,6 +808,10 @@
                             </Grid>
                         </Border>
 
+                        <!-- v1.48 Top X: gouden rand als overlay (verschuift de lay-out niet) -->
+                        <Border CornerRadius="8" BorderBrush="DarkGoldenrod" BorderThickness="2"
+                                IsHitTestVisible="False" Visibility="{x:Bind TopPickVisibility}"/>
+                      </Grid>
                     </DataTemplate>
                 </ListView.ItemTemplate>
             </ListView>

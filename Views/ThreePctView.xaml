@@ -405,6 +405,11 @@
                                            TextWrapping="Wrap"
                                            Visibility="{x:Bind _viewModel.HasDiversifiedInfo, Mode=OneWay}"/>
 
+                                <!-- v1.48 Top X: welke setups eerst beoordelen -->
+                                <controls:TopPicksBar TopCount="{x:Bind _viewModel.TopPickCount, Mode=TwoWay}"
+                                                      OnlyTop="{x:Bind _viewModel.OnlyTopPicks, Mode=TwoWay}"
+                                                      Summary="{x:Bind _viewModel.TopPickSummary, Mode=OneWay}"/>
+
                                 <!-- Header -->
                                 <Grid>
                                     <Grid.ColumnDefinitions>
@@ -445,7 +450,7 @@
                                     <TextBlock Grid.Column="10" Text="F6"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Factor 6 — Liquiditeit (0-10): bid-ask spread en orderboekdiepte. Onder 4 wordt de setup gefilterd."/>
                                     <TextBlock Grid.Column="11" Text="F7"         FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Factor 7 — Positionering (0-10): funding rate en long/short-ratio. Onder 3 wordt de setup gefilterd."/>
                                     <TextBlock Grid.Column="12" Text="BTC-corr"   FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Right" ToolTipService.ToolTip="Pearson-correlatie van de dagrendementen met BTC (60 dagen). Hoog (>0,8) = beweegt vrijwel gelijk met BTC."/>
-                                    <TextBlock Grid.Column="13" Text="★"          FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Center" ToolTipService.ToolTip="Gediversifieerde shortlist-keuze: een van de max. 5 setups met onderling lage correlatie."/>
+                                    <TextBlock Grid.Column="13" Text="★"          FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}" HorizontalAlignment="Center" ToolTipService.ToolTip="Gediversifieerde shortlist-keuze: een van de setups met onderling lage correlatie (aantal en grens instelbaar in Instellingen). De 🏆-badge bij de coin is de Top X op kansscore."/>
                                     <TextBlock Grid.Column="14" Text=""            FontWeight="SemiBold" Style="{ThemeResource CaptionTextBlockStyle}"/>
                                 </Grid>
                                 <MenuFlyoutSeparator/>
@@ -479,7 +484,17 @@
                                                     <ColumnDefinition Width="24"/>
                                                     <ColumnDefinition Width="Auto"/>
                                                 </Grid.ColumnDefinitions>
+                                                <!-- v1.48 Top X: gouden rand over de hele rij -->
+                                                <Border Grid.ColumnSpan="15" Margin="-6,-4,-2,-4" CornerRadius="4"
+                                                        BorderBrush="DarkGoldenrod" BorderThickness="2"
+                                                        IsHitTestVisible="False" Visibility="{x:Bind IsTopPick}"/>
                                                 <StackPanel Grid.Column="0" VerticalAlignment="Center">
+                                                    <Border CornerRadius="3" Padding="4,0" Background="DarkGoldenrod"
+                                                            HorizontalAlignment="Left"
+                                                            Visibility="{x:Bind IsTopPick}"
+                                                            ToolTipService.ToolTip="{x:Bind TopExplanation}">
+                                                        <TextBlock Text="{x:Bind TopBadgeText}" FontSize="10" FontWeight="SemiBold" Foreground="White"/>
+                                                    </Border>
                                                     <TextBlock Text="{x:Bind Symbol}"
                                                                FontFamily="Consolas" FontSize="12"/>
                                                     <!-- #1: fundamenteel kwaliteitsoordeel -->

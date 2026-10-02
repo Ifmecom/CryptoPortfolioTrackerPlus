@@ -4,8 +4,17 @@ namespace CryptoPortfolioTracker.Models;
 /// Compact projection of a TradeAnalysisResult used in the "Analyseer alles" ranked list.
 /// One row per coin, sorted by signal strength.
 /// </summary>
-public class CoinAnalysisSummary
+public class CoinAnalysisSummary : CryptoPortfolioTracker.Services.ITopPickRow
 {
+    // ── Top X (v1.48) — gezet door OpportunityRanker.Apply vóór weergave ─────
+    public int    TopRank        { get; set; }
+    public double KansScore      { get; set; }
+    public string TopExplanation { get; set; } = string.Empty;
+    public bool   IsTopPick      { get; set; }
+
+    /// <summary>Setup doorstond TradeSetupValidator (geen degenerate SL/TP).</summary>
+    public bool   SetupValid     { get; init; }
+
     public Coin   Coin         { get; init; } = null!;
     public int    Score        { get; init; }
     public string Direction    { get; init; } = string.Empty;   // Long / Short / Geen signaal
@@ -35,6 +44,7 @@ public class CoinAnalysisSummary
         Target1     = result.Setup.Target1;
         Target1Pct  = result.Setup.Target1Pct;
         RiskReward1 = result.Setup.RiskReward1;
+        SetupValid  = result.Setup.IsValid;
         DataSource  = result.DataSource;
         HasLiveData = !result.DataSource.Contains("lokale cache", StringComparison.OrdinalIgnoreCase)
                    && !result.DataSource.Contains("geen data",    StringComparison.OrdinalIgnoreCase);

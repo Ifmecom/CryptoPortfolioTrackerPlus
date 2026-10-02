@@ -193,7 +193,8 @@
         </Border>
 
         <!-- ── Row 2: Filter buttons ────────────────────────────────────────── -->
-        <StackPanel Grid.Row="2" Orientation="Horizontal" Spacing="6" Margin="0,0,0,10">
+        <StackPanel Grid.Row="2" Spacing="8" Margin="0,0,0,10">
+        <StackPanel Orientation="Horizontal" Spacing="6">
             <ToggleButton Content="Alle"
                           IsChecked="{x:Bind _viewModel.FilterAll, Mode=OneWay}"
                           Click="FilterAll_Click" FontSize="12"
@@ -220,6 +221,12 @@
                           ToolTipService.ToolTip="Handmatig gesloten — setup was niet meer geldig (bijv. patroon geïnvalideerd)"/>
         </StackPanel>
 
+        <!-- v1.48 Top X: welke wachtende setups eerst beoordelen -->
+        <controls:TopPicksBar TopCount="{x:Bind _viewModel.TopPickCount, Mode=TwoWay}"
+                              OnlyTop="{x:Bind _viewModel.OnlyTopPicks, Mode=TwoWay}"
+                              Summary="{x:Bind _viewModel.TopPickSummary, Mode=OneWay}"/>
+        </StackPanel>
+
         <!-- ── Row 3: Setup list ─────────────────────────────────────────────── -->
 
         <!-- Empty state -->
@@ -244,6 +251,7 @@
                   ItemContainerStyle="{StaticResource TransparentListViewItem}">
             <ListView.ItemTemplate>
                 <DataTemplate x:DataType="models:WatchedSetup">
+                  <Grid>
                     <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
                             CornerRadius="8" Padding="14,10" Margin="0,0,0,6">
                         <Grid ColumnSpacing="12">
@@ -269,6 +277,13 @@
                             <!-- Coin name + pattern summary + current price -->
                             <StackPanel Grid.Column="1" VerticalAlignment="Center" Spacing="2">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <!-- v1.48 Top X-badge; tooltip = opbouw van de kansscore -->
+                                    <Border CornerRadius="3" Padding="5,1" Background="DarkGoldenrod"
+                                            VerticalAlignment="Center"
+                                            Visibility="{x:Bind IsTopPick}"
+                                            ToolTipService.ToolTip="{x:Bind TopExplanation}">
+                                        <TextBlock Text="{x:Bind TopBadgeText}" FontSize="11" FontWeight="SemiBold" Foreground="White"/>
+                                    </Border>
                                     <TextBlock Text="{x:Bind CoinName}"
                                                FontSize="13" FontWeight="SemiBold"
                                                VerticalAlignment="Center"/>
@@ -450,6 +465,11 @@
 
                         </Grid>
                     </Border>
+
+                    <!-- v1.48 Top X: gouden rand als overlay -->
+                    <Border CornerRadius="8" Margin="0,0,0,6" BorderBrush="DarkGoldenrod" BorderThickness="2"
+                            IsHitTestVisible="False" Visibility="{x:Bind IsTopPick}"/>
+                  </Grid>
                 </DataTemplate>
             </ListView.ItemTemplate>
         </ListView>

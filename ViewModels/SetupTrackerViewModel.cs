@@ -44,6 +44,28 @@ public partial class SetupTrackerViewModel : BaseViewModel
     [ObservableProperty] private int    openCount     = 0;
     [ObservableProperty] private double winRatePct    = 0;
 
+    // ── Top X (v1.48) ─────────────────────────────────────────────────────────
+    private const string TopPage = "SetupTracker";
+    private bool _initializingTop;
+
+    [ObservableProperty] private int    topPickCount;
+    [ObservableProperty] private bool   onlyTopPicks;
+    [ObservableProperty] private string topPickSummary = string.Empty;
+
+    partial void OnTopPickCountChanged(int value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPickCount(TopPage, value);
+        _ = RefreshAsync();
+    }
+
+    partial void OnOnlyTopPicksChanged(bool value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPicksOnly(TopPage, value);
+        _ = RefreshAsync();
+    }
+
     // ── Price freshness ───────────────────────────────────────────────────────
     [ObservableProperty] private string pricesTimestamp = string.Empty;
 
@@ -72,6 +94,11 @@ public partial class SetupTrackerViewModel : BaseViewModel
         Logger = Log.Logger.ForContext(
             Constants.SourceContextPropertyName,
             nameof(SetupTrackerViewModel).PadRight(22));
+
+        _initializingTop = true;
+        TopPickCount = appSettings.GetTopPickCount(TopPage);
+        OnlyTopPicks = appSettings.GetTopPicksOnly(TopPage);
+        _initializingTop = false;
 
         // Auto-refresh whenever PriceUpdateService finishes a price cycle
         messenger.Register<UpdatePricesMessage>(this, async (r, m) =>
@@ -222,12 +249,37 @@ public partial class SetupTrackerViewModel : BaseViewModel
 
             var list = filtered.ToList();
 
+            // Top X (v1.48): alleen gevolgde setups waarvan de entry nog niet geraakt is (Watching) zijn nog
+            // te beoordelen. Gemeten win-rate per scoreklasse uit je eigen afgesloten setups telt mee als de
+            // klasse betrouwbaar is (≥ ReliabilityThresholds.MinClosedSetups).
+            var calByClass = calibration.GroupBy(c => c.ScoreClass).ToDictionary(g => g.Key, g => g.First());
+            OpportunityRanker.Apply(list, s =>
+            {
+                calByClass.TryGetValue(SetupOutcomeCalibrator.Bucket(s.Score), out var cal);
+                return new OpportunityInput(
+                    Key:             s.Id.ToString(),
+                    Direction:       s.Direction,
+                    Quality:         s.Score,
+                    RiskReward:      s.RiskReward > 0 ? s.RiskReward : null,
+                    HitRate:         cal is { TradeCount: > 0 } ? cal.WinRatePct / 100.0 : null,
+                    HitRateSamples:  cal?.TradeCount ?? 0,
+                    HitRateReliable: cal?.IsReliable ?? false,
+                    CounterTrend:    TrendAlignment.IsCounterTrend(s.Direction, s.Bias1D),
+                    Eligible:        s.Status == WatchedSetupStatus.Watching);
+            }, TopPickCount);
+            int candidates = list.Count(s => s.TopRank > 0);
+            string topSummary = TopPickCount == 0 || candidates == 0
+                ? (candidates == 0 && list.Count > 0 ? "geen setups die nog op entry wachten" : string.Empty)
+                : $"top {Math.Min(TopPickCount, candidates)} van {candidates} wachtende setups";
+            list = OpportunityRanker.Visible(list, TopPickCount, OnlyTopPicks);
+
             string timestamp = priceByApiId.Count > 0
                 ? $"Prijzen: {DateTime.Now:HH:mm:ss}"
                 : string.Empty;
 
             _dispatcherQueue?.TryEnqueue(() =>
             {
+                TopPickSummary = topSummary;
                 Setups.Clear();
                 foreach (var s in list)
                     Setups.Add(s);

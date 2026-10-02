@@ -94,6 +94,11 @@ public partial class SignalsViewModel : BaseViewModel
         _signalEngine     = signalEngine;
         _tradeService     = tradeService;
         _outcomeService   = outcomeService;
+
+        _initializingTop = true;
+        TopPickCount = appSettings.GetTopPickCount(TopPage);
+        OnlyTopPicks = appSettings.GetTopPicksOnly(TopPage);
+        _initializingTop = false;
     }
 
     public async Task ViewLoading()
@@ -287,8 +292,52 @@ public partial class SignalsViewModel : BaseViewModel
                 _               => filtered.OrderByDescending(r => r.Rank),
             };
 
-        Rows = new ObservableCollection<CoinSignalRow>(sorted);
+        // 3. Top X (v1.48): rangschik binnen de gefilterde lijst; markeren of alleen de top tonen.
+        var list = sorted.ToList();
+        OpportunityRanker.Apply(list, ToOpportunity, TopPickCount);
+        int candidates = list.Count(r => r.TopRank > 0);
+        TopPickSummary = TopPickCount == 0 || candidates == 0
+            ? (candidates == 0 ? "geen Long/Short-signalen in deze lijst" : string.Empty)
+            : $"top {Math.Min(TopPickCount, candidates)} van {candidates} signalen";
+
+        Rows = new ObservableCollection<CoinSignalRow>(OpportunityRanker.Visible(list, TopPickCount, OnlyTopPicks));
     }
+
+    // ── Top X (v1.48) ────────────────────────────────────────────────────────
+    private const string TopPage = "Signals";
+    private bool _initializingTop;
+
+    [ObservableProperty] private int    topPickCount;
+    [ObservableProperty] private bool   onlyTopPicks;
+    [ObservableProperty] private string topPickSummary = string.Empty;
+
+    partial void OnTopPickCountChanged(int value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPickCount(TopPage, value);
+        ApplySortToRows();
+    }
+
+    partial void OnOnlyTopPicksChanged(bool value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPicksOnly(TopPage, value);
+        ApplySortToRows();
+    }
+
+    /// <summary>
+    /// Signaal → kansscore-invoer. Geen SL/TP op deze pagina, dus geen R/R; de gemeten trefkans uit de
+    /// signaal-kalibratie telt mee bij ≥ ReliabilityThresholds.MinSignalOutcomes metingen (dan 1:1 aangenomen).
+    /// </summary>
+    private static OpportunityInput ToOpportunity(CoinSignalRow r) => new(
+        Key:             r.CoinId.ToString(),
+        Direction:       r.Direction,
+        Quality:         r.DirectionalStrength,
+        HitRate:         r.CalHitRate,
+        HitRateSamples:  r.CalCount,
+        HitRateReliable: r.CalReliable,
+        // Stablecoins hebben geen edge (zelfde poort als Pattern Trading / Trade Advies).
+        Eligible:        r.HasSignal && !TradeSetupGate.IsStablecoin(r.Symbol));
 
     // -----------------------------------------------------------------------
     // Data loading

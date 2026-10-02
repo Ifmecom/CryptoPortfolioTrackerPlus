@@ -52,6 +52,58 @@ public partial class TradeAnalysisViewModel : BaseViewModel
         _analysisService  = analysisService;
         _tradeService     = tradeService;
         _fundamentals     = fundamentals;
+
+        _initializingTop = true;
+        TopPickCount = appSettings.GetTopPickCount(TopPage);
+        OnlyTopPicks = appSettings.GetTopPicksOnly(TopPage);
+        _initializingTop = false;
+    }
+
+    // -----------------------------------------------------------------------
+    // Top X (v1.48) — de view tekent opnieuw bij een wijziging (PropertyChanged)
+    // -----------------------------------------------------------------------
+
+    private const string TopPage = "TradeAnalysis";
+    private bool _initializingTop;
+
+    [ObservableProperty] private int    topPickCount;
+    [ObservableProperty] private bool   onlyTopPicks;
+    [ObservableProperty] private string topPickSummary = string.Empty;
+
+    partial void OnTopPickCountChanged(int value)
+    {
+        if (!_initializingTop) AppSettings.SetTopPickCount(TopPage, value);
+    }
+
+    partial void OnOnlyTopPicksChanged(bool value)
+    {
+        if (!_initializingTop) AppSettings.SetTopPicksOnly(TopPage, value);
+    }
+
+    /// <summary>
+    /// Rangschikt de (op richting gefilterde) overzichtsrijen en geeft terug wat getoond moet worden:
+    /// alles in de bestaande volgorde (top gemarkeerd) of — bij "alleen top" — de top X op rang.
+    /// Trade Advies kijkt naar trend en momentum: kwaliteit = score in de eigen richting (Short = 100 − score), R/R naar TP1, en een
+    /// waarschuwing als de richting tegen de daily-trend ingaat. Geen gemeten trefkans voor deze bron.
+    /// </summary>
+    public List<CoinAnalysisSummary> PrepareOverview(IEnumerable<CoinAnalysisSummary> filtered)
+    {
+        var list = filtered.ToList();
+        OpportunityRanker.Apply(list, s => new OpportunityInput(
+            Key:          s.Coin.ApiId ?? s.Coin.Symbol ?? s.Coin.Id.ToString(),
+            Direction:    s.Direction,
+            // Score is hier "hoe bullish" (≥ 60 Long, ≤ 40 Short — zie BuildTradeSetup): sterkte in eigen richting.
+            Quality:      s.Direction == "Short" ? 100 - s.Score : s.Score,
+            RiskReward:   s.RiskReward1 > 0 ? s.RiskReward1 : null,
+            CounterTrend: TrendAlignment.IsCounterTrend(s.Direction, s.DailyBias),
+            Eligible:     s.SetupValid && s.EntryPrice > 0), TopPickCount);
+
+        int candidates = list.Count(s => s.TopRank > 0);
+        TopPickSummary = TopPickCount == 0 || candidates == 0
+            ? (candidates == 0 && list.Count > 0 ? "geen beoordeelbare setups in deze lijst" : string.Empty)
+            : $"top {Math.Min(TopPickCount, candidates)} van {candidates} setups";
+
+        return OpportunityRanker.Visible(list, TopPickCount, OnlyTopPicks);
     }
 
     // -----------------------------------------------------------------------

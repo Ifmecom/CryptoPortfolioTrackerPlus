@@ -155,6 +155,13 @@
                                 <ComboBoxItem Content="🔴 Short"        Tag="Short"/>
                                 <ComboBoxItem Content="— Geen signaal"  Tag="None"/>
                             </ComboBox>
+
+                            <!-- v1.48 Top X: welke setups eerst beoordelen -->
+                            <Border Width="1" Height="18" Margin="8,0" VerticalAlignment="Center"
+                                    Background="{ThemeResource SystemControlForegroundBaseLowBrush}"/>
+                            <controls:TopPicksBar TopCount="{x:Bind _vm.TopPickCount, Mode=TwoWay}"
+                                                  OnlyTop="{x:Bind _vm.OnlyTopPicks, Mode=TwoWay}"
+                                                  Summary="{x:Bind _vm.TopPickSummary, Mode=OneWay}"/>
                         </StackPanel>
 
                         <ScrollViewer Grid.Row="1"

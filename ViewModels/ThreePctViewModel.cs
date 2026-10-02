@@ -71,6 +71,62 @@ public partial class ThreePctViewModel : BaseViewModel
     [ObservableProperty] private string regimeBtcRsi       = "–";
     [ObservableProperty] private bool   isRegimeLoading    = false;
 
+    // ── Top X (v1.48) ────────────────────────────────────────────────────────
+    private const string TopPage = "ThreePct";
+    private bool _initializingTop;
+    /// <summary>Volledige Live Scan-uitkomst; <see cref="LiveRows"/> is de weergave daarvan (markeren of alleen top).</summary>
+    private List<ThreePctLiveRow> _allLiveRows = new();
+
+    [ObservableProperty] private int    topPickCount;
+    [ObservableProperty] private bool   onlyTopPicks;
+    [ObservableProperty] private string topPickSummary = string.Empty;
+
+    partial void OnTopPickCountChanged(int value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPickCount(TopPage, value);
+        ApplyTopPicks();
+    }
+
+    partial void OnOnlyTopPicksChanged(bool value)
+    {
+        if (_initializingTop) return;
+        AppSettings.SetTopPicksOnly(TopPage, value);
+        ApplyTopPicks();
+    }
+
+    private void ApplyTopPicks()
+    {
+        OpportunityRanker.Apply(_allLiveRows, ToOpportunity, TopPickCount);
+        int candidates = _allLiveRows.Count(r => r.TopRank > 0);
+        LiveRows = new ObservableCollection<ThreePctLiveRow>(
+            OpportunityRanker.Visible(_allLiveRows, TopPickCount, OnlyTopPicks));
+        TopPickSummary = TopPickCount == 0 || candidates == 0
+            ? (candidates == 0 && _allLiveRows.Count > 0 ? "geen beoordeelbare setups" : string.Empty)
+            : $"top {Math.Min(TopPickCount, candidates)} van {candidates} setups";
+    }
+
+    /// <summary>
+    /// 3%-rij → kansscore-invoer. De gemeten netto-hitrate uit Fase 1 telt mee als de scoreklasse genoeg
+    /// backtest-trades heeft (IsReliable, ≥ ReliabilityThresholds.MinBacktestTrades). Gefilterde setups (F6/F7)
+    /// doen niet mee.
+    /// </summary>
+    private OpportunityInput ToOpportunity(ThreePctLiveRow r)
+    {
+        int n = CalibrationRows.FirstOrDefault(c => c.ScoreClass == r.ScoreClass)?.TradeCount ?? 0;
+        return new OpportunityInput(
+            Key:             $"{r.Symbol}|{r.Bias}",
+            Direction:       r.Bias,
+            Quality:         r.Score,
+            RiskReward:      r.RiskReward > 0 ? r.RiskReward : null,
+            HitRate:         r.HistHitrate > 0 ? r.HistHitrate / 100.0 : null,
+            HitRateSamples:  n,
+            HitRateReliable: r.IsReliable,
+            // Stablecoins hebben geen edge (zelfde poort als Pattern Trading / Trade Advies / Analyse).
+            Eligible:        !r.IsFiltered && r.EntryPrice > 0 && r.StopLoss > 0 && r.TakeProfit > 0
+                             && !TradeSetupGate.IsStablecoin(r.Symbol));
+    }
+
     // ── Diversified shortlist (Sprint C) ─────────────────────────────────────
     [ObservableProperty] private ObservableCollection<ThreePctLiveRow> diversifiedRows = new();
     [ObservableProperty] private string diversifiedInfo = string.Empty;
@@ -129,6 +185,11 @@ public partial class ThreePctViewModel : BaseViewModel
         _tradeService     = tradeService;
         _fundamentals     = fundamentals;
         _portfolioService = portfolioService;
+
+        _initializingTop = true;
+        TopPickCount = appSettings.GetTopPickCount(TopPage);
+        OnlyTopPicks = appSettings.GetTopPicksOnly(TopPage);
+        _initializingTop = false;
     }
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
@@ -275,6 +336,8 @@ public partial class ThreePctViewModel : BaseViewModel
         RunLiveScanCommand.NotifyCanExecuteChanged();
         CancelLiveScanCommand.NotifyCanExecuteChanged();
         LiveRows.Clear();
+        _allLiveRows = new();
+        TopPickSummary = string.Empty;
         DiversifiedRows.Clear();
         DiversifiedInfo = string.Empty;
         _barsCache.Clear();
@@ -441,7 +504,8 @@ public partial class ThreePctViewModel : BaseViewModel
                 .Concat(filtered)
                 .ToList();
 
-            LiveRows = new ObservableCollection<ThreePctLiveRow>(sortedWithBadge);
+            _allLiveRows = sortedWithBadge;
+            ApplyTopPicks();
             DiversifiedRows = new ObservableCollection<ThreePctLiveRow>(diversifiedPicks);
             DiversifiedInfo = diversifiedPicks.Count > 0
                 ? $"Aanbevolen shortlist: {string.Join(", ", diversifiedPicks.Select(r => r.Symbol))}  " +

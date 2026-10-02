@@ -3,8 +3,30 @@ using System.Collections.Generic;
 
 namespace CryptoPortfolioTracker.ViewModels;
 
-public class CoinSignalRow
+public class CoinSignalRow : CryptoPortfolioTracker.Services.ITopPickRow
 {
+    // ── Top X (v1.48) — gezet door OpportunityRanker.Apply vóór weergave ─────
+    public int    TopRank        { get; set; }
+    public double KansScore      { get; set; }
+    public string TopExplanation { get; set; } = string.Empty;
+    public bool   IsTopPick      { get; set; }
+    public string TopBadgeText => IsTopPick ? $"🏆 #{TopRank}" : string.Empty;
+    /// <summary>Compacte badge voor de smalle rangkolom.</summary>
+    public string TopRankShort => IsTopPick ? $"#{TopRank}" : string.Empty;
+
+    /// <summary>Signaalsterkte in de eigen richting (0–100): Long = score, Short = 100 − score.</summary>
+    public double DirectionalStrength => Direction switch
+    {
+        "Long"  => CombinedScore,
+        "Short" => 100 - CombinedScore,
+        _       => 0,
+    };
+
+    // Gemeten trefkans als getal (v1.48, voor de Top X) — naast de bestaande tekst.
+    public double? CalHitRate  { get; }
+    public int     CalCount    { get; }
+    public bool    CalReliable { get; }
+
     // Identity
     public long   Rank           { get; }
     public string Name           { get; }
@@ -143,5 +165,8 @@ public class CoinSignalRow
                 calibration, CryptoPortfolioTracker.Services.SignalOutcomeSources.Signal, Direction, CombinedScore);
         MeasuredText    = CryptoPortfolioTracker.Services.SignalCalibrationCalculator.ShortText(cal);
         MeasuredTooltip = CryptoPortfolioTracker.Services.SignalCalibrationCalculator.Explanation(cal);
+        CalHitRate      = cal is { Count: > 0 } ? cal.HitRatePct / 100.0 : null;
+        CalCount        = cal?.Count ?? 0;
+        CalReliable     = cal?.IsReliable ?? false;
     }
 }

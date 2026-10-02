@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("🏆", "Top X op elke setup-pagina",
+            "Markeer of toon alleen de meest kansrijke setups, op kansscore (score × R/R × gemeten trefkans).");
+
         AddFeature("🧺", "3% Trading: shortlist instelbaar",
             "Max. aantal setups en correlatiegrens zelf kiezen; op 1,00 mogen ook samenbewegende munten samen.");
 

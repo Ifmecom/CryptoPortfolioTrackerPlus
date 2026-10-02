@@ -8,7 +8,7 @@ namespace CryptoPortfolioTracker.Models;
 /// Stored in SQLite; status is updated automatically when AnalyzePortfolio
 /// detects that the current price has crossed TP1 or the stop-loss.
 /// </summary>
-public class WatchedSetup
+public class WatchedSetup : CryptoPortfolioTracker.Services.ITopPickRow
 {
     public int    Id             { get; set; }
 
@@ -68,6 +68,13 @@ public class WatchedSetup
     /// <summary>True wanneer er een fundamental-score beschikbaar is om te tonen.</summary>
     [NotMapped]
     public bool HasFundamental { get; set; }
+
+    // ── Top X (v1.48) — runtime, gezet door OpportunityRanker.Apply; niet in de database ──
+    [NotMapped] public int    TopRank        { get; set; }
+    [NotMapped] public double KansScore      { get; set; }
+    [NotMapped] public string TopExplanation { get; set; } = string.Empty;
+    [NotMapped] public bool   IsTopPick      { get; set; }
+    [NotMapped] public string TopBadgeText   => IsTopPick ? $"🏆 #{TopRank}" : string.Empty;
 
     /// <summary>Compacte weergave van het fundamentele kwaliteitsoordeel, bv. "Ⓕ 72 · Strong".</summary>
     [NotMapped]
