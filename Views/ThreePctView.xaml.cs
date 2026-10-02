@@ -19,7 +19,7 @@ public sealed partial class ThreePctView : Page
 
     private void View_Loaded(object sender, RoutedEventArgs e)
     {
-        _viewModel.ViewLoading();
+        using (PerfLog.Measure("ThreePctView.ViewLoading")) _viewModel.ViewLoading();
     }
 
     private void View_Unloaded(object sender, RoutedEventArgs e)

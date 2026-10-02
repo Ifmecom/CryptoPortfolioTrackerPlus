@@ -258,7 +258,12 @@ public partial class TradeJournalViewModel : BaseViewModel
     // Data loading
     // -----------------------------------------------------------------------
 
-    private async Task LoadRowsAsync()
+    /// <param name="syncLive">
+    /// Na het laden de live/demo-orders met Bybit synchroniseren (op de achtergrond, v1.48). Het journaal toont
+    /// eerst wat in de database staat; zijn er via Bybit wijzigingen (vulling, TP/SL-sluiting), dan wordt het
+    /// daarna vanzelf ververst. Voorheen wachtte het journaal ~2 s op Bybit voordat er iets verscheen.
+    /// </param>
+    private async Task LoadRowsAsync(bool syncLive = true)
     {
         var context = _portfolioService.Context;
         if (context is null) return;
@@ -266,9 +271,6 @@ public partial class TradeJournalViewModel : BaseViewModel
         IsLoading = true;
         try
         {
-            // v1.47: eerst live/demo-orders bijwerken met Bybit (vullingen, TP/SL-sluitingen).
-            var liveEvents = await _tradeService.SyncLiveOrdersAsync();
-
             var query = context.ExchangeOrders.AsNoTracking().AsQueryable();
 
             query = _activeFilter switch
@@ -344,8 +346,6 @@ public partial class TradeJournalViewModel : BaseViewModel
             StatusMessage        = Rows.Count == 0
                 ? "No trades found."
                 : $"{Rows.Count} trade(s) — filter: {_activeFilter}";
-            if (liveEvents.Count > 0)
-                StatusMessage = "🧪 Bybit Demo: " + string.Join(" · ", liveEvents);
             LastRefreshedDisplay = $"Prijzen: {DateTime.Now:HH:mm:ss}";
             _isDataLoaded = true;
         }
@@ -356,6 +356,38 @@ public partial class TradeJournalViewModel : BaseViewModel
         finally
         {
             IsLoading = false;
+        }
+
+        if (syncLive)
+            _ = SyncLiveInBackgroundAsync();
+    }
+
+    private bool _liveSyncRunning;
+
+    /// <summary>
+    /// Synchroniseert live/demo-orders met Bybit (vullingen, TP/SL-sluitingen) zonder het journaal te blokkeren;
+    /// bij wijzigingen worden de rijen opnieuw uit de database geladen en wordt de melding getoond.
+    /// </summary>
+    private async Task SyncLiveInBackgroundAsync()
+    {
+        if (_liveSyncRunning) return;
+        _liveSyncRunning = true;
+        try
+        {
+            var liveEvents = await _tradeService.SyncLiveOrdersAsync();
+            if (liveEvents.Count > 0)
+            {
+                await LoadRowsAsync(syncLive: false);
+                StatusMessage = "🧪 Bybit Demo: " + string.Join(" · ", liveEvents);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "TradeJournalViewModel: Bybit-sync op de achtergrond mislukt");
+        }
+        finally
+        {
+            _liveSyncRunning = false;
         }
     }
 }

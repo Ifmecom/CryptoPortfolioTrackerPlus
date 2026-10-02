@@ -204,7 +204,15 @@ public partial class StatisticsViewModel : BaseViewModel
             BuildCharts(orders);
             BuildTopSymbols(orders);
             await LoadSetupStatsAsync();
-            await LoadCalibrationAsync(forceUpdate: false);
+
+            // Snapshot-eerst (v1.48): toon direct de opgeslagen uitkomsten; het bijwerken via het netwerk
+            // (was ~11 s wachten bij het openen) loopt op de achtergrond en ververst de tabellen zelf.
+            if (!IsUpdatingOutcomes)
+            {
+                await ShowStoredCalibrationAsync();
+                if (IsOutcomeUpdateDue)
+                    _ = UpdateOutcomesAsync();
+            }
 
             StatusMessage = $"{orders.Count} orders geladen — periode: {SelectedPeriod} · type: {SelectedTradeKind}";
             _isDataLoaded = true;
@@ -333,30 +341,52 @@ public partial class StatisticsViewModel : BaseViewModel
     };
 
     /// <summary>
-    /// Werkt (zo nodig) de gemeten uitkomsten bij via de signal-outcome-tracker en bouwt de tabellen.
-    /// Automatisch hooguit elke 30 minuten; <paramref name="forceUpdate"/> (knop) haalt altijd op.
+    /// Toont eerst de opgeslagen uitkomsten (snapshot, geen netwerk) en werkt ze daarna zo nodig bij via de
+    /// signal-outcome-tracker. Automatisch hooguit elke 30 minuten; <paramref name="forceUpdate"/> (knop)
+    /// haalt altijd op. Bij het openen van de pagina loopt het bijwerken op de achtergrond (zie LoadAsync).
     /// </summary>
     private async Task LoadCalibrationAsync(bool forceUpdate)
     {
         if (IsUpdatingOutcomes) return;
+        await ShowStoredCalibrationAsync();
+        if (forceUpdate || IsOutcomeUpdateDue)
+            await UpdateOutcomesAsync();
+    }
+
+    private static bool IsOutcomeUpdateDue => DateTime.UtcNow - _lastOutcomeUpdateUtc > OutcomeAutoUpdateInterval;
+
+    /// <summary>Bouwt de kalibratietabellen uit wat al in de database staat — snel, zonder netwerk.</summary>
+    private async Task ShowStoredCalibrationAsync()
+    {
         try
         {
-            if (forceUpdate || DateTime.UtcNow - _lastOutcomeUpdateUtc > OutcomeAutoUpdateInterval)
-            {
-                IsUpdatingOutcomes = true;
-                var progress = new Progress<string>(msg => CalibrationStatus = msg);
-                var r = await _outcomeService.UpdateAsync(progress);
-                _lastOutcomeUpdateUtc = DateTime.UtcNow;
-                Logger.Information("Signaal-kalibratie bijgewerkt: {Result}", r);
-            }
-
             _outcomes = await _outcomeService.GetAllAsync();
             BuildCalibration();
         }
         catch (Exception ex)
         {
-            Logger.Warning(ex, "StatisticsViewModel.LoadCalibrationAsync failed");
+            Logger.Warning(ex, "StatisticsViewModel: opgeslagen kalibratie laden mislukt");
             CalibrationStatus = "Signaal-kalibratie kon niet worden geladen.";
+        }
+    }
+
+    /// <summary>Meet nieuwe uitkomsten (haalt koershistorie op via het netwerk) en ververst daarna de tabellen.</summary>
+    private async Task UpdateOutcomesAsync()
+    {
+        if (IsUpdatingOutcomes) return;
+        IsUpdatingOutcomes = true;
+        try
+        {
+            var progress = new Progress<string>(msg => CalibrationStatus = msg);
+            var r = await _outcomeService.UpdateAsync(progress);
+            _lastOutcomeUpdateUtc = DateTime.UtcNow;
+            Logger.Information("Signaal-kalibratie bijgewerkt: {Result}", r);
+            await ShowStoredCalibrationAsync();
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "StatisticsViewModel: uitkomsten bijwerken mislukt");
+            CalibrationStatus = "Uitkomsten bijwerken mislukt — de getoonde cijfers zijn de laatst opgeslagen.";
         }
         finally
         {

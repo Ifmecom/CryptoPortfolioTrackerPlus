@@ -18,7 +18,7 @@ public sealed partial class SetupTrackerView : Page
     }
 
     private async void View_Loaded(object sender, RoutedEventArgs e)
-        => await _viewModel.ViewLoadingAsync();
+        { using (PerfLog.Measure("SetupTrackerView.ViewLoadingAsync")) await _viewModel.ViewLoadingAsync(); }
 
     private void View_Unloaded(object sender, RoutedEventArgs e)
         => _viewModel.Terminate();

@@ -28,7 +28,7 @@ public partial class DashboardView : Page, IDisposable
 
     private async void View_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        _viewModel.ViewLoading();
+        using (PerfLog.Measure("DashboardView.ViewLoading")) _viewModel.ViewLoading();
     }
 
     private void View_Loading(Microsoft.UI.Xaml.FrameworkElement sender, object args)

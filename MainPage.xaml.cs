@@ -203,7 +203,16 @@ public partial class MainPage : Page //INotifyPropertyChanged
             }
         }
         lastPageType = pageType;
-        contentFrame.Content = App.Container.GetService(pageType);
+        var shown = PerfLog.Measure($"{pageType.Name} tonen (aanmaken+layout)");
+        object? page;
+        using (PerfLog.Measure($"{pageType.Name} aanmaken"))
+            page = App.Container.GetService(pageType);
+        if (page is FrameworkElement fe)
+        {
+            void OnLoaded(object s, RoutedEventArgs a) { fe.Loaded -= OnLoaded; shown.Dispose(); }
+            fe.Loaded += OnLoaded;
+        }
+        contentFrame.Content = page;
         PageInfoButton.Visibility = PageHelpCatalog.For(pageType.Name) is null ? Visibility.Collapsed : Visibility.Visible;
     }
 

@@ -23,7 +23,7 @@ public sealed partial class TradeJournalView : Page
 
     private async void View_Loaded(object sender, RoutedEventArgs e)
     {
-        await _viewModel.ViewLoading();
+        using (PerfLog.Measure("TradeJournalView.ViewLoading")) await _viewModel.ViewLoading();
     }
 
     private void View_Unloaded(object sender, RoutedEventArgs e)

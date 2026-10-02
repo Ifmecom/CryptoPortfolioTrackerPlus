@@ -388,16 +388,23 @@ public class PriceUpdateService : IPriceUpdateService
                 coin.Change1Month = coinData.PriceChangePercentage30DInCurrency ?? 0;
                 coin.Change52Week = coinData.PriceChangePercentage1YInCurrency ?? 0;
 
-                // Coin was loaded AsNoTracking — re-attach for the update
-                context.Coins.Update(coin);
+                // Alleen de koersvelden wegschrijven — NIET context.Coins.Update(coin). De coin is
+                // AsNoTracking geladen zonder Narrative; Update() nam de hele objectgraaf mee, inclusief
+                // het lege `new Narrative()` uit de Coin-constructor, en voegde dat bij elke koerswijziging
+                // als nieuw narratief in én koppelde het aan de coin (bug sinds 5436f08: ~196.000 lege
+                // narratieven, coins kwijt aan hun eigen narratief).
                 Logger.Information("Updating {0} {1} => {2}", coin.Name, oldPrice, newPrice);
-
-                await context.SaveChangesAsync();
-
-                // Detach so the next coin iteration starts with a clean tracker
-                context.Entry(coin).State = EntityState.Detached;
-                foreach (var pl in coin.PriceLevels)
-                    context.Entry(pl).State = EntityState.Detached;
+                await context.Coins
+                    .Where(c => c.Id == coin.Id)
+                    .ExecuteUpdateAsync(s => s
+                        .SetProperty(c => c.Price,        coin.Price)
+                        .SetProperty(c => c.MarketCap,    coin.MarketCap)
+                        .SetProperty(c => c.ImageUri,     coin.ImageUri)
+                        .SetProperty(c => c.Rank,         coin.Rank)
+                        .SetProperty(c => c.Change24Hr,   coin.Change24Hr)
+                        .SetProperty(c => c.Ath,          coin.Ath)
+                        .SetProperty(c => c.Change1Month, coin.Change1Month)
+                        .SetProperty(c => c.Change52Week, coin.Change52Week));
 
                 // Reflect the changes in the PortfolioContext (UI context)
                 var entity = await _portfolioService.Context.Coins.FindAsync(coin.Id);

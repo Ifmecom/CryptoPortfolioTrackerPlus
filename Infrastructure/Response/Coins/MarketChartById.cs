@@ -46,16 +46,16 @@ public class MarketChartById
 
     public decimal?[][] FillPricesArray(List<DataPoint> list)
     {
-        var sortedList = list.OrderBy(x => x.Date.ToDateTime(TimeOnly.Parse("01:00 AM"))).ToList();
-
-        Prices = Array.Empty<decimal?[]>();
-
-        foreach (var dataPoint in sortedList)
-        {
-            var date = dataPoint.Date.ToDateTime(TimeOnly.Parse("01:00 AM")).Date;
-            var price = dataPoint.Value;
-            Prices = Prices.Append(new decimal?[] { (decimal)date.Subtract(DateTime.UnixEpoch).TotalMilliseconds, (decimal)price }).ToArray();
-        }
+        // Zelfde resultaat als voorheen (sorteren op dag, tijdstempel = middernacht van die dag), maar in één
+        // keer opgebouwd i.p.v. per punt Append(..).ToArray() (kwadratisch) met TimeOnly.Parse per punt.
+        Prices = list
+            .OrderBy(x => x.Date)
+            .Select(x => new decimal?[]
+            {
+                (decimal)x.Date.ToDateTime(TimeOnly.MinValue).Subtract(DateTime.UnixEpoch).TotalMilliseconds,
+                (decimal)x.Value,
+            })
+            .ToArray();
         return Prices;
     }
 
@@ -127,7 +127,9 @@ public class MarketChartById
                 await using FileStream openStream = File.OpenRead(fileName);
                 Prices = await System.Text.Json.JsonSerializer.DeserializeAsync<decimal?[][]>(openStream);
 
-                CheckAndFixPrices(this);
+                // v1.48: hier stond CheckAndFixPrices(this) — dat bouwde een gecorrigeerde kopie maar gooide
+                // die weg (this.Prices bleef ongewijzigd) en kostte ~9 mln TimeOnly.Parse-aanroepen per
+                // pagina met 70 coins (Analyse/Prijsniveaus ~10 s bij eerste bezoek). Zonder effect, dus weg.
                 return true;
             }
             return Error.New(new Exception($"MarketChart for {coinId} does not exist"));
@@ -157,44 +159,6 @@ public class MarketChartById
     //        }
     //    }
     //}
-
-
-    private decimal?[][] CheckAndFixPrices(MarketChartById Chart)
-    {
-        var priceList = this.GetPriceList();
-        var checkedChart = new MarketChartById();
-
-        var startDate = this.StartDate().ToDateTime(TimeOnly.Parse("01:00 AM")).Date;
-        var endDate = this.EndDate().ToDateTime(TimeOnly.Parse("01:00 AM")).Date;
-
-        for (DateTime date = startDate; date <= endDate; date = date.AddDays(1))
-        {
-            var dataPointToCheck = priceList.Where(x => x.Date.ToDateTime(TimeOnly.Parse("01:00 AM")).Date == date.Date).FirstOrDefault();
-
-            if (dataPointToCheck is not null)
-            {
-                continue; //and check next
-            }
-            else
-            {
-                var value = 0.0;
-                var adjacent = priceList.Where(x => x.Date.ToDateTime(TimeOnly.Parse("01:00 AM")).Date == date.AddDays(-1).Date).FirstOrDefault();
-
-                if (adjacent is not null)
-                {
-                    value = adjacent.Value;
-                }
-                
-                var dataPoint = new DataPoint { Date = DateOnly.FromDateTime(date), Value = value };
-                priceList.Add(dataPoint);
-            }
-        }
-
-        checkedChart.FillPricesArray(priceList);
-
-        return checkedChart.Prices;
-
-    }
 
 
 

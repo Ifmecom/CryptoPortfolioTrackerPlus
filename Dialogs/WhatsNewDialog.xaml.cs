@@ -30,6 +30,12 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("⚡", "Pagina's openen veel sneller",
+            "Analyse en Prijsniveaus van ~10 s naar < 0,5 s; Statistieken en Trade Journal tonen direct de laatste gegevens.");
+
+        AddFeature("🗂️", "Narratieven hersteld",
+            "Een fout maakte bij elke koersupdate lege narratieven aan; opgelost en je indeling is teruggezet.");
+
         AddFeature("🛠️", "Start voortaan in één keer op",
             "De willekeurige crash direct na het opstarten (0xC0000374) is opgelost.");
 

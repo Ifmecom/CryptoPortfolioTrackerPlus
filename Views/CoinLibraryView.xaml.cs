@@ -24,8 +24,8 @@ public partial class CoinLibraryView : Page, IDisposable
 
     private async void View_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
-        await _viewModel.ViewLoading();
-        await _viewModel.RetrieveAllCoinData();
+        using (PerfLog.Measure("CoinLibraryView.ViewLoading")) await _viewModel.ViewLoading();
+        using (PerfLog.Measure("CoinLibraryView.RetrieveAllCoinData")) await _viewModel.RetrieveAllCoinData();
     }
     private async void View_Loading(Microsoft.UI.Xaml.FrameworkElement sender, object args)
     {

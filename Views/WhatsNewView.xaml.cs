@@ -30,6 +30,18 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("⚡", "Pagina's openen veel sneller",
+            "Analyse en Prijsniveaus openden de eerste keer pas na ~10 seconden; nu binnen een halve seconde " +
+            "(er werd per coin miljoenen keren onnodig gerekend aan de koersgrafiek). Statistieken en het Trade " +
+            "Journal tonen nu meteen de laatst bekende gegevens en werken op de achtergrond bij (signaaluitkomsten " +
+            "resp. Bybit Demo-orders) — de tabellen verversen zichzelf zodra dat klaar is.");
+
+        AddFeature("🗂️", "Narratieven hersteld",
+            "Door een fout sinds mei kreeg bij elke koersupdate iedere coin een nieuw, leeg narratief — de " +
+            "database liep vol (ca. 196.000 lege narratieven) en de meeste coins raakten hun narratief kwijt. " +
+            "De fout is opgelost en de narratieven zijn teruggezet vanuit de back-up van 12 mei. Narratieven en " +
+            "Dashboard laden daardoor ook sneller. AltLayer en ElizaOS (na mei toegevoegd) wijs je zelf opnieuw toe.");
+
         AddFeature("🛠️", "Geen willekeurige crash meer bij het opstarten",
             "De app viel ongeveer de helft van de keren direct na het opstarten weg (fout 0xC0000374). Met een " +
             "debugger is de oorzaak gevonden: een geheugenfout in een onderdeel van Microsoft (de resource-manager " +

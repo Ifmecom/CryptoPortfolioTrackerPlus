@@ -267,6 +267,8 @@ Wat bijgewerkt moet worden:
 - **Geen nieuwe databron toevoegen zonder de Databronnen-tab in `SettingsView.xaml` bij te werken**
 - **Geen zichtbare gebruikersfunctie toevoegen zonder `WhatsNewView.xaml.cs` (`BuildContent`) bij te werken**
 - **Geen pagina zichtbaar wijzigen of toevoegen zonder de uitleg in `PageHelpCatalog.cs` bij te werken**
+- **Nooit `context.Coins.Update(coin)` op een `AsNoTracking`-coin die zonder `.Include(x => x.Narrative)` is geladen.** De `Coin`-constructor zet `Narrative = new()`; `Update()` voegt dat lege narratief dan in en koppelt het aan de coin (v1.48-incident: 196.000 lege narratieven, 66 coins kwijt aan hun narratief). Schrijf losse velden met `ExecuteUpdateAsync` (zie `PriceUpdateService.UpdatePriceCoin`) of laad met tracking.
+- **Geen netwerk-wachttijd in het eerste laadpad van een pagina.** Toon eerst wat in de database staat (snapshot) en werk op de achtergrond bij (patroon: `StatisticsViewModel.UpdateOutcomesAsync`, `TradeJournalViewModel.SyncLiveInBackgroundAsync`). Laadtijden staan in het log als `Perf: …` (`Helpers/PerfLog`).
 - **`PRD.md` nooit verouderd laten — altijd bijwerken na elke wijziging (zie § PRD bijhouden)**
 
 ---

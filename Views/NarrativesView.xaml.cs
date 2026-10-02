@@ -30,7 +30,7 @@ public partial class NarrativesView : Page, IDisposable
     private async void View_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         MyAssetsListViewControl.AssetsListView.DataContext = _viewModel;
-        await _viewModel.ViewLoading();
+        using (PerfLog.Measure("NarrativesView.ViewLoading")) await _viewModel.ViewLoading();
         InitAssetsListView();
     }
     private async void View_Loading(Microsoft.UI.Xaml.FrameworkElement sender, object args)

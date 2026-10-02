@@ -22,7 +22,7 @@ public sealed partial class SignalsView : Page
 
     private async void View_Loaded(object sender, RoutedEventArgs e)
     {
-        await _viewModel.ViewLoading();
+        using (PerfLog.Measure("SignalsView.ViewLoading")) await _viewModel.ViewLoading();
 
         // Hook up horizontal scroll sync after the ListView has rendered
         DataListView.Loaded += OnListViewLoaded;

@@ -34,7 +34,7 @@ public partial class AssetsView : Page, IDisposable
     private async void View_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         MyAssetsListViewControl.AssetsListView.DataContext = _viewModel;
-        await _viewModel.ViewLoading();
+        using (PerfLog.Measure("AssetsView.ViewLoading")) await _viewModel.ViewLoading();
 
         if (MyAssetsListViewControl.AssetsListView.Items.Count > 0)
         {

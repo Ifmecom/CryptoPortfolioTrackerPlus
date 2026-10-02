@@ -34,7 +34,7 @@ public sealed partial class TradeAnalysisView : Page
         _vm.PropertyChanged -= OnVmPropertyChanged;
         _vm.PropertyChanged += OnVmPropertyChanged;
 
-        await _vm.InitializeAsync();
+        using (PerfLog.Measure("TradeAnalysisView.InitializeAsync")) await _vm.InitializeAsync();
 
         // Restore overview panel — persist until the user explicitly refreshes
         if (_vm.AllResults is not null)
