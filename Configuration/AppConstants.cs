@@ -26,6 +26,8 @@ public static class AppConstants
     public static string PortfoliosPath { get; set; } = string.Empty;
     public static string IconsPath { get; set; } = string.Empty;
     public static string ChartsFolder { get; set; } = string.Empty;
+    /// <summary>Map voor TradingView-exports: Pine Scripts en watchlists (v1.48).</summary>
+    public static string TradingViewFolder { get; set; } = string.Empty;
     public static string ScheduledTaskExe { get; set; } = string.Empty;
     public static string PowerShellScriptPs1 { get; set; } = string.Empty;
     public static string AuthStateFile { get; set; } = string.Empty;
@@ -52,6 +54,9 @@ public static class AppConstants
 
         AppConstants.PortfoliosPath = Path.Combine(AppConstants.AppDataPath, "Portfolios");
         AppConstants.ChartsFolder = Path.Combine(AppConstants.AppDataPath, "MarketCharts");
+        // v1.48: TradingView-exports (Pine Scripts, watchlists) — in Documenten zodat de gebruiker ze makkelijk vindt.
+        AppConstants.TradingViewFolder = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "CryptoPortfolioTracker", "TradingView");
         AppConstants.PowerShellScriptPs1 = Path.Combine(AppConstants.AppPath, "RegisterScheduledTask.ps1");
         AppConstants.IconsPath = Path.Combine(AppConstants.AppDataPath, "LibraryIcons");
         AppConstants.AuthStateFile = Path.Combine(AppConstants.AppDataPath, "authstate.json");

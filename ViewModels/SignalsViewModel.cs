@@ -80,15 +80,51 @@ public partial class SignalsViewModel : BaseViewModel
     private string SortArrow(string col) =>
         SortColumn == col ? (SortAscending ? " ▲" : " ▼") : "";
 
+    // ── TradingView (v1.48) — Analyse heeft geen entry/SL, dus alleen grafiek + watchlist ──
+
+    private readonly ITradingViewService? _tradingView;
+
+    public string TickerFor(CoinSignalRow r) => _tradingView?.TickerFor(r.Symbol) ?? TradingViewSymbol.For(r.Symbol);
+
+    /// <summary>Watchlist met de top X, daarna Long en Short (zoals nu getoond, met het richtingsfilter).</summary>
+    public (string Content, int Count) BuildTradingViewWatchlist()
+    {
+        var shown = Rows.ToList();
+        var top   = shown.Where(r => r.IsTopPick).OrderBy(r => r.TopRank).Select(TickerFor).ToList();
+        var longs = shown.Where(r => r.Direction == "Long").Select(TickerFor).ToList();
+        var shorts= shown.Where(r => r.Direction == "Short").Select(TickerFor).ToList();
+        var other = shown.Select(TickerFor).ToList();
+        var content = TradingViewWatchlist.Build(new (string, IEnumerable<string>)[]
+        {
+            ("CPT Top-signalen", top),
+            ("CPT Long", longs),
+            ("CPT Short", shorts),
+            ("CPT Analyse overig", other),
+        });
+        return (content, other.Where(t => t.Length > 0).Distinct().Count());
+    }
+
+    [RelayCommand]
+    private async Task OpenTradingView(CoinSignalRow row)
+    {
+        if (row is null || _tradingView is null) return;
+        var ticker = TickerFor(row);
+        StatusMessage = await _tradingView.OpenChartAsync(ticker)
+            ? $"TradingView geopend ({ticker})."
+            : "Openen van TradingView is mislukt.";
+    }
+
     public SignalsViewModel(
         PortfolioService portfolioService,
         IIndicatorService indicatorService,
         ISignalEngine signalEngine,
         ITradeService tradeService,
         ISignalOutcomeService outcomeService,
-        Settings appSettings)
+        Settings appSettings,
+        ITradingViewService? tradingView = null)
         : base(appSettings)
     {
+        _tradingView      = tradingView;
         _portfolioService = portfolioService;
         _indicatorService = indicatorService;
         _signalEngine     = signalEngine;

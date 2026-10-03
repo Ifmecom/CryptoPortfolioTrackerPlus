@@ -147,6 +147,38 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         OnPropertyChanged(nameof(ThreePctCorrelationText));
     }
 
+    // TradingView-koppeling (v1.48)
+    public IReadOnlyList<string> TradingViewExchanges { get; } = TradingViewSymbol.SupportedExchanges;
+    public IReadOnlyList<string> TradingViewIntervals { get; } = new[] { "15M", "1H", "4H", "1D", "1W" };
+
+    [ObservableProperty] private string tradingViewExchange = "BINANCE";
+    partial void OnTradingViewExchangeChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) AppSettings.TradingViewDefaultExchange = value;
+    }
+
+    [ObservableProperty] private string tradingViewInterval = "1D";
+    partial void OnTradingViewIntervalChanged(string value)
+    {
+        if (!string.IsNullOrWhiteSpace(value)) AppSettings.TradingViewInterval = value;
+    }
+
+    public string TradingViewFolder => AppConstants.TradingViewFolder;
+
+    [RelayCommand]
+    private void OpenTradingViewFolder()
+    {
+        try
+        {
+            Directory.CreateDirectory(AppConstants.TradingViewFolder);
+            Process.Start(new ProcessStartInfo("explorer.exe", $"\"{AppConstants.TradingViewFolder}\"") { UseShellExecute = true });
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning(ex, "TradingView-map openen mislukt");
+        }
+    }
+
     /// <summary>Weergave van de correlatiegrens; 1,00 = filter uit.</summary>
     public string ThreePctCorrelationText => ThreePctShortlistMaxCorrelation >= 0.995
         ? "uit (geen filter)"
@@ -583,6 +615,8 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         MinSetupAtrPercent       = AppSettings.MinSetupAtrPercent;
         ThreePctShortlistMax            = AppSettings.ThreePctShortlistMax;
         ThreePctShortlistMaxCorrelation = AppSettings.ThreePctShortlistMaxCorrelation;
+        TradingViewExchange      = AppSettings.TradingViewDefaultExchange;
+        TradingViewInterval      = AppSettings.TradingViewInterval;
         MaxPortfolioPercPerTrade = AppSettings.MaxPortfolioPercPerTrade;
         MaxOpenPositions         = AppSettings.MaxOpenPositions;
         DailyLossLimitPerc       = AppSettings.DailyLossLimitPerc;

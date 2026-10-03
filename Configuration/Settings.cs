@@ -286,6 +286,23 @@ public partial class Settings : ObservableObject
         set { _store.Set("MinSetupAtrPercent", Math.Clamp(value, 0.5, 5.0)); OnPropertyChanged(nameof(MinSetupAtrPercent)); }
     }
 
+    /// <summary>
+    /// TradingView (v1.48): beursprefix voor tickers zonder bekende databron (bijv. "BINANCE", "BYBIT").
+    /// Pattern Trading en Trade Advies gebruiken de beurs waar de koersdata vandaan kwam.
+    /// </summary>
+    public string TradingViewDefaultExchange
+    {
+        get => _store.Get("TradingViewDefaultExchange", "BINANCE") ?? "BINANCE";
+        set { _store.Set("TradingViewDefaultExchange", string.IsNullOrWhiteSpace(value) ? "BINANCE" : value.Trim().ToUpperInvariant()); OnPropertyChanged(nameof(TradingViewDefaultExchange)); }
+    }
+
+    /// <summary>TradingView (v1.48): standaard grafiek-interval bij openen ("1D", "4H", "1H", "15M", "1W").</summary>
+    public string TradingViewInterval
+    {
+        get => _store.Get("TradingViewInterval", "1D") ?? "1D";
+        set { _store.Set("TradingViewInterval", string.IsNullOrWhiteSpace(value) ? "1D" : value.Trim().ToUpperInvariant()); OnPropertyChanged(nameof(TradingViewInterval)); }
+    }
+
     /// <summary>Top X-keuze per pagina (v1.48): aantal te markeren setups (0 = uit, standaard 5).</summary>
     public int GetTopPickCount(string page) => _store.Get($"TopPicks.{page}.Count", 5);
     public void SetTopPickCount(string page, int value) => _store.Set($"TopPicks.{page}.Count", Math.Clamp(value, 0, 50));

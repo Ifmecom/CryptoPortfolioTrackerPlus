@@ -106,6 +106,21 @@
                                 IsEnabled="False"
                                 MinWidth="100"
                                 ToolTipService.ToolTip="Kopieer analyse naar klembord (Discord-formaat)"/>
+
+                        <!-- TradingView-koppeling (v1.48) -->
+                        <Button Content="📊  TradingView"
+                                MinWidth="110"
+                                ToolTipService.ToolTip="Open de grafiek op TradingView, maak een Pine Script of exporteer een watchlist">
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Open grafiek van de huidige analyse" Click="TvOpen_Click"/>
+                                    <MenuFlyoutItem Text="Pine Script voor de huidige analyse…" Click="TvPineCurrent_Click"/>
+                                    <MenuFlyoutSeparator/>
+                                    <MenuFlyoutItem Text="Pine Script — top-setups uit 'Analyseer alles'" Click="TvPineTop_Click"/>
+                                    <MenuFlyoutItem Text="Watchlist exporteren (.txt)" Click="TvWatchlist_Click"/>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
                     </StackPanel>
 
                     <!-- Right: progress + status -->

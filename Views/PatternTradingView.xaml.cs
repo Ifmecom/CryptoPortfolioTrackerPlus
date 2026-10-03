@@ -130,6 +130,48 @@ public sealed partial class PatternTradingView : Page
             await _viewModel.CopyShareTextCommand.ExecuteAsync(row);
     }
 
+    // ── TradingView (v1.48) ───────────────────────────────────────────────────
+
+    private async void OpenTradingView_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement fe && fe.Tag is PatternCoinRow row)
+            await _viewModel.OpenTradingViewCommand.ExecuteAsync(row);
+    }
+
+    private async void PineForRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement fe || fe.Tag is not PatternCoinRow row) return;
+        var setup = _viewModel.PineSetupFor(row);
+        if (setup is null) return;
+        await PineScriptDialog.ShowAsync(XamlRoot, $"{row.Name} ({setup.Direction})",
+            PineScriptGenerator.ForSetup(setup, DateTime.Now), setup.Ticker,
+            TradingViewSymbol.PairOf(setup.Ticker), _appSettings.AppTheme);
+    }
+
+    private async void PineTopSetups_Click(object sender, RoutedEventArgs e)
+    {
+        var setups = _viewModel.TopPineSetups();
+        if (setups.Count == 0)
+        {
+            _viewModel.StatusText = "Geen setups om naar TradingView te sturen — draai eerst een scan.";
+            return;
+        }
+        await PineScriptDialog.ShowAsync(XamlRoot, $"Pattern Trading top-setups ({setups.Count})",
+            PineScriptGenerator.ForWatchlist(setups, "CPT Pattern top-setups", DateTime.Now), null,
+            "pattern_top", _appSettings.AppTheme);
+    }
+
+    private async void ExportWatchlist_Click(object sender, RoutedEventArgs e)
+    {
+        var (content, count) = _viewModel.BuildTradingViewWatchlist();
+        if (count == 0)
+        {
+            _viewModel.StatusText = "Geen munten om te exporteren — draai eerst een scan.";
+            return;
+        }
+        await PineScriptDialog.ExportWatchlistAsync(XamlRoot, "pattern", content, count, _appSettings.AppTheme);
+    }
+
     // ── Watchlist remove button inside coin card ──────────────────────────────
 
     private async void RemoveWatchlist_Click(object sender, RoutedEventArgs e)

@@ -30,6 +30,17 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("📊", "Koppeling met TradingView: grafieken, Pine Scripts en watchlists",
+            "Op Pattern Trading, Trade Advies, Setup Tracker en 3% Trading staat een 📊 TradingView-knop. 'Open grafiek' " +
+            "opent de munt op TradingView in je browser, op de beurs waar de app de koersdata vandaan haalde. 'Pine Script' " +
+            "maakt een kant-en-klaar script (Pine v6) dat entry, stop-loss, TP1/TP2, de risico- en winstzone en steun/weerstand " +
+            "op de TradingView-grafiek tekent, met drie alerts: entry geraakt, stop-loss geraakt en TP1 geraakt. Kopiëren, in de " +
+            "Pine Editor plakken, 'Toevoegen aan grafiek' — klaar. Het top-setups-script bevat alle top-setups in één script en " +
+            "tekent steeds de niveaus van de munt die op je grafiek staat. 'Watchlist exporteren' maakt een bestand dat je in " +
+            "TradingView importeert (ook op Analyse, met secties Top/Long/Short; rechtsklik op een rij opent de grafiek). " +
+            "Standaardbeurs en interval stel je in bij Instellingen → TradingView. Een gratis TradingView-account volstaat; " +
+            "de app stuurt niets naar TradingView.");
+
         AddFeature("🏆", "Top X: welke setups eerst beoordelen",
             "Op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading staat boven de lijst een " +
             "Top-balk: kies 3, 5, 10 of 20 en de meest kansrijke setups krijgen een gouden rand en een 🏆-badge — of " +

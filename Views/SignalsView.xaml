@@ -101,6 +101,16 @@
                             <ComboBoxItem Content="🔴 Short"        Tag="Short"/>
                             <ComboBoxItem Content="— Geen signaal"  Tag="None"/>
                         </ComboBox>
+
+                        <!-- TradingView-koppeling (v1.48) -->
+                        <Button Content="📊  TradingView" VerticalAlignment="Center" Margin="8,0,0,0"
+                                ToolTipService.ToolTip="Exporteer de getoonde munten als TradingView-watchlist. Rechtsklik op een rij opent die munt op TradingView.">
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem Text="Watchlist exporteren (.txt) — top, Long, Short" Click="TvWatchlist_Click"/>
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
                     </StackPanel>
 
                     <!-- Top X (v1.48) + status message -->
@@ -269,7 +279,13 @@
 
                         <ListView.ItemTemplate>
                             <DataTemplate x:DataType="viewmodels:CoinSignalRow">
-                                <Grid Padding="12,8,12,8" MinHeight="44">
+                                <Grid Padding="12,8,12,8" MinHeight="44" Background="Transparent">
+                                    <!-- TradingView (v1.48): rechtsklik op een rij -->
+                                    <Grid.ContextFlyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="📊 Open op TradingView" Tag="{x:Bind}" Click="TvOpenRow_Click"/>
+                                        </MenuFlyout>
+                                    </Grid.ContextFlyout>
                                     <Grid.ColumnDefinitions>
                                         <ColumnDefinition Width="35"/>
                                         <ColumnDefinition Width="160"/>

@@ -45,13 +45,15 @@ public partial class TradeAnalysisViewModel : BaseViewModel
         ITradeAnalysisService analysisService,
         ITradeService tradeService,
         IFundamentalsService fundamentals,
-        Settings appSettings)
+        Settings appSettings,
+        ITradingViewService? tradingView = null)
         : base(appSettings)
     {
         _portfolioService = portfolioService;
         _analysisService  = analysisService;
         _tradeService     = tradeService;
         _fundamentals     = fundamentals;
+        _tradingView      = tradingView;
 
         _initializingTop = true;
         TopPickCount = appSettings.GetTopPickCount(TopPage);
@@ -108,6 +110,85 @@ public partial class TradeAnalysisViewModel : BaseViewModel
             : $"top {Math.Min(TopPickCount, candidates)} van {candidates} setups";
 
         return OpportunityRanker.Visible(list, TopPickCount, OnlyTopPicks);
+    }
+
+    // -----------------------------------------------------------------------
+    // TradingView (v1.48) — grafiek, Pine Script en watchlist; de view toont de vensters
+    // -----------------------------------------------------------------------
+
+    private readonly ITradingViewService? _tradingView;
+
+    private string TickerFor(string symbol, string dataSource)
+        => _tradingView?.TickerFor(symbol, dataSource) ?? TradingViewSymbol.For(symbol, dataSource);
+
+    /// <summary>Ticker van de huidige analyse, of null als er niets geanalyseerd is.</summary>
+    public string? CurrentTicker => CurrentAnalysis is { } r ? TickerFor(r.Symbol, r.DataSource) : null;
+
+    /// <summary>Pine-setup voor de huidige analyse (met steun/weerstand), of null zonder geldige setup.</summary>
+    public PineSetup? CurrentPineSetup()
+    {
+        if (CurrentAnalysis is not { } r || r.Setup is not { IsValid: true } s) return null;
+        var setup = new PineSetup(
+            Ticker:      TickerFor(r.Symbol, r.DataSource),
+            Name:        r.CoinName,
+            Direction:   s.Direction,
+            Entry:       s.EntryPrice,
+            StopLoss:    s.StopLoss,
+            Target1:     s.Target1,
+            Target2:     s.Target2,
+            Score:       r.CombinedScore,
+            Source:      "Trade Advies",
+            Note:        $"Vertrouwen {s.Confidence} · R/R {s.RiskReward1:0.0}",
+            Supports:    r.SupportLevels,
+            Resistances: r.ResistanceLevels);
+        return setup.IsValid ? setup : null;
+    }
+
+    private static PineSetup ToPine(CoinAnalysisSummary s, string ticker) => new(
+        Ticker:    ticker,
+        Name:      s.Coin.Name ?? s.Coin.Symbol ?? ticker,
+        Direction: s.Direction,
+        Entry:     s.EntryPrice,
+        StopLoss:  s.StopLoss,
+        Target1:   s.Target1,
+        Score:     s.Score,
+        Source:    "Trade Advies",
+        Note:      s.TopRank > 0 ? $"Top #{s.TopRank} · kansscore {s.KansScore:0}" : string.Empty);
+
+    /// <summary>De top-setups uit 'Analyseer alles' (op rang); zonder Top X alle geldige setups.</summary>
+    public List<PineSetup> TopPineSetups()
+    {
+        var all = AllResults ?? Array.Empty<CoinAnalysisSummary>();
+        var rows = all.Any(s => s.IsTopPick)
+            ? all.Where(s => s.IsTopPick).OrderBy(s => s.TopRank)
+            : all.Where(s => s.SetupValid && s.EntryPrice > 0).OrderByDescending(s => s.KansScore);
+        return rows.Select(s => ToPine(s, TickerFor(s.Coin.Symbol ?? string.Empty, s.DataSource)))
+                   .Where(p => p.IsValid).ToList();
+    }
+
+    /// <summary>Watchlist: eerst de top-setups, daarna alle geanalyseerde munten.</summary>
+    public (string Content, int Count) BuildTradingViewWatchlist()
+    {
+        var all  = AllResults ?? Array.Empty<CoinAnalysisSummary>();
+        var top  = TopPineSetups().Select(p => p.Ticker).ToList();
+        var rest = all.Select(s => TickerFor(s.Coin.Symbol ?? string.Empty, s.DataSource))
+                      .Where(t => !string.IsNullOrEmpty(t)).ToList();
+        if (rest.Count == 0 && CurrentTicker is { } cur) rest.Add(cur);
+        var content = TradingViewWatchlist.Build(new (string, IEnumerable<string>)[]
+        {
+            ("CPT Top-setups", top),
+            ("CPT Trade Advies", rest),
+        });
+        return (content, top.Concat(rest).Distinct().Count());
+    }
+
+    [RelayCommand]
+    private async Task OpenTradingView()
+    {
+        if (_tradingView is null || CurrentTicker is not { } ticker) return;
+        StatusMessage = await _tradingView.OpenChartAsync(ticker)
+            ? $"TradingView geopend ({ticker})."
+            : "Openen van TradingView is mislukt.";
     }
 
     // -----------------------------------------------------------------------

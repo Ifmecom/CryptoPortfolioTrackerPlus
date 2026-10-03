@@ -45,6 +45,42 @@ public sealed partial class SetupTrackerView : Page
 
     // ── Row action buttons ────────────────────────────────────────────────────
 
+    // ── TradingView (v1.48) ───────────────────────────────────────────────────
+
+    private static ElementTheme Theme => App.Container.GetRequiredService<Settings>().AppTheme;
+
+    private async void TvOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: WatchedSetup setup })
+            await _viewModel.OpenTradingViewCommand.ExecuteAsync(setup);
+    }
+
+    private async void TvPine_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not FrameworkElement { Tag: WatchedSetup ws }) return;
+        var setup = _viewModel.PineSetupFor(ws);
+        if (setup is null) { _viewModel.StatusText = $"{ws.CoinSymbol}: onvolledige setup — geen Pine Script."; return; }
+        await Dialogs.PineScriptDialog.ShowAsync(XamlRoot, $"{setup.Name} ({setup.Direction})",
+            PineScriptGenerator.ForSetup(setup, DateTime.Now), setup.Ticker,
+            TradingViewSymbol.PairOf(setup.Ticker), Theme);
+    }
+
+    private async void TvPineTop_Click(object sender, RoutedEventArgs e)
+    {
+        var setups = _viewModel.TopPineSetups();
+        if (setups.Count == 0) { _viewModel.StatusText = "Geen lopende setups om naar TradingView te sturen."; return; }
+        await Dialogs.PineScriptDialog.ShowAsync(XamlRoot, $"Setup Tracker ({setups.Count})",
+            PineScriptGenerator.ForWatchlist(setups, "CPT Setup Tracker", DateTime.Now), null,
+            "tracker", Theme);
+    }
+
+    private async void TvWatchlist_Click(object sender, RoutedEventArgs e)
+    {
+        var (content, count) = _viewModel.BuildTradingViewWatchlist();
+        if (count == 0) { _viewModel.StatusText = "Geen lopende setups om te exporteren."; return; }
+        await Dialogs.PineScriptDialog.ExportWatchlistAsync(XamlRoot, "tracker", content, count, Theme);
+    }
+
     private async void CloseAsWon_Click(object sender, RoutedEventArgs e)
     {
         if (sender is not Button { Tag: WatchedSetup setup }) return;

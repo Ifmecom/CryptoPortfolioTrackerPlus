@@ -140,6 +140,18 @@
                             </Flyout>
                         </Button.Flyout>
                     </Button>
+
+                    <!-- TradingView-koppeling (v1.48) -->
+                    <Button Content="📊  TradingView"
+                            Padding="10,6" FontSize="12"
+                            ToolTipService.ToolTip="Pine Script met de top-setups of een watchlist voor TradingView maken">
+                        <Button.Flyout>
+                            <MenuFlyout>
+                                <MenuFlyoutItem Text="Pine Script — top-setups (één script)" Click="PineTopSetups_Click"/>
+                                <MenuFlyoutItem Text="Watchlist exporteren (.txt)" Click="ExportWatchlist_Click"/>
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
                 </StackPanel>
             </Grid>
 
@@ -784,6 +796,19 @@
                                             Padding="8,3" FontSize="11"
                                             Visibility="{x:Bind HasDataVis}"
                                             ToolTipService.ToolTip="Toon de koersgrafiek met patroon-markers voor deze coin"/>
+                                    <Button Content="📊 TradingView"
+                                            Padding="8,3" FontSize="11"
+                                            ToolTipService.ToolTip="Open deze munt op TradingView of maak een Pine Script met entry, stop-loss en doelen">
+                                        <Button.Flyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Open grafiek op TradingView"
+                                                                Tag="{x:Bind}" Click="OpenTradingView_Click"/>
+                                                <MenuFlyoutItem Text="Pine Script voor deze setup…"
+                                                                Tag="{x:Bind}" Click="PineForRow_Click"
+                                                                IsEnabled="{x:Bind HasSetup}"/>
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                    </Button>
                                     <Button Content="👁 Volg trade setup"
                                             Tag="{x:Bind}"
                                             Click="WatchSetup_Click"

@@ -67,6 +67,15 @@
                            Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                            VerticalAlignment="Center"
                            ToolTipService.ToolTip="Tijdstip van de meest recente koersverversing"/>
+                <Button Content="📊  TradingView"
+                        ToolTipService.ToolTip="Pine Script met de lopende (top-)setups of een watchlist voor TradingView maken">
+                    <Button.Flyout>
+                        <MenuFlyout>
+                            <MenuFlyoutItem Text="Pine Script — lopende top-setups (één script)" Click="TvPineTop_Click"/>
+                            <MenuFlyoutItem Text="Watchlist exporteren (.txt)" Click="TvWatchlist_Click"/>
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
                 <Button Content="↻  Vernieuwen"
                         Command="{x:Bind _viewModel.RefreshCommand}"
                         Style="{StaticResource AccentButtonStyle}"
@@ -455,6 +464,17 @@
                                         Click="Expire_Click"
                                         Visibility="{x:Bind converters:Functions.IsWatchingToVisible(Status)}"
                                         ToolTipService.ToolTip="Markeer als verlopen — het patroon is geïnvalideerd of niet meer relevant"/>
+                                <!-- TradingView (v1.48) -->
+                                <Button Content="📊 TradingView"
+                                        FontSize="11"
+                                        ToolTipService.ToolTip="Open de grafiek op TradingView of maak een Pine Script met entry, stop-loss en doelen">
+                                    <Button.Flyout>
+                                        <MenuFlyout>
+                                            <MenuFlyoutItem Text="Open grafiek op TradingView" Tag="{x:Bind}" Click="TvOpen_Click"/>
+                                            <MenuFlyoutItem Text="Pine Script voor deze setup…" Tag="{x:Bind}" Click="TvPine_Click"/>
+                                        </MenuFlyout>
+                                    </Button.Flyout>
+                                </Button>
                                 <!-- Remove — always visible -->
                                 <Button Content="🗑 Verwijder"
                                         FontSize="11"

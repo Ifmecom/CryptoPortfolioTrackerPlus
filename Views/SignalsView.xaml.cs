@@ -66,6 +66,22 @@ public sealed partial class SignalsView : Page
             await _viewModel.PlacePaperTradeCommand.ExecuteAsync(row);
     }
 
+    // ── TradingView (v1.48) ───────────────────────────────────────────────────
+
+    private async void TvOpenRow_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is FrameworkElement { Tag: CoinSignalRow row })
+            await _viewModel.OpenTradingViewCommand.ExecuteAsync(row);
+    }
+
+    private async void TvWatchlist_Click(object sender, RoutedEventArgs e)
+    {
+        var (content, count) = _viewModel.BuildTradingViewWatchlist();
+        if (count == 0) { _viewModel.StatusMessage = "Geen munten om te exporteren."; return; }
+        await Dialogs.PineScriptDialog.ExportWatchlistAsync(XamlRoot, "analyse", content, count,
+            App.Container.GetRequiredService<Settings>().AppTheme);
+    }
+
     // Walk the visual tree to find the first ScrollViewer inside a given element
     private static ScrollViewer? FindScrollViewer(DependencyObject root)
     {

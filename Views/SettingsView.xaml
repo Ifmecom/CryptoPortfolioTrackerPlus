@@ -290,6 +290,32 @@
                         </ct:SettingsExpander>
 
                         <!-- ================================================ -->
+                        <!-- TradingView (v1.48)                               -->
+                        <!-- ================================================ -->
+                        <ct:SettingsExpander Header="TradingView"
+                            Description="Grafieken openen op TradingView, Pine Scripts en watchlists. Werkt met een gratis TradingView-account; er worden geen gegevens naar TradingView gestuurd."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D2;}">
+                            <ct:SettingsExpander.Items>
+                                <ct:SettingsCard Header="Standaardbeurs"
+                                    Description="Voor munten zonder bekende databron. Munten uit Trade Advies en Pattern Trading gebruiken de beurs waar de koersdata vandaan kwam; 3% Trading gebruikt altijd Binance. Bij BYBIT wordt de quote-munt van Bybit gebruikt (EU: USDC).">
+                                    <ComboBox ItemsSource="{x:Bind _viewModel.TradingViewExchanges}"
+                                              SelectedItem="{x:Bind _viewModel.TradingViewExchange, Mode=TwoWay}"
+                                              MinWidth="140"/>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="Standaard-interval van de grafiek"
+                                    Description="Waarmee 'Open grafiek op TradingView' de grafiek opent (3% Trading gebruikt het gekozen scan-tijdvak).">
+                                    <ComboBox ItemsSource="{x:Bind _viewModel.TradingViewIntervals}"
+                                              SelectedItem="{x:Bind _viewModel.TradingViewInterval, Mode=TwoWay}"
+                                              MinWidth="140"/>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="Exportmap (.pine en watchlists)"
+                                    Description="{x:Bind _viewModel.TradingViewFolder}">
+                                    <Button Content="Open map" Command="{x:Bind _viewModel.OpenTradingViewFolderCommand}"/>
+                                </ct:SettingsCard>
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ================================================ -->
                         <!-- Risk-guardrails                                   -->
                         <!-- ================================================ -->
                         <ct:SettingsExpander Header="Risk-guardrails"
@@ -815,6 +841,36 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <ct:SettingsCard Header="TradingView-exports (.pine / watchlist)"
+                                    Description="Documenten\CryptoPortfolioTracker\TradingView"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Pine Scripts (CPT_*.pine) en watchlists (CPT_watchlist_*.txt) die je via de 📊 TradingView-knoppen opslaat. Je plakt of importeert ze zelf in TradingView."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Beheerd door: TradingViewService (v1.48)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── Grafieken & scripts ────────────────────────── -->
+                        <ct:SettingsExpander Header="Grafieken &amp; scripts"
+                            Description="Externe grafiekplatformen waar de app naar linkt."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE9D2;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+                                <ct:SettingsCard Header="TradingView (website, deeplinks)"
+                                    Description="https://www.tradingview.com/chart/?symbol=BEURS:PAAR"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Opent de grafiek van een munt in je browser. TradingView heeft geen openbare API: de app haalt er geen data op en stuurt er niets naartoe. Pine Script (v6) en watchlists plak/importeer je zelf."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Kosten: gratis account volstaat · Alerts uit het Pine Script werken binnen TradingView; webhooks vereisen een betaald plan (niet gekoppeld)."/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
                             </ct:SettingsExpander.Items>
                         </ct:SettingsExpander>
 

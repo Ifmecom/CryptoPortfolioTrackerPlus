@@ -111,6 +111,67 @@ public partial class PatternTradingViewModel : BaseViewModel
                                  minAtrFraction: 0));
     }
 
+    // ── TradingView (v1.48) ───────────────────────────────────────────────────
+    private readonly ITradingViewService? _tradingView;
+
+    /// <summary>TradingView-ticker van een kaart: de beurs en het paar waar de koersdata vandaan kwam.</summary>
+    public string TickerFor(PatternCoinRow r)
+        => _tradingView?.TickerFor(r.Symbol, r.Analysis.DataSource) ?? TradingViewSymbol.For(r.Symbol, r.Analysis.DataSource);
+
+    /// <summary>Setup van een kaart voor Pine Script, of null als er geen (geldige) setup is.</summary>
+    public PineSetup? PineSetupFor(PatternCoinRow r)
+    {
+        var s = r.Analysis.Setup;
+        if (!r.HasSetup || s is null) return null;
+        var setup = new PineSetup(
+            Ticker:      TickerFor(r),
+            Name:        r.Name,
+            Direction:   r.Direction,
+            Entry:       s.EntryPrice,
+            StopLoss:    s.StopLoss,
+            Target1:     s.Target1,
+            Target2:     s.Target2,
+            Score:       r.Score,
+            Source:      "Pattern Trading",
+            Note:        string.Join(" · ", r.Analysis.KeyPatterns.Take(4).Select(p => $"{p.DisplayName} {p.Timeframe}"))
+                         + (r.IsTopPick ? $" · Top X #{r.TopRank} (kansscore {r.KansScore:0})" : string.Empty),
+            Supports:    r.Analysis.SupportLevels.Select(l => l.Price).ToList(),
+            Resistances: r.Analysis.ResistanceLevels.Select(l => l.Price).ToList());
+        return setup.IsValid ? setup : null;
+    }
+
+    /// <summary>De setups voor een verzamel-export: de gemarkeerde top, anders alle getoonde kaarten met een setup.</summary>
+    public List<PineSetup> TopPineSetups()
+    {
+        var rows = DisplayItems.Where(r => r.IsTopPick).OrderBy(r => r.TopRank).ToList();
+        if (rows.Count == 0) rows = DisplayItems.Where(r => r.HasSetup).ToList();
+        return rows.Select(PineSetupFor).Where(s => s is not null).Select(s => s!).ToList();
+    }
+
+    /// <summary>Watchlist-inhoud: top-setups als eerste sectie, daarna de overige getoonde coins.</summary>
+    public (string Content, int Count) BuildTradingViewWatchlist()
+    {
+        var top  = TopPineSetups().Select(s => s.Ticker).ToList();
+        var rest = DisplayItems.Select(TickerFor).ToList();
+        var content = TradingViewWatchlist.Build(new (string, IEnumerable<string>)[]
+        {
+            ("CPT Top-setups", top),
+            ("CPT Pattern Trading", rest),
+        });
+        int count = content.Split(',').Count(p => !p.StartsWith("###"));
+        return (content, count);
+    }
+
+    [RelayCommand]
+    private async Task OpenTradingView(PatternCoinRow row)
+    {
+        if (row is null || _tradingView is null) return;
+        var ticker = TickerFor(row);
+        StatusText = await _tradingView.OpenChartAsync(ticker)
+            ? $"TradingView geopend voor {ticker}."
+            : "Openen van TradingView is mislukt.";
+    }
+
     private async Task LoadPatternCalibrationAsync()
     {
         if (_outcomes is null) return;
@@ -151,9 +212,11 @@ public partial class PatternTradingViewModel : BaseViewModel
         IBinanceDataService    binance,
         Settings               appSettings,
         IPatternStateStore?    patternState = null,
-        ISignalOutcomeService? outcomes     = null) : base(appSettings)
+        ISignalOutcomeService? outcomes     = null,
+        ITradingViewService?   tradingView  = null) : base(appSettings)
     {
-        _outcomes = outcomes;
+        _outcomes    = outcomes;
+        _tradingView = tradingView;
         // Top X (v1.48): keuze per pagina onthouden — zonder via de Changed-handlers op te slaan/te filteren.
         _initializingTop = true;
         TopPickCount  = appSettings.GetTopPickCount(TopPage);

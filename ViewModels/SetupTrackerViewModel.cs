@@ -77,15 +77,73 @@ public partial class SetupTrackerViewModel : BaseViewModel
 
     // ── Constructor ───────────────────────────────────────────────────────────
 
+    // ── TradingView (v1.48) ────────────────────────────────────────────────────
+
+    private readonly ITradingViewService? _tradingView;
+
+    public string TickerFor(WatchedSetup s)
+        => _tradingView?.TickerFor(s.CoinSymbol) ?? TradingViewSymbol.For(s.CoinSymbol);
+
+    public PineSetup? PineSetupFor(WatchedSetup s)
+    {
+        var setup = new PineSetup(
+            Ticker:    TickerFor(s),
+            Name:      string.IsNullOrWhiteSpace(s.CoinName) ? s.CoinSymbol : s.CoinName,
+            Direction: s.Direction,
+            Entry:     s.EntryPrice,
+            StopLoss:  s.StopLoss,
+            Target1:   s.Target1,
+            Target2:   s.Target2,
+            Score:     s.Score,
+            Source:    "Setup Tracker",
+            Note:      s.PatternSummary + (s.TopRank > 0 ? $" · Top #{s.TopRank}" : string.Empty));
+        return setup.IsValid ? setup : null;
+    }
+
+    private static bool IsActive(WatchedSetup s) => s.Status is WatchedSetupStatus.Watching or WatchedSetupStatus.Open;
+
+    /// <summary>Lopende setups (Watching/Open): de top X op rang, of anders alle lopende.</summary>
+    public List<PineSetup> TopPineSetups()
+    {
+        var rows = Setups.Any(s => s.IsTopPick)
+            ? Setups.Where(s => s.IsTopPick).OrderBy(s => s.TopRank)
+            : Setups.Where(IsActive).AsEnumerable();
+        return rows.Select(PineSetupFor).Where(p => p is not null).Select(p => p!).ToList();
+    }
+
+    public (string Content, int Count) BuildTradingViewWatchlist()
+    {
+        var top  = TopPineSetups().Select(p => p.Ticker).ToList();
+        var rest = Setups.Where(IsActive).Select(TickerFor).ToList();
+        var content = TradingViewWatchlist.Build(new (string, IEnumerable<string>)[]
+        {
+            ("CPT Top-setups", top),
+            ("CPT Setup Tracker", rest),
+        });
+        return (content, top.Concat(rest).Where(t => t.Length > 0).Distinct().Count());
+    }
+
+    [RelayCommand]
+    private async Task OpenTradingView(WatchedSetup setup)
+    {
+        if (setup is null || _tradingView is null) return;
+        var ticker = TickerFor(setup);
+        StatusText = await _tradingView.OpenChartAsync(ticker)
+            ? $"TradingView geopend ({ticker})."
+            : "Openen van TradingView is mislukt.";
+    }
+
     public SetupTrackerViewModel(
         IWatchedSetupService service,
         ILibraryService      libraryService,
         IFundamentalsService fundamentals,
         IMessenger           messenger,
-        Settings             appSettings)
+        Settings             appSettings,
+        ITradingViewService? tradingView = null)
         : base(appSettings)
     {
         Current          = this;
+        _tradingView     = tradingView;
         _service         = service;
         _libraryService  = libraryService;
         _fundamentals    = fundamentals;

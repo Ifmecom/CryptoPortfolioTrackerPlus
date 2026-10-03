@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("📊", "Koppeling met TradingView",
+            "Grafiek openen, Pine Script met entry/stop/doelen en alerts, en watchlist-export — via de 📊-knop op de setup-pagina's.");
+
         AddFeature("🏆", "Top X op elke setup-pagina",
             "Markeer of toon alleen de meest kansrijke setups, op kansscore (score × R/R × gemeten trefkans).");
 

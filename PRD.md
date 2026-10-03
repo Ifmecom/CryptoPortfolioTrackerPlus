@@ -111,6 +111,9 @@ services.AddScoped<IPatternTradingService, PatternTradingService>();         // 
 services.AddScoped<ILiveOrderExecutor, BybitDemoExecutor>();   // TradeService delegeert niet-paper orders hierheen
 services.AddScoped<IAutoTraderService, AutoTraderService>();   // aangeroepen door PatternTradingService ná de scan
 
+// TradingView-koppeling (v1.48):
+services.AddSingleton<ITradingViewService, TradingViewService>(); // grafiek openen, klembord, .pine/.txt opslaan
+
 // Signal-outcome-tracker (v1.46):
 services.AddScoped<ISignalOutcomeService, SignalOutcomeService>();           // uitkomst per signaal + kalibratie (EF)
 
@@ -173,6 +176,10 @@ Migraties worden automatisch toegepast bij app-start via `context.Database.Migra
   Backup\
     RestorePoint_*.cpt    → portfolio-backups
   Icons\                  → coinlogo's (PNG)
+
+%USERPROFILE%\Documents\CryptoPortfolioTracker\TradingView\   (AppConstants.TradingViewFolder, v1.48)
+  CPT_{label}_{yyyyMMdd-HHmm}.pine        → Pine Scripts
+  CPT_watchlist_{label}_{yyyyMMdd-HHmm}.txt → TradingView-watchlists
 ```
 
 ---
@@ -227,6 +234,24 @@ Op elke pagina met setups of adviezen staat een gedeelde `Controls/TopPicksBar` 
 | Gezondheid munt (`CoinHealth`) | ingestort (≤ −70% in een maand of ≤ −50% onder MA50) ×0,60 · microcap (< $10 mln) ×0,80 (stapelbaar). Uitgesloten: geen koers/marktwaarde/rang, < $1 mln, ATR 0 of onder de setup-drempel (Analyse) |
 
 Niet mee: dode/onverhandelbare munten (zie Gezondheid; aanleiding: WMOXY, NEIRO en NIBI verschenen als top-kans door extreme maar betekenisloze indicatoren), geen richting, ongeldige setup, F6/F7-gefilterd (3%), stablecoins (Analyse en 3%; elders al door `TradeSetupGate`), niet-*Watching* (Setup Tracker). Gelijke stand: hogere kwaliteit, dan hogere R/R. Rijen (`ITopPickRow`) krijgen `TopRank`, `KansScore`, `TopExplanation` (tooltip op de 🏆-badge) en `IsTopPick` (gouden rand). Keuze per pagina via `Settings.Get/SetTopPickCount` en `Get/SetTopPicksOnly`. Pattern Trading bewaart de liquiditeitscheck nu per coin (telt mee en blijft staan bij filteren).
+
+### 3.6 TradingView-koppeling *(v1.48)*
+
+**Inventarisatie.** TradingView heeft geen openbare API om grafieken, indicatoren of watchlists van buitenaf te beheren. Wat wel kan en is gebouwd:
+
+| Koppeling | Hoe | Waar |
+|---|---|---|
+| Grafiek openen | Deeplink `https://www.tradingview.com/chart/?symbol=BEURS:PAAR&interval=…` via `Windows.System.Launcher` | Pattern Trading (kaart), Trade Advies (werkbalk), Setup Tracker (kaart), 3% Trading (rij), Analyse (rechtsklik op rij) |
+| Pine Script per setup | `PineScriptGenerator.ForSetup` → Pine v6-indicator: entry/SL/TP1/TP2-lijnen, risico- en winstzone, steun/weerstand (max. 4 per kant), labels, waarschuwing bij verkeerd symbool, 3 `alertcondition`s (entry/SL/TP1 geraakt; JSON-bericht met `{{ticker}}`/`{{close}}`) | Pattern Trading, Trade Advies, Setup Tracker, 3% Trading |
+| Pine Script top-setups | `PineScriptGenerator.ForWatchlist` → één script met `switch syminfo.ticker` (max. 40 setups, dubbele paren: eerste wint) — tekent de niveaus van de munt die op de grafiek staat | idem (werkbalk) |
+| Watchlist | `TradingViewWatchlist.Build` → `###Sectie,BEURS:PAAR,…` (importeren via Watchlist → ⋯ → Lijst importeren) | alle vijf pagina's |
+
+Ticker-keuze (`TradingViewSymbol.For`): de `DataSource` van de analyse ("Binance (X)", "KuCoin (BTC-USDT)", "Gate.io (X_USDT)", "MEXC (X)") bepaalt beurs en paar; anders `Settings.TradingViewDefaultExchange` + USDT (bij BYBIT de `BybitQuoteCoin`). 3% Trading gebruikt altijd BINANCE (scan op Binance-klines). `PineScriptDialog` (code-only) toont het script met de stappen, Kopiëren (klembord, `Clipboard.Flush`) en Opslaan als .pine (opent Verkenner). Pure delen getest in `TradingViewTests` (25 tests).
+
+**Niet gebouwd (bewust):**
+- *Webhooks TradingView → app*: vereisen een betaald TradingView-plan én een publiek bereikbare URL (de app is een desktop-app achter NAT). De alert-berichten zijn al JSON, zodat een latere koppeling (bijv. via een relay) ze kan lezen.
+- *Data uit TradingView halen* (koersen, indicatoren, ideeën): geen API en scrapen is in strijd met de gebruiksvoorwaarden. De app blijft eigen bronnen (Binance/KuCoin/Gate.io/MEXC, CoinGecko) gebruiken.
+- *Automatisch inloggen of scripts publiceren*: de gebruiker plakt het script zelf; er worden geen TradingView-inloggegevens opgeslagen.
 
 ### 3.4 Pagina-uitleg (ⓘ-knop) *(v1.48)*
 
@@ -2175,6 +2200,15 @@ vaak samen met de markt mee (onderling afhankelijk).
 | **Gebruik** | BTC-dominantie voor het marktregime |
 | **Service** | `GlobalMarketDataService` · cache 5 min |
 
+### 7.15 TradingView *(v1.48)*
+
+| | |
+|---|---|
+| **Endpoint** | `https://www.tradingview.com/chart/?symbol={BEURS}:{PAAR}&interval={D\|240\|60\|15\|W}` (alleen deeplink in de browser) |
+| **Gebruik** | Grafiek openen; Pine Script (v6) en watchlist-bestanden die de gebruiker zelf plakt/importeert |
+| **Service** | `ITradingViewService` / `TradingViewService` (singleton) · pure `TradingViewSymbol`, `PineScriptGenerator`, `TradingViewWatchlist` |
+| **Authenticatie** | Geen — de app stuurt niets naar TradingView en haalt er niets op (zie §3.6) |
+
 ---
 
 ## 8. Achtergrondservices
@@ -2260,6 +2294,8 @@ Het `Settings`-object is de centrale configuratieklasse, opgeslagen in `prefs.xm
 | `AutoTradeMaxPerDay` *(v1.47)* | Max. automatische orders per dag (1–20, standaard 3) |
 | `AutoTradeRiskPct` *(v1.47)* | Risico per trade, % van het demo-saldo (0,1–5, standaard 1) |
 | `AutoTradeMaxPositionPct` *(v1.47)* | Max. inleg per trade, % van het saldo (5–50, standaard 20) |
+| `TradingViewDefaultExchange` *(v1.48)* | TradingView-beursprefix voor munten zonder bekende databron (BINANCE/BYBIT/KUCOIN/GATEIO/MEXC/OKX, standaard BINANCE) |
+| `TradingViewInterval` *(v1.48)* | Interval waarmee grafieken openen (15M/1H/4H/1D/1W, standaard 1D) |
 
 ### 9.2 Portfoliosysteem
 
@@ -2486,6 +2522,7 @@ Voor `ExchangeKind.Bybit` (echt geld) gooit de methode bewust een fout. Vrijgeve
 |-----------|---------|
 | **Fill-sync alleen bij vernieuwen** *(v1.47)* | Demo-orders worden gesynchroniseerd bij plaatsen/sluiten en bij elke vernieuwing van het Trade Journal (geen WebSocket). Bybit bewaakt SL/TP zelf, dus de positie is beschermd; alleen de weergave loopt achter tot de volgende sync. |
 | **Bybit Demo: spot-only, één TP** *(v1.47)* | Geen Short, geen hefboom, geen TP2/gedeeltelijk sluiten op Bybit; SL/TP van een demo-order zijn niet aan te passen vanuit de app. Gekoppelde TP/SL op spot-limitorders is niet in de demo getest vóór v1.47 — controleer bij de eerste order op Bybit dat beide zichtbaar zijn. |
+| **TradingView alleen via deeplink en bestanden** *(v1.48)* | Geen API: de app kan geen indicator op een grafiek zetten, geen alerts aanmaken en geen data uit TradingView lezen. Pine Scripts plakt de gebruiker zelf; alerts maakt de gebruiker in TradingView. Webhooks (betaald plan + publieke URL) zijn niet gekoppeld. Een beurs-ticker die TradingView niet kent (nieuwe listing) geeft een lege grafiek — kies dan een andere standaardbeurs. |
 | **Binance/KuCoin geen API-key** | Publieke endpoints; geen privé accountdata |
 | **Sentimentanalyse** | Eenvoudige NLP, geen BERT/LLM; nauwkeurigheid beperkt |
 | **WinUI 3 x:Bind beperking** | `{x:Bind}` werkt niet binnen `ct:SettingsExpander.Items` — gebruik altijd `{Binding}` of losse `ct:SettingsCard` elementen |
@@ -2550,7 +2587,7 @@ Voor `ExchangeKind.Bybit` (echt geld) gooit de methode bewust een fout. Vrijgeve
 | v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
 | v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
 | v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
-| v1.48 | **Pagina-uitleg**: ⓘ-knop rechtsboven op elke pagina (`PageInfoButton`) · pure `PageHelpCatalog` met per menu-optie wat zie je / hoe lees je het / hoe ga je ermee om / let op · `PageHelpDialog` · test die elke `Tag` in `MainPage.xaml` afdekt · **Telegram**: `TelegramHtml.Sanitize` + platte-tekst-vangnet (losse `<` gaf ‘can't parse entities’) · **Bybit EU Demo**: saldo via `/v5/order/spot-borrow-check`, sluiten annuleert alle TP/SL-ordertypes · **Opstartcrash opgelost**: `Program.cs` omzeilt heapoverloop in WinAppSDK-MRM · **Top X**: `OpportunityRanker` (kansscore = kwaliteit × R/R × gemeten trefkans × waarschuwingen) + gedeelde `TopPicksBar` op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading (markeren of alleen top, per pagina onthouden) · **3% Trading**: shortlist-limieten instelbaar (`ThreePctShortlistMax`, `ThreePctShortlistMaxCorrelation`) · **Laadsnelheid**: dode `CheckAndFixPrices` uit `MarketChartById.LoadMarketChartJson` (Analyse/Prijsniveaus ~10 s → <0,5 s), `FillPricesArray` lineair, snapshot-eerst in Statistieken (`UpdateOutcomesAsync`) en Trade Journal (`SyncLiveInBackgroundAsync`), `Helpers/PerfLog` · **Narratief-bug**: `PriceUpdateService` schrijft koersvelden met `ExecuteUpdateAsync` i.p.v. `Coins.Update(coin)` (maakte sinds 5436f08 per koerswijziging een leeg narratief); data hersteld uit back-up 12-05-2026 |
+| v1.48 | **TradingView-koppeling**: `ITradingViewService` + pure `TradingViewSymbol`/`PineScriptGenerator`/`TradingViewWatchlist` · 📊-knoppen op Pattern Trading, Trade Advies, Setup Tracker, 3% Trading en Analyse (grafiek openen, Pine v6-script per setup of voor de top-setups met alerts, watchlist-export) · `PineScriptDialog` · instellingen standaardbeurs/interval · **Pagina-uitleg**: ⓘ-knop rechtsboven op elke pagina (`PageInfoButton`) · pure `PageHelpCatalog` met per menu-optie wat zie je / hoe lees je het / hoe ga je ermee om / let op · `PageHelpDialog` · test die elke `Tag` in `MainPage.xaml` afdekt · **Telegram**: `TelegramHtml.Sanitize` + platte-tekst-vangnet (losse `<` gaf ‘can't parse entities’) · **Bybit EU Demo**: saldo via `/v5/order/spot-borrow-check`, sluiten annuleert alle TP/SL-ordertypes · **Opstartcrash opgelost**: `Program.cs` omzeilt heapoverloop in WinAppSDK-MRM · **Top X**: `OpportunityRanker` (kansscore = kwaliteit × R/R × gemeten trefkans × waarschuwingen) + gedeelde `TopPicksBar` op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading (markeren of alleen top, per pagina onthouden) · **3% Trading**: shortlist-limieten instelbaar (`ThreePctShortlistMax`, `ThreePctShortlistMaxCorrelation`) · **Laadsnelheid**: dode `CheckAndFixPrices` uit `MarketChartById.LoadMarketChartJson` (Analyse/Prijsniveaus ~10 s → <0,5 s), `FillPricesArray` lineair, snapshot-eerst in Statistieken (`UpdateOutcomesAsync`) en Trade Journal (`SyncLiveInBackgroundAsync`), `Helpers/PerfLog` · **Narratief-bug**: `PriceUpdateService` schrijft koersvelden met `ExecuteUpdateAsync` i.p.v. `Coins.Update(coin)` (maakte sinds 5436f08 per koerswijziging een leeg narratief); data hersteld uit back-up 12-05-2026 |
 | v1.47 | **Bybit EU Demo**: `ExchangeKind.BybitDemo` · `ILiveOrderExecutor`/`BybitDemoExecutor` (spot, limit-instap met gekoppelde TP/SL, cancel, close, sync) · pure `BybitApi`, `BybitOrderPlanner`, `LiveOrderReconciler`, `AutoTradeSelector` · `AutoTraderService` na Pattern-scan (schakelaar, standaard uit) · order-dialoog 'Paper / Bybit EU Demo' · Trade Journal-sync + 'Demo'-label · instellingen voor demo-sleutel (domein-detectie EU/global) en automatisch handelen · `IGuardrailService.CheckNewLiveTradeAsync` · echt geld geblokkeerd |
 | v1.46 | **Signaal-kalibratie** (signal-outcome-tracker): `SignalOutcome`-entiteit + `SignalOutcomes`-tabel · pure `SignalOutcomeEvaluator` (meting 1/3/7/14 d, MFE/MAE, geen lookahead) + `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime) · `ISignalOutcomeService` (SignalEngine-signalen met terugwerkende kracht, Pattern-scans vanaf nu, daily klines Binance→KuCoin→Gate.io→MEXC) · nieuw tabblad Statistieken → Signaal-kalibratie · gemeten kans onder de score op de Analyse-pagina · `ReliabilityThresholds.MinSignalOutcomes` (20) |
 | v1.33 | **3% Trading-tool** (`ThreePctView`): gekalibreerd 7-factor scoremodel met +3% netto-doel · Fase 1 backtest/kalibratie (`ThreePctBacktestService`, JSON-opslag) · Fase 2 live scan met F6 liquiditeit + F7 positionering als gatekeepers · `CorrelationService` (gediversifieerde shortlist) · `MacroEventService` (FOMC/CPI/NFP/PCE) · `SetupDetailDialog`. **Cross-tool:** `TradeSetupValidator.CheckAdvice` markeert ongeldige/krappe setups in Trade Advies & Pattern Trading · `MarketRegimeService.GetRegimeContextAsync` (EMA50/200 + dominantie) ook in `SignalEngine` · markt-context (liquiditeit/funding/events) in Trade Advies · gedeelde `TtlCache<T>` · geëxtraheerde `TradeLevelCalculator` · nieuwe databronnen (Binance depth/futures, CoinGecko global). Tests: 40 → 183 |

@@ -396,6 +396,16 @@
                                 <StackPanel Orientation="Horizontal" Spacing="12">
                                     <TextBlock Text="Setups met positieve expectancy (gesorteerd op verwachte R per trade)"
                                                Style="{ThemeResource SubtitleTextBlockStyle}"/>
+                                    <!-- TradingView-koppeling (v1.48) -->
+                                    <Button Content="📊  TradingView" VerticalAlignment="Center" FontSize="12" Padding="10,4"
+                                            ToolTipService.ToolTip="Pine Script met de top-setups of een watchlist voor TradingView maken">
+                                        <Button.Flyout>
+                                            <MenuFlyout>
+                                                <MenuFlyoutItem Text="Pine Script — top-setups (één script)" Click="TvPineTop_Click"/>
+                                                <MenuFlyoutItem Text="Watchlist exporteren (.txt)" Click="TvWatchlist_Click"/>
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                    </Button>
                                 </StackPanel>
 
                                 <!-- Diversified shortlist info (Sprint C) -->
@@ -584,6 +594,17 @@
                                                             ToolTipService.ToolTip="Activeer deze setup als paper trade om de strategie met live data te forward-testen."
                                                             CommandParameter="{x:Bind}"
                                                             Command="{Binding DataContext.OpenPaperTradeCommand, ElementName=RootPage}"/>
+                                                    <Button Content="📊"
+                                                            FontSize="11"
+                                                            Padding="6,2"
+                                                            ToolTipService.ToolTip="TradingView: grafiek openen of Pine Script voor deze setup">
+                                                        <Button.Flyout>
+                                                            <MenuFlyout>
+                                                                <MenuFlyoutItem Text="Open grafiek op TradingView" Tag="{x:Bind}" Click="TvOpenRow_Click"/>
+                                                                <MenuFlyoutItem Text="Pine Script voor deze setup…" Tag="{x:Bind}" Click="TvPineRow_Click"/>
+                                                            </MenuFlyout>
+                                                        </Button.Flyout>
+                                                    </Button>
                                                 </StackPanel>
                                             </Grid>
                                         </DataTemplate>

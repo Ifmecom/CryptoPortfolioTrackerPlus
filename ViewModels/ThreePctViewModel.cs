@@ -179,9 +179,11 @@ public partial class ThreePctViewModel : BaseViewModel
         ITradeService              tradeService,
         IFundamentalsService       fundamentals,
         PortfolioService           portfolioService,
-        Settings                   appSettings)
+        Settings                   appSettings,
+        ITradingViewService?       tradingView = null)
         : base(appSettings)
     {
+        _tradingView      = tradingView;
         _backtest         = backtest;
         _scorer           = scorer;
         _binance          = binance;
@@ -556,6 +558,62 @@ public partial class ThreePctViewModel : BaseViewModel
     private void CancelLiveScan() { _cts?.Cancel(); }
 
     private bool CanCancelLiveScan() => IsLiveScanRunning;
+
+    // =========================================================================
+    // TradingView (v1.48) — de scan gebruikt Binance-data, dus altijd BINANCE:XUSDT
+    // =========================================================================
+
+    private readonly ITradingViewService? _tradingView;
+
+    public static string TickerFor(ThreePctLiveRow row) => TradingViewSymbol.For(row.Symbol, null, "BINANCE", "USDT");
+
+    public PineSetup? PineSetupFor(ThreePctLiveRow row)
+    {
+        var setup = new PineSetup(
+            Ticker:    TickerFor(row),
+            Name:      string.IsNullOrWhiteSpace(row.CoinName) ? row.Symbol : row.CoinName,
+            Direction: row.Bias,
+            Entry:     row.EntryPrice,
+            StopLoss:  row.StopLoss,
+            Target1:   row.TakeProfit,
+            Score:     (int)Math.Round(row.Score),
+            Source:    "3% Trading",
+            Note:      $"Score {row.Score:0.0} · {SelectedTimeframe}" +
+                       (row.HistHitrate > 0 ? $" · hitrate {row.HistHitrate:0}%" : string.Empty) +
+                       (row.TopRank > 0 ? $" · Top #{row.TopRank}" : string.Empty));
+        return setup.IsValid ? setup : null;
+    }
+
+    /// <summary>Top-setups op rang; zonder Top X alle gekwalificeerde (niet-gefilterde) rijen.</summary>
+    public List<PineSetup> TopPineSetups()
+    {
+        var rows = LiveRows.Any(r => r.IsTopPick)
+            ? LiveRows.Where(r => r.IsTopPick).OrderBy(r => r.TopRank)
+            : LiveRows.Where(r => !r.IsFiltered).AsEnumerable();
+        return rows.Select(PineSetupFor).Where(s => s is not null).Select(s => s!).ToList();
+    }
+
+    public (string Content, int Count) BuildTradingViewWatchlist()
+    {
+        var top  = TopPineSetups().Select(s => s.Ticker).ToList();
+        var rest = LiveRows.Select(TickerFor).ToList();
+        var content = TradingViewWatchlist.Build(new (string, IEnumerable<string>)[]
+        {
+            ("CPT Top-setups", top),
+            ("CPT 3% Trading", rest),
+        });
+        return (content, top.Concat(rest).Where(t => t.Length > 0).Distinct().Count());
+    }
+
+    [RelayCommand]
+    private async Task OpenTradingView(ThreePctLiveRow row)
+    {
+        if (row is null || _tradingView is null) return;
+        var ticker = TickerFor(row);
+        LiveScanStatus = await _tradingView.OpenChartAsync(ticker, SelectedTimeframe)
+            ? $"TradingView geopend ({ticker})."
+            : "Openen van TradingView is mislukt.";
+    }
 
     // =========================================================================
     // Sprint C — Detail dialog

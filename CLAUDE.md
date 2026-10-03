@@ -313,6 +313,17 @@ Wat bijgewerkt moet worden:
 
 ---
 
+## TradingView-koppeling (subsysteem, v1.48)
+
+- **Geen API:** alles loopt via deeplinks (`TradingViewSymbol.ChartUrl`), Pine Script (v6) dat de gebruiker zelf plakt, en watchlist-bestanden (`###Sectie,BEURS:PAAR,…`). Geen scraping, geen webhooks (betaald plan + publieke URL) — zie PRD §3.6.
+- **Puur + getest** (`TradingViewTests`): `TradingViewSymbol` (DataSource → `BEURS:PAAR`, interval-mapping), `PineScriptGenerator` (`ForSetup`, `ForWatchlist` met `switch syminfo.ticker`, max. 40), `TradingViewWatchlist`.
+- **`ITradingViewService`** (singleton): `TickerFor` (standaardbeurs uit Settings; BYBIT → `BybitQuoteCoin`), `OpenChartAsync`, `CopyToClipboard`, `SaveAsync` (naar `AppConstants.TradingViewFolder`), `RevealInExplorer`. VM's krijgen hem als **optionele laatste ctor-parameter** (`ITradingViewService? tradingView = null`).
+- **UI:** `Dialogs/PineScriptDialog` (`ShowAsync`, `ExportWatchlistAsync`). Per pagina in de VM: `PineSetupFor(row)`, `TopPineSetups()`, `BuildTradingViewWatchlist()`, `OpenTradingViewCommand`; code-behind toont alleen de vensters.
+- **Pine-regels:** alles in het script via `PineScriptGenerator.P()` (invariant, geen exponent) en `Safe()` (geen quotes/regeleinden in strings). Wijzig je de gegenereerde Pine, controleer dan dat hij in de Pine Editor compileert — de tests dekken alleen de structuur.
+- Nieuwe pagina met setups? Voeg een 📊 TradingView-knop toe volgens hetzelfde patroon en noem hem in `PageHelpCatalog`.
+
+---
+
 ## Wishlist — toekomstige indicatoren
 
 Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:

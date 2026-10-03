@@ -1042,6 +1042,49 @@ public sealed partial class TradeAnalysisView : Page
         CopyButton.IsEnabled = true;
     }
 
+    // -----------------------------------------------------------------------
+    // TradingView (v1.48)
+    // -----------------------------------------------------------------------
+
+    private static ElementTheme Theme => App.Container.GetRequiredService<Settings>().AppTheme;
+
+    private async void TvOpen_Click(object sender, RoutedEventArgs e)
+    {
+        if (_vm.CurrentAnalysis is null) { _vm.StatusMessage = "Analyseer eerst een coin."; return; }
+        await _vm.OpenTradingViewCommand.ExecuteAsync(null);
+    }
+
+    private async void TvPineCurrent_Click(object sender, RoutedEventArgs e)
+    {
+        var setup = _vm.CurrentPineSetup();
+        if (setup is null)
+        {
+            _vm.StatusMessage = _vm.CurrentAnalysis is null
+                ? "Analyseer eerst een coin."
+                : "Deze analyse heeft geen geldige Long/Short-setup — geen Pine Script.";
+            return;
+        }
+        await Dialogs.PineScriptDialog.ShowAsync(XamlRoot, $"{setup.Name} ({setup.Direction})",
+            PineScriptGenerator.ForSetup(setup, DateTime.Now), setup.Ticker,
+            TradingViewSymbol.PairOf(setup.Ticker), Theme);
+    }
+
+    private async void TvPineTop_Click(object sender, RoutedEventArgs e)
+    {
+        var setups = _vm.TopPineSetups();
+        if (setups.Count == 0) { _vm.StatusMessage = "Geen setups — klik eerst 'Analyseer alles'."; return; }
+        await Dialogs.PineScriptDialog.ShowAsync(XamlRoot, $"Trade Advies top-setups ({setups.Count})",
+            PineScriptGenerator.ForWatchlist(setups, "CPT Trade Advies top-setups", DateTime.Now), null,
+            "advies_top", Theme);
+    }
+
+    private async void TvWatchlist_Click(object sender, RoutedEventArgs e)
+    {
+        var (content, count) = _vm.BuildTradingViewWatchlist();
+        if (count == 0) { _vm.StatusMessage = "Niets te exporteren — analyseer eerst."; return; }
+        await Dialogs.PineScriptDialog.ExportWatchlistAsync(XamlRoot, "advies", content, count, Theme);
+    }
+
     private static string FormatForDiscord(TradeAnalysisResult r)
     {
         var sb = new StringBuilder();
