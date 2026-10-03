@@ -33,6 +33,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
         AddFeature("📊", "Koppeling met TradingView",
             "Grafiek openen, Pine Script met entry/stop/doelen en alerts, en watchlist-export — via de 📊-knop op de setup-pagina's.");
 
+        AddFeature("🔔", "TradingView-alerts in de app",
+            "Met een betaald plan: webhook-alerts via ntfy.sh naar de app en Telegram; optioneel een Bybit Demo-order bij 'Entry geraakt'.");
+
         AddFeature("🏆", "Top X op elke setup-pagina",
             "Markeer of toon alleen de meest kansrijke setups, op kansscore (score × R/R × gemeten trefkans).");
 

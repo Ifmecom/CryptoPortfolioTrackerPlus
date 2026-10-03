@@ -41,6 +41,13 @@ public sealed partial class WhatsNewView : Page
             "Standaardbeurs en interval stel je in bij Instellingen → TradingView. Een gratis TradingView-account volstaat; " +
             "de app stuurt niets naar TradingView.");
 
+        AddFeature("🔔", "TradingView-alerts in de app (webhooks)",
+            "Heb je een betaald TradingView-plan? Zet bij Instellingen → TradingView 'Webhook-alerts ontvangen' aan en plak de " +
+            "geheime URL in je TradingView-alert (Meldingen → Webhook-URL). Alerts van de CPT-scripts — entry, stop-loss of TP1 " +
+            "geraakt — komen dan binnen ~20 seconden in de app en via Telegram binnen, met de gevolgde setup erbij. Optioneel " +
+            "plaatst een 'Entry geraakt'-alert automatisch een Bybit Demo-order voor een Long-setup die je volgt in de Setup Tracker " +
+            "(standaard uit, alleen demo). De alerts lopen via de gratis doorgeefdienst ntfy.sh; met 'Test' controleer je de verbinding.");
+
         AddFeature("🏆", "Top X: welke setups eerst beoordelen",
             "Op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading staat boven de lijst een " +
             "Top-balk: kies 3, 5, 10 of 20 en de meest kansrijke setups krijgen een gouden rand en een 🏆-badge — of " +

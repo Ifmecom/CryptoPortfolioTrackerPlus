@@ -192,7 +192,9 @@ public static class PineScriptGenerator
         "2. Open TradingView (knop 'Open grafiek') en klik onderaan op 'Pine Editor'.\n" +
         "3. Vervang de inhoud door het gekopieerde script en klik 'Opslaan' en daarna 'Toevoegen aan grafiek'.\n" +
         "4. Alerts: klik op de grafiek op ⋯ (of Alt+A) → Alert toevoegen → Conditie: dit script → kies " +
-        "'Entry geraakt', 'Stop-loss geraakt' of 'TP1 geraakt'.\n\n" +
+        "'Entry geraakt', 'Stop-loss geraakt' of 'TP1 geraakt'.\n" +
+        "5. Alerts in de app (betaald plan): tab Meldingen → 'Webhook-URL' aanvinken → plak de URL uit " +
+        "Instellingen → TradingView. Laat het bericht staan zoals het is.\n\n" +
         "Het script tekent alleen niveaus en geeft alerts — het plaatst geen orders. Geen financieel advies.";
 
     // ── Hulpfuncties ────────────────────────────────────────────────────────
@@ -208,7 +210,7 @@ public static class PineScriptGenerator
     }
 
     private static string AlertMessage(string? pair, string evt)
-        => "'{\"bron\":\"CPT\",\"event\":\"" + evt + "\",\"ticker\":\"{{ticker}}\",\"prijs\":{{close}}" +
+        => "'{\"bron\":\"CPT\",\"event\":\"" + evt + "\",\"ticker\":\"{{ticker}}\",\"exchange\":\"{{exchange}}\",\"prijs\":{{close}}" +
            (pair is null ? "" : ",\"paar\":\"" + pair + "\"") + "}'";
 
     private static double RiskReward(PineSetup s)

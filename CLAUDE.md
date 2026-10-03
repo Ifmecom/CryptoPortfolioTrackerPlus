@@ -315,7 +315,8 @@ Wat bijgewerkt moet worden:
 
 ## TradingView-koppeling (subsysteem, v1.48)
 
-- **Geen API:** alles loopt via deeplinks (`TradingViewSymbol.ChartUrl`), Pine Script (v6) dat de gebruiker zelf plakt, en watchlist-bestanden (`###Sectie,BEURS:PAAR,…`). Geen scraping, geen webhooks (betaald plan + publieke URL) — zie PRD §3.6.
+- **Geen API:** alles loopt via deeplinks (`TradingViewSymbol.ChartUrl`), Pine Script (v6) dat de gebruiker zelf plakt, en watchlist-bestanden (`###Sectie,BEURS:PAAR,…`). Geen scraping — zie PRD §3.6.
+- **Webhooks via ntfy.sh:** `TradingViewWebhookService` (singleton, gestart in `App` na het venster) pollt `ntfy.sh/{geheim kanaal}/json?poll=1&since={id}` elke 20 s. Pure parsing/poort in `TradingViewAlerts` (`TradingViewAlertsTests`). Het alertbericht-formaat (`bron`/`event`/`ticker`/`exchange`/`prijs`) komt uit `PineScriptGenerator.AlertMessage` — wijzig beide samen. Automatische order alleen via `TradingViewAlerts.AutoOrderCheck` (gevolgde Long-setup, Watching, Bybit Demo); nooit prijs of munt uit het alertbericht zelf gebruiken voor een order (iedereen met de kanaalnaam kan posten).
 - **Puur + getest** (`TradingViewTests`): `TradingViewSymbol` (DataSource → `BEURS:PAAR`, interval-mapping), `PineScriptGenerator` (`ForSetup`, `ForWatchlist` met `switch syminfo.ticker`, max. 40), `TradingViewWatchlist`.
 - **`ITradingViewService`** (singleton): `TickerFor` (standaardbeurs uit Settings; BYBIT → `BybitQuoteCoin`), `OpenChartAsync`, `CopyToClipboard`, `SaveAsync` (naar `AppConstants.TradingViewFolder`), `RevealInExplorer`. VM's krijgen hem als **optionele laatste ctor-parameter** (`ITradingViewService? tradingView = null`).
 - **UI:** `Dialogs/PineScriptDialog` (`ShowAsync`, `ExportWatchlistAsync`). Per pagina in de VM: `PineSetupFor(row)`, `TopPineSetups()`, `BuildTradingViewWatchlist()`, `OpenTradingViewCommand`; code-behind toont alleen de vensters.

@@ -293,7 +293,7 @@
                         <!-- TradingView (v1.48)                               -->
                         <!-- ================================================ -->
                         <ct:SettingsExpander Header="TradingView"
-                            Description="Grafieken openen op TradingView, Pine Scripts en watchlists. Werkt met een gratis TradingView-account; er worden geen gegevens naar TradingView gestuurd."
+                            Description="Grafieken openen op TradingView, Pine Scripts en watchlists. Grafieken en scripts werken met een gratis account; webhook-alerts vereisen een betaald plan. Er worden geen gegevens naar TradingView gestuurd."
                             HeaderIcon="{ui:FontIcon Glyph=&#xE9D2;}">
                             <ct:SettingsExpander.Items>
                                 <ct:SettingsCard Header="Standaardbeurs"
@@ -307,6 +307,32 @@
                                     <ComboBox ItemsSource="{x:Bind _viewModel.TradingViewIntervals}"
                                               SelectedItem="{x:Bind _viewModel.TradingViewInterval, Mode=TwoWay}"
                                               MinWidth="140"/>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="Webhook-alerts ontvangen (betaald TradingView-plan)"
+                                    Description="TradingView stuurt een alert naar een geheim kanaal op ntfy.sh (gratis doorgeefdienst); de app haalt hem daar elke 20 seconden op zolang hij draait. Je krijgt een Telegram-melding en ziet of de alert bij een gevolgde setup hoort. Alerts die binnenkomen terwijl de app uit staat, worden bij de volgende start nog verwerkt (ntfy bewaart ze 12 uur).">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.IsTradingViewWebhookEnabled, Mode=TwoWay}"/>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="Webhook-URL voor TradingView"
+                                    Description="Plak deze URL in TradingView: alert maken → tab Meldingen → Webhook-URL aanvinken. Laat het bericht staan zoals het Pine Script het invult. Houd de URL geheim: wie hem kent, kan meelezen en nep-alerts sturen. Uitgelekt? Klik 'Nieuwe URL'.">
+                                    <StackPanel Spacing="6" MinWidth="360">
+                                        <TextBox Text="{x:Bind _viewModel.TradingViewWebhookUrl, Mode=OneWay}" IsReadOnly="True"
+                                                 FontFamily="Consolas" FontSize="12" PlaceholderText="Zet de schakelaar hierboven aan"/>
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <Button Content="Kopiëren" Command="{x:Bind _viewModel.CopyTradingViewWebhookUrlCommand}"/>
+                                            <Button Content="Nieuwe URL" Command="{x:Bind _viewModel.NewTradingViewWebhookUrlCommand}"
+                                                    ToolTipService.ToolTip="Maakt een nieuw geheim kanaal; de oude URL werkt daarna niet meer"/>
+                                            <Button Content="Test" Command="{x:Bind _viewModel.TestTradingViewWebhookCommand}"
+                                                    ToolTipService.ToolTip="Stuurt een testbericht naar je kanaal; het verschijnt hieronder en in Telegram"/>
+                                        </StackPanel>
+                                        <TextBlock Text="{x:Bind _viewModel.TradingViewWebhookStatus, Mode=OneWay}" TextWrapping="Wrap" FontSize="12"
+                                                   Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
+                                        <TextBlock Text="{x:Bind _viewModel.TradingViewWebhookAlerts, Mode=OneWay}" TextWrapping="Wrap" FontSize="11"
+                                                   FontFamily="Consolas"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="Bij 'Entry geraakt': automatisch Bybit Demo-order"
+                                    Description="Alleen voor een setup die je volgt in de Setup Tracker, Long (Bybit Demo is spot), nog op Watching en zonder gekoppelde order. Limit-order op de entry van de setup met SL en TP1, inleg volgens 'Risico per trade' bij Automatisch handelen; telt mee voor het dagmaximum en de risicobewakers gelden. Alleen demo — echt geld staat op slot.">
+                                    <ToggleSwitch IsOn="{x:Bind _viewModel.IsTradingViewWebhookAutoOrder, Mode=TwoWay}"/>
                                 </ct:SettingsCard>
                                 <ct:SettingsCard Header="Exportmap (.pine en watchlists)"
                                     Description="{x:Bind _viewModel.TradingViewFolder}">
@@ -861,14 +887,24 @@
                             HeaderIcon="{ui:FontIcon Glyph=&#xE9D2;}"
                             IsExpanded="True">
                             <ct:SettingsExpander.Items>
+                                <ct:SettingsCard Header="ntfy.sh (doorgeefdienst TradingView-webhooks)"
+                                    Description="https://ntfy.sh/{geheim kanaal}/json?poll=1"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8BD;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Alleen als 'Webhook-alerts ontvangen' aan staat: TradingView post alerts naar een geheim kanaal, de app haalt ze elke 20 s op. Inhoud: event, paar, beurs en koers — geen persoonsgegevens of sleutels."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Kosten: gratis · geen account · berichten 12 uur bewaard · Beheerd door: TradingViewWebhookService"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
                                 <ct:SettingsCard Header="TradingView (website, deeplinks)"
                                     Description="https://www.tradingview.com/chart/?symbol=BEURS:PAAR"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
                                     <StackPanel MaxWidth="320" Spacing="4">
                                         <TextBlock TextWrapping="Wrap" FontSize="12"
-                                                   Text="Opent de grafiek van een munt in je browser. TradingView heeft geen openbare API: de app haalt er geen data op en stuurt er niets naartoe. Pine Script (v6) en watchlists plak/importeer je zelf."/>
+                                                   Text="Opent de grafiek van een munt in je browser. TradingView heeft geen openbare API: de app haalt er geen data op en stuurt er niets naartoe (alerts komen via ntfy.sh). Pine Script (v6) en watchlists plak/importeer je zelf."/>
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                   Text="Kosten: gratis account volstaat · Alerts uit het Pine Script werken binnen TradingView; webhooks vereisen een betaald plan (niet gekoppeld)."/>
+                                                   Text="Kosten: gratis account volstaat · Alerts uit het Pine Script werken binnen TradingView; webhooks (betaald plan) komen via ntfy.sh in de app — zie hierboven."/>
                                     </StackPanel>
                                 </ct:SettingsCard>
                             </ct:SettingsExpander.Items>

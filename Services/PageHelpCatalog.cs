@@ -231,6 +231,7 @@ public static class PageHelpCatalog
                     "Zet een setup op ⏹ Verlopen als het patroon niet meer geldig is, zodat hij je statistiek niet vertekent.",
                     "Kijk na een paar weken welke scoreklasse en welk marktregime het best presteerden, en focus daarop.",
                     "📊 TradingView op een setup: grafiek openen of een Pine Script met entry/stop/TP1/TP2 en alerts, zodat TradingView je waarschuwt als de entry geraakt wordt. Rechtsboven: één script of een watchlist met al je lopende (top-)setups.",
+                    "Met webhook-alerts aan (Instellingen → TradingView) komen die alerts in de app en via Telegram binnen, met de setup erbij. Zet je 'automatisch Bybit Demo-order' aan, dan plaatst een 'Entry geraakt'-alert op een Long-setup die hier op Watching staat een demo-order met de SL en TP1 van de setup.",
                     "🏆 Top X (balk boven de lijst): markeert de setups die het eerst het beoordelen waard zijn, op kansscore (kwaliteit × R/R × gemeten trefkans × waarschuwingen). Kies het aantal, zet \"Alleen top\" aan om alleen die te zien, en beweeg over 🏆 voor de opbouw. Het is een volgorde om te beoordelen, geen advies."),
                 S(Watch, "Let op",
                     "Weinig afgesloten setups = toeval speelt een grote rol. Trek pas conclusies bij voldoende aantallen."),
@@ -407,9 +408,11 @@ public static class PageHelpCatalog
                     "Gebruik voor exchanges een API-sleutel met alleen handelsrechten, nooit opnamerechten. Klik daarna 'Verbinding testen'.",
                     "Zet automatisch handelen eerst streng af (hoge minimale score, 1–2 orders per dag) en kijk een paar dagen mee via Telegram en het Trade Journal.",
                     "De kill-switch stopt direct alle nieuwe orders, handig als het even te hard gaat.",
-                    "TradingView: kies de beurs waarop je in TradingView kijkt (bijv. BYBIT als je op Bybit EU handelt) en het interval waarmee grafieken openen. Exports (.pine en watchlists) staan in de exportmap."),
+                    "TradingView: kies de beurs waarop je in TradingView kijkt (bijv. BYBIT als je op Bybit EU handelt) en het interval waarmee grafieken openen. Exports (.pine en watchlists) staan in de exportmap.",
+                    "Webhook-alerts (betaald TradingView-plan): zet 'Webhook-alerts ontvangen' aan, klik 'Kopiëren' en plak de URL in TradingView bij de alert → Meldingen → Webhook-URL. Klik 'Test' om te zien of het werkt. De app haalt alerts elke 20 s op zolang hij draait en stuurt ze door naar Telegram. Optioneel plaatst hij bij 'Entry geraakt' een Bybit Demo-order — alleen voor een Long-setup die je volgt in de Setup Tracker."),
                 S(Watch, "Let op",
-                    "Sleutels worden versleuteld opgeslagen op deze pc. Deel ze nooit met anderen."),
+                    "Sleutels worden versleuteld opgeslagen op deze pc. Deel ze nooit met anderen.",
+                    "Houd de webhook-URL geheim: wie hem kent, kan meelezen en nep-alerts sturen. Uitgelekt? Klik 'Nieuwe URL' en pas hem aan in je TradingView-alerts."),
             }),
 
         ["HelpView"] = new(

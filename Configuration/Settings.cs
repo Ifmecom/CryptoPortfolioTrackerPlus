@@ -303,6 +303,37 @@ public partial class Settings : ObservableObject
         set { _store.Set("TradingViewInterval", string.IsNullOrWhiteSpace(value) ? "1D" : value.Trim().ToUpperInvariant()); OnPropertyChanged(nameof(TradingViewInterval)); }
     }
 
+    /// <summary>TradingView-webhooks (v1.48): alerts ophalen van het geheime ntfy.sh-kanaal (standaard uit).</summary>
+    public bool IsTradingViewWebhookEnabled
+    {
+        get => _store.Get("IsTradingViewWebhookEnabled", false);
+        set { _store.Set("IsTradingViewWebhookEnabled", value); OnPropertyChanged(nameof(IsTradingViewWebhookEnabled)); }
+    }
+
+    /// <summary>Geheim ntfy.sh-kanaal voor de webhook (leeg = nog niet aangemaakt).</summary>
+    public string TradingViewWebhookTopic
+    {
+        get => _store.Get("TradingViewWebhookTopic", string.Empty) ?? string.Empty;
+        set { _store.Set("TradingViewWebhookTopic", value?.Trim() ?? string.Empty); OnPropertyChanged(nameof(TradingViewWebhookTopic)); }
+    }
+
+    /// <summary>Id van het laatst verwerkte ntfy-bericht (cursor, zodat alerts na een herstart niet opnieuw komen).</summary>
+    public string TradingViewWebhookLastId
+    {
+        get => _store.Get("TradingViewWebhookLastId", string.Empty) ?? string.Empty;
+        set => _store.Set("TradingViewWebhookLastId", value ?? string.Empty);
+    }
+
+    /// <summary>
+    /// Bij 'Entry geraakt' voor een gevolgde Long-setup automatisch een Bybit Demo-order plaatsen (standaard uit).
+    /// Telt mee voor het dagmaximum van automatisch handelen; de risk-guardrails gelden.
+    /// </summary>
+    public bool IsTradingViewWebhookAutoOrder
+    {
+        get => _store.Get("IsTradingViewWebhookAutoOrder", false);
+        set { _store.Set("IsTradingViewWebhookAutoOrder", value); OnPropertyChanged(nameof(IsTradingViewWebhookAutoOrder)); }
+    }
+
     /// <summary>Top X-keuze per pagina (v1.48): aantal te markeren setups (0 = uit, standaard 5).</summary>
     public int GetTopPickCount(string page) => _store.Get($"TopPicks.{page}.Count", 5);
     public void SetTopPickCount(string page, int value) => _store.Set($"TopPicks.{page}.Count", Math.Clamp(value, 0, 50));

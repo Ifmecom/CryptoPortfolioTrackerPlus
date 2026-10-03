@@ -108,6 +108,9 @@ public partial class App : Application
         // Start the 15-minute sentiment collection background timer AFTER the window is visible
         // so the background DbContext queries don't race with startup initialization queries
         Container.GetRequiredService<ISentimentService>().Start();
+
+        // TradingView-webhooks (v1.48): haalt alerts op van het geheime ntfy.sh-kanaal (doet niets als het uit staat)
+        Container.GetRequiredService<ITradingViewWebhookService>().Start();
     }
 
     private async Task MoveUserPreferencesToSettingsIfNeeded()
@@ -287,6 +290,7 @@ public partial class App : Application
         services.AddScoped<ILiveOrderExecutor, BybitDemoExecutor>();          // v1.47 — Bybit EU Demo (spot)
         services.AddScoped<IAutoTraderService, AutoTraderService>();          // v1.47 — automatisch handelen (demo)
         services.AddSingleton<ITradingViewService, TradingViewService>();     // v1.48 — TradingView: grafiek, Pine Script, watchlist
+        services.AddSingleton<ITradingViewWebhookService, TradingViewWebhookService>(); // v1.48 — TradingView-alerts via ntfy.sh
 
         // Pattern Trading (Phase 1 + 2)
         services.AddSingleton<IPatternDetectionService, PatternDetectionService>();

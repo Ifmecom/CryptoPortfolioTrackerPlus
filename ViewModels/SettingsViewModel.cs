@@ -165,6 +165,94 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
 
     public string TradingViewFolder => AppConstants.TradingViewFolder;
 
+    // TradingView-webhooks via ntfy.sh (v1.48)
+    private ITradingViewWebhookService? _webhook;
+    private Microsoft.UI.Dispatching.DispatcherQueue? _dispatcher;
+
+    [ObservableProperty] private bool   isTradingViewWebhookEnabled;
+    [ObservableProperty] private bool   isTradingViewWebhookAutoOrder;
+    [ObservableProperty] private string tradingViewWebhookUrl    = string.Empty;
+    [ObservableProperty] private string tradingViewWebhookStatus = string.Empty;
+    [ObservableProperty] private string tradingViewWebhookAlerts = string.Empty;
+
+    partial void OnIsTradingViewWebhookEnabledChanged(bool value)
+    {
+        if (_initializingWebhook) return;
+        AppSettings.IsTradingViewWebhookEnabled = value;
+        if (value && !TradingViewAlerts.IsValidTopic(AppSettings.TradingViewWebhookTopic))
+            NewTradingViewWebhookUrl();
+        _ = _webhook?.PollNowAsync();
+    }
+
+    partial void OnIsTradingViewWebhookAutoOrderChanged(bool value)
+    {
+        if (!_initializingWebhook) AppSettings.IsTradingViewWebhookAutoOrder = value;
+    }
+
+    private bool _initializingWebhook;
+
+    private void InitializeWebhook()
+    {
+        _initializingWebhook = true;
+        IsTradingViewWebhookEnabled   = AppSettings.IsTradingViewWebhookEnabled;
+        IsTradingViewWebhookAutoOrder = AppSettings.IsTradingViewWebhookAutoOrder;
+        _initializingWebhook = false;
+        TradingViewWebhookUrl = TradingViewAlerts.IsValidTopic(AppSettings.TradingViewWebhookTopic)
+            ? TradingViewAlerts.WebhookUrl(AppSettings.TradingViewWebhookTopic) : string.Empty;
+
+        try
+        {
+            _dispatcher = Microsoft.UI.Dispatching.DispatcherQueue.GetForCurrentThread();
+            _webhook = App.Container.GetService<ITradingViewWebhookService>();
+            if (_webhook is not null)
+            {
+                _webhook.StateChanged += (_, _) => _dispatcher?.TryEnqueue(RefreshWebhookState);
+                RefreshWebhookState();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Debug(ex, "TradingView-webhook: status koppelen mislukt");
+        }
+    }
+
+    private void RefreshWebhookState()
+    {
+        if (_webhook is null) return;
+        TradingViewWebhookStatus = _webhook.Status;
+        var recent = _webhook.RecentAlerts.Take(5).Select(TradingViewAlerts.Describe).ToList();
+        TradingViewWebhookAlerts = recent.Count == 0 ? string.Empty : string.Join("\n", recent);
+    }
+
+    /// <summary>Maakt een nieuw geheim kanaal. De oude URL werkt daarna niet meer: pas hem aan in je TradingView-alerts.</summary>
+    [RelayCommand]
+    private void NewTradingViewWebhookUrl()
+    {
+        AppSettings.TradingViewWebhookTopic  = TradingViewAlerts.NewTopic();
+        AppSettings.TradingViewWebhookLastId = string.Empty;
+        TradingViewWebhookUrl = TradingViewAlerts.WebhookUrl(AppSettings.TradingViewWebhookTopic);
+        _ = _webhook?.PollNowAsync();
+    }
+
+    [RelayCommand]
+    private void CopyTradingViewWebhookUrl()
+    {
+        if (string.IsNullOrEmpty(TradingViewWebhookUrl)) return;
+        bool ok = App.Container.GetRequiredService<ITradingViewService>().CopyToClipboard(TradingViewWebhookUrl);
+        TradingViewWebhookStatus = ok ? "✓ Webhook-URL gekopieerd — plak hem in TradingView bij de alert → Meldingen → Webhook-URL." : "Kopiëren mislukt.";
+    }
+
+    [RelayCommand]
+    private async Task TestTradingViewWebhook()
+    {
+        if (_webhook is null) return;
+        if (!AppSettings.IsTradingViewWebhookEnabled) { TradingViewWebhookStatus = "Zet eerst 'Webhook-alerts ontvangen' aan."; return; }
+        TradingViewWebhookStatus = "Testbericht versturen…";
+        if (!await _webhook.SendTestAsync()) { TradingViewWebhookStatus = "Testbericht versturen mislukt — controleer je internetverbinding."; return; }
+        await Task.Delay(1500);
+        await _webhook.PollNowAsync();
+    }
+
     [RelayCommand]
     private void OpenTradingViewFolder()
     {
@@ -594,6 +682,7 @@ public partial class SettingsViewModel : BaseViewModel, INotifyPropertyChanged
         _exchangeAccountService = exchangeAccountService;
 
         InitializeFields();
+        InitializeWebhook();
     }
 
     private void InitializeFields()
