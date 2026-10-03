@@ -44,16 +44,21 @@ public sealed class PineScriptDialog : ContentDialog
             stack.Children.Add(open);
         }
 
-        stack.Children.Add(new TextBox
+        // Let op de volgorde: AcceptsReturn moet vóór Text staan. Een TextBox zonder AcceptsReturn knipt de
+        // tekst af na de eerste regel (dan zie je alleen "//@version=6").
+        var scriptBox = new TextBox
         {
-            Text = script,
-            IsReadOnly = true,
             AcceptsReturn = true,
             TextWrapping = TextWrapping.NoWrap,
+            IsReadOnly = true,
             FontFamily = new FontFamily("Consolas"),
             FontSize = 12,
             Height = 360,
-        });
+        };
+        ScrollViewer.SetVerticalScrollBarVisibility(scriptBox, ScrollBarVisibility.Auto);
+        ScrollViewer.SetHorizontalScrollBarVisibility(scriptBox, ScrollBarVisibility.Auto);
+        scriptBox.Text = script;
+        stack.Children.Add(scriptBox);
         stack.Children.Add(_status);
         Content = stack;
 
