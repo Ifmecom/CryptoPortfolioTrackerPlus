@@ -47,6 +47,7 @@ public partial class SetupTrackerViewModel : BaseViewModel
     // ── Top X (v1.48) ─────────────────────────────────────────────────────────
     private const string TopPage = "SetupTracker";
     private bool _initializingTop;
+    private Dictionary<string, Coin> _coinsByApiId = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty] private int    topPickCount;
     [ObservableProperty] private bool   onlyTopPicks;
@@ -265,7 +266,12 @@ public partial class SetupTrackerViewModel : BaseViewModel
                     HitRateSamples:  cal?.TradeCount ?? 0,
                     HitRateReliable: cal?.IsReliable ?? false,
                     CounterTrend:    TrendAlignment.IsCounterTrend(s.Direction, s.Bias1D),
-                    Eligible:        s.Status == WatchedSetupStatus.Watching);
+                    Eligible:        s.Status == WatchedSetupStatus.Watching,
+                    Health:          _coinsByApiId.TryGetValue(s.CoinApiId, out var coin)
+                                         ? CoinHealth.Evaluate(coin.Price, coin.MarketCap, coin.Rank, coin.Change1Month,
+                                               atr: null, ma50DistPct: coin.Ma50DistPerc == 0 ? null : coin.Ma50DistPerc,
+                                               minAtrFraction: 0)
+                                         : null);
             }, TopPickCount);
             int candidates = list.Count(s => s.TopRank > 0);
             string topSummary = TopPickCount == 0 || candidates == 0
@@ -322,11 +328,15 @@ public partial class SetupTrackerViewModel : BaseViewModel
         var dbResult = await _libraryService.GetCoinsFromContext();
         dbResult.IfSucc(coins =>
         {
+            var byApiId = new Dictionary<string, Coin>(StringComparer.OrdinalIgnoreCase);
             foreach (var c in coins)
             {
                 if (c.ApiId != null && c.Price > 0)
                     map[c.ApiId] = c.Price;
+                if (c.ApiId != null)
+                    byApiId[c.ApiId] = c;
             }
+            _coinsByApiId = byApiId;   // voor de gezondheidscheck in de Top X (v1.48)
         });
 
         // 2. Override with live in-memory prices where available (more up-to-date)

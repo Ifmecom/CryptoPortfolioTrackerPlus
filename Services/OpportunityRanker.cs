@@ -26,7 +26,8 @@ public sealed record OpportunityInput(
     bool    TfConflict      = false,
     bool    ThinLiquidity   = false,
     bool    NearBreakout    = false,
-    bool    Eligible        = true);
+    bool    Eligible        = true,
+    CoinHealthResult? Health = null);
 
 /// <summary>Uitkomst per setup: positie (1 = beste), kansscore en een uitleg van de opbouw.</summary>
 public sealed record OpportunityRank(string Key, int Rank, double KansScore, string Explanation);
@@ -63,6 +64,7 @@ public static class OpportunityRanker
 
     public static bool IsEligible(OpportunityInput i)
         => i.Eligible
+           && i.Health is not { Excluded: true }
            && (i.Direction == "Long" || i.Direction == "Short")
            && i.Quality > 0 && !double.IsNaN(i.Quality);
 
@@ -108,6 +110,11 @@ public static class OpportunityRanker
         if (i.TfConflict)    { score *= TfConflictFactor;    parts.Add($"TF-conflict 1D/4H → ×{F(TfConflictFactor, "0.00")}"); }
         if (i.ThinLiquidity) { score *= ThinLiquidityFactor; parts.Add($"Dunne liquiditeit → ×{F(ThinLiquidityFactor, "0.00")}"); }
         if (i.NearBreakout)  { score *= NearBreakoutFactor;  parts.Add($"Bijna breakout → ×{F(NearBreakoutFactor, "0.00")}"); }
+        if (i.Health is { Excluded: false } h && h.Factor != 1.0)
+        {
+            score *= h.Factor;
+            parts.AddRange(h.Reasons);
+        }
 
         return (Math.Round(Math.Clamp(score, 0, 100), 1), parts);
     }
@@ -181,8 +188,11 @@ public static class OpportunityRanker
         "• × bewijs: alleen als er genoeg metingen zijn van vergelijkbare setups — de gemeten trefkans wordt " +
         "omgerekend naar een verwachte opbrengst in R (×0,6–×1,4).\n" +
         "• × waarschuwingen: tegen de daily-trend ×0,85, TF-conflict ×0,90, dunne liquiditeit ×0,80; " +
-        "bijna breakout ×1,05.\n\n" +
-        "Setups zonder richting of met een ongeldige setup doen niet mee. Beweeg over 🏆 voor de opbouw per " +
+        "bijna breakout ×1,05.\n" +
+        "• × gezondheid van de munt: ingestort (> 70% gedaald in een maand of > 50% onder het 50-daags " +
+        "gemiddelde) ×0,60, microcap (< $10 mln) ×0,80.\n\n" +
+        "Doen niet mee: setups zonder richting of met een ongeldige setup, stablecoins, en munten die dood of " +
+        "onverhandelbaar lijken (geen marktwaarde of rang, < $1 mln, geen of te weinig beweging). Beweeg over 🏆 voor de opbouw per " +
         "setup. Dit is een volgorde om te beoordelen, geen voorspelling of financieel advies.";
 
     private static string F(double v, string fmt) => v.ToString(fmt, Nl);

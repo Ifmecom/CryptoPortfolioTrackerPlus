@@ -76,6 +76,8 @@ public partial class ThreePctViewModel : BaseViewModel
     private bool _initializingTop;
     /// <summary>Volledige Live Scan-uitkomst; <see cref="LiveRows"/> is de weergave daarvan (markeren of alleen top).</summary>
     private List<ThreePctLiveRow> _allLiveRows = new();
+    /// <summary>Munten van de laatste scan per symbool — voor de gezondheidscheck in de Top X.</summary>
+    private Dictionary<string, Coin> _scanCoins = new(StringComparer.OrdinalIgnoreCase);
 
     [ObservableProperty] private int    topPickCount;
     [ObservableProperty] private bool   onlyTopPicks;
@@ -124,7 +126,13 @@ public partial class ThreePctViewModel : BaseViewModel
             HitRateReliable: r.IsReliable,
             // Stablecoins hebben geen edge (zelfde poort als Pattern Trading / Trade Advies / Analyse).
             Eligible:        !r.IsFiltered && r.EntryPrice > 0 && r.StopLoss > 0 && r.TakeProfit > 0
-                             && !TradeSetupGate.IsStablecoin(r.Symbol));
+                             && !TradeSetupGate.IsStablecoin(r.Symbol),
+            // Marktwaarde/rang/instorting; liquiditeit zit al in de F6-poortwachter (atr: null).
+            Health:          _scanCoins.TryGetValue(r.Symbol, out var coin)
+                                 ? CoinHealth.Evaluate(coin.Price, coin.MarketCap, coin.Rank, coin.Change1Month,
+                                       atr: null, ma50DistPct: coin.Ma50DistPerc == 0 ? null : coin.Ma50DistPerc,
+                                       minAtrFraction: 0)
+                                 : null);
     }
 
     // ── Diversified shortlist (Sprint C) ─────────────────────────────────────
@@ -357,6 +365,10 @@ public partial class ThreePctViewModel : BaseViewModel
             _btcBarsCache = await _binance.GetKlinesAsync("BTCUSDT", pars.Timeframe, limit: 100);
 
             var coins = await GetCoinsAsync();
+            _scanCoins = coins
+                .Where(c => !string.IsNullOrEmpty(c.Symbol))
+                .GroupBy(c => c.Symbol, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
             if (!coins.Any())
             {
                 LiveScanStatus = "Geen coins gevonden in de database.";

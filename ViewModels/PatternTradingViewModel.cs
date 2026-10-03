@@ -90,6 +90,7 @@ public partial class PatternTradingViewModel : BaseViewModel
     private OpportunityInput ToOpportunity(PatternCoinRow r)
     {
         var setup = r.Analysis.Setup;
+        var coin  = r.Analysis.Coin;
         var cal   = SignalCalibrationCalculator.Lookup(_patternCalibration, SignalOutcomeSources.Pattern, r.Direction, r.Score);
         return new OpportunityInput(
             Key:             string.IsNullOrEmpty(r.ApiId) ? r.Symbol : r.ApiId,
@@ -103,7 +104,11 @@ public partial class PatternTradingViewModel : BaseViewModel
             TfConflict:      r.HasTfConflict,
             ThinLiquidity:   r.LiquidityLevel == LiquidityClassifier.Level.Thin,
             NearBreakout:    r.IsNearBreakout,
-            Eligible:        r.HasSetup && (setup?.IsValid ?? false));
+            Eligible:        r.HasSetup && (setup?.IsValid ?? false),
+            // Volatiliteit is al door de setup-poort gecontroleerd (atr: null); hier marktwaarde/rang/instorting.
+            Health:          CoinHealth.Evaluate(coin.Price, coin.MarketCap, coin.Rank, coin.Change1Month,
+                                 atr: null, ma50DistPct: coin.Ma50DistPerc == 0 ? null : coin.Ma50DistPerc,
+                                 minAtrFraction: 0));
     }
 
     private async Task LoadPatternCalibrationAsync()

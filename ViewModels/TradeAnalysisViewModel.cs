@@ -96,7 +96,11 @@ public partial class TradeAnalysisViewModel : BaseViewModel
             Quality:      s.Direction == "Short" ? 100 - s.Score : s.Score,
             RiskReward:   s.RiskReward1 > 0 ? s.RiskReward1 : null,
             CounterTrend: TrendAlignment.IsCounterTrend(s.Direction, s.DailyBias),
-            Eligible:     s.SetupValid && s.EntryPrice > 0), TopPickCount);
+            Eligible:     s.SetupValid && s.EntryPrice > 0,
+            // Volatiliteit is al door de setup-poort gecontroleerd (atr: null); hier marktwaarde/rang/instorting.
+            Health:       CoinHealth.Evaluate(s.Coin.Price, s.Coin.MarketCap, s.Coin.Rank, s.Coin.Change1Month,
+                              atr: null, ma50DistPct: s.Coin.Ma50DistPerc == 0 ? null : s.Coin.Ma50DistPerc,
+                              minAtrFraction: 0)), TopPickCount);
 
         int candidates = list.Count(s => s.TopRank > 0);
         TopPickSummary = TopPickCount == 0 || candidates == 0

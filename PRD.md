@@ -224,8 +224,9 @@ Op elke pagina met setups of adviezen staat een gedeelde `Controls/TopPicksBar` 
 | R/R | R/R ÷ 2, begrensd 0,25–1,4 (1:2 neutraal, 1:1 = ×0,5; onbekend = 1) |
 | Bewijs | alleen bij een betrouwbare gemeten trefkans p (drempels uit `ReliabilityThresholds`): E = p·R/R − (1−p) (zonder R/R 1:1), factor 1 + E/2, begrensd 0,6–1,4 |
 | Waarschuwingen | tegen daily-trend ×0,85 · TF-conflict ×0,90 · dunne liquiditeit ×0,80 · bijna breakout ×1,05 |
+| Gezondheid munt (`CoinHealth`) | ingestort (≤ −70% in een maand of ≤ −50% onder MA50) ×0,60 · microcap (< $10 mln) ×0,80 (stapelbaar). Uitgesloten: geen koers/marktwaarde/rang, < $1 mln, ATR 0 of onder de setup-drempel (Analyse) |
 
-Niet mee: geen richting, ongeldige setup, F6/F7-gefilterd (3%), stablecoins (Analyse en 3%; elders al door `TradeSetupGate`), niet-*Watching* (Setup Tracker). Gelijke stand: hogere kwaliteit, dan hogere R/R. Rijen (`ITopPickRow`) krijgen `TopRank`, `KansScore`, `TopExplanation` (tooltip op de 🏆-badge) en `IsTopPick` (gouden rand). Keuze per pagina via `Settings.Get/SetTopPickCount` en `Get/SetTopPicksOnly`. Pattern Trading bewaart de liquiditeitscheck nu per coin (telt mee en blijft staan bij filteren).
+Niet mee: dode/onverhandelbare munten (zie Gezondheid; aanleiding: WMOXY, NEIRO en NIBI verschenen als top-kans door extreme maar betekenisloze indicatoren), geen richting, ongeldige setup, F6/F7-gefilterd (3%), stablecoins (Analyse en 3%; elders al door `TradeSetupGate`), niet-*Watching* (Setup Tracker). Gelijke stand: hogere kwaliteit, dan hogere R/R. Rijen (`ITopPickRow`) krijgen `TopRank`, `KansScore`, `TopExplanation` (tooltip op de 🏆-badge) en `IsTopPick` (gouden rand). Keuze per pagina via `Settings.Get/SetTopPickCount` en `Get/SetTopPicksOnly`. Pattern Trading bewaart de liquiditeitscheck nu per coin (telt mee en blijft staan bij filteren).
 
 ### 3.4 Pagina-uitleg (ⓘ-knop) *(v1.48)*
 

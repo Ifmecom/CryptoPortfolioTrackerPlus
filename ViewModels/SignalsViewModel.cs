@@ -329,7 +329,7 @@ public partial class SignalsViewModel : BaseViewModel
     /// Signaal → kansscore-invoer. Geen SL/TP op deze pagina, dus geen R/R; de gemeten trefkans uit de
     /// signaal-kalibratie telt mee bij ≥ ReliabilityThresholds.MinSignalOutcomes metingen (dan 1:1 aangenomen).
     /// </summary>
-    private static OpportunityInput ToOpportunity(CoinSignalRow r) => new(
+    private OpportunityInput ToOpportunity(CoinSignalRow r) => new(
         Key:             r.CoinId.ToString(),
         Direction:       r.Direction,
         Quality:         r.DirectionalStrength,
@@ -337,7 +337,12 @@ public partial class SignalsViewModel : BaseViewModel
         HitRateSamples:  r.CalCount,
         HitRateReliable: r.CalReliable,
         // Stablecoins hebben geen edge (zelfde poort als Pattern Trading / Trade Advies).
-        Eligible:        r.HasSignal && !TradeSetupGate.IsStablecoin(r.Symbol));
+        Eligible:        r.HasSignal && !TradeSetupGate.IsStablecoin(r.Symbol),
+        // Dode, onverhandelbare of ingestorte munten: extremen in de indicatoren zijn daar geen kans.
+        // Zelfde volatiliteitsdrempel als de setup-poort; ATR 0 = stilstaande of ontbrekende data.
+        Health:          CoinHealth.Evaluate(r.Price, r.MarketCap, r.Rank, r.Change1Month,
+                             r.Atr, r.Ma50DistPerc == 0 ? null : r.Ma50DistPerc,
+                             AppSettings.MinSetupAtrPercent / 100.0));
 
     // -----------------------------------------------------------------------
     // Data loading

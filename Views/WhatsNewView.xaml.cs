@@ -36,7 +36,9 @@ public sealed partial class WhatsNewView : Page
             "zet 'Alleen top' aan om alleen die te zien, op volgorde. De rangorde is een kansscore: de eigen score van " +
             "de pagina × de winst/risico-verhouding × de gemeten trefkans van vergelijkbare setups (alleen bij genoeg " +
             "metingen) × waarschuwingen (tegen de trend, TF-conflict, dunne liquiditeit). Beweeg over 🏆 voor de " +
-            "opbouw, of klik ? voor de uitleg. Je keuze wordt per pagina onthouden.");
+            "opbouw, of klik ? voor de uitleg. Je keuze wordt per pagina onthouden. Munten die dood of " +
+            "onverhandelbaar lijken (geen marktwaarde, < $1 mln, geen koersbeweging) doen niet mee; ingestorte " +
+            "munten en microcaps tellen lager — hun extreme indicatoren zijn meestal geen kans maar een vallend mes.");
 
         AddFeature("🧺", "3% Trading: shortlist-limieten instelbaar",
             "Het maximum aantal setups in de aanbevolen shortlist (was vast 5) en de maximale onderlinge correlatie " +

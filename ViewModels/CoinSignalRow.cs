@@ -22,6 +22,10 @@ public class CoinSignalRow : CryptoPortfolioTracker.Services.ITopPickRow
         _       => 0,
     };
 
+    // Voor de gezondheidscheck van de Top X (v1.48): dode/ingestorte munten niet als top-kans tonen.
+    public double MarketCap    { get; }
+    public double Change1Month { get; }
+
     // Gemeten trefkans als getal (v1.48, voor de Top X) — naast de bestaande tekst.
     public double? CalHitRate  { get; }
     public int     CalCount    { get; }
@@ -118,6 +122,8 @@ public class CoinSignalRow : CryptoPortfolioTracker.Services.ITopPickRow
         ImageUri       = coin.ImageUri;
         CoinId         = coin.Id;
         Price          = coin.Price;
+        MarketCap      = coin.MarketCap;
+        Change1Month   = coin.Change1Month;
 
         Macd           = coin.Macd;
         MacdSignal     = coin.MacdSignal;
