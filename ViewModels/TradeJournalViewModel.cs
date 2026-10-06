@@ -433,7 +433,8 @@ public class TradeJournalRow
     public string SlDisplay           => StopLoss     == 0 ? "–" : $"{StopLoss:#,0.########}";
     public string TpDisplay         => TakeProfit == 0 ? "–" : $"{TakeProfit:#,0.########}";
     public string ClosePriceDisplay => ClosePrice == 0 ? "–" : $"{ClosePrice:#,0.########}";
-    public string QtyDisplay        => Qty        == 0 ? "–" : $"{Qty:#,0.########}";
+    // Max. 3 decimalen; alleen bij heel kleine hoeveelheden (< 0,001) meer, anders stond er "0"
+    public string QtyDisplay        => Qty        == 0 ? "–" : Qty >= 0.001 ? $"{Qty:#,0.###}" : $"{Qty:0.########}";
     /// <summary>Ingelegd bedrag in USDT: instapprijs × hoeveelheid.</summary>
     public double Invested          => Entry * Qty;
     public string InvestedDisplay   => Invested   == 0 ? "–" : $"{Invested:#,0.00}";
