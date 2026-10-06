@@ -470,6 +470,9 @@ public partial class ThreePctViewModel : BaseViewModel
                 }
             }
 
+            // Per coin één richting (bij "Both" anders Long én Short met dezelfde hitrate in de top)
+            rows = ThreePctBiasSelector.BestPerCoin(rows);
+
             // Sprint B: qualified setups eerst, daarna gefilterde als context
             var qualified = rows
                 .Where(r => !r.IsFiltered && (r.Expectancy > 0 || r.Score > 60))

@@ -1016,6 +1016,10 @@ Een "kans" is hier een historisch gemeten waarschijnlijkheid (uit een backtest),
 
 **Fase 2 — Live Scan:**
 - Scoort alle portfolio-coins, koppelt de score aan de gemeten hitrate/expectancy uit Fase 1.
+- **Eén richting per coin *(v1.48)*:** bij Richting *Both* wordt elke coin Long én Short gescoord; de kalibratie is per
+  scoreklasse (niet per richting), dus beide kanten kregen dezelfde hitrate/expectancy en stonden samen in de top.
+  Pure `ThreePctBiasSelector.BestPerCoin` houdt per coin één rij over: eerst niet-gefilterd (F6/F7), dan hoogste score,
+  dan hoogste expectancy (`ThreePctBiasSelectorTests`).
 - **7-factor model** (`ThreePctScoringService`): Trend (25%), Momentum (15%), Volume/OBV (15%),
   Volatiliteit (10%), Support/Resistance (15%) — plus **F6 Liquiditeit** en **F7 Positionering**
   als *gatekeepers*: setups onder de drempel (F6 < 4 of F7 < 3) worden gefilterd. De 5-factor

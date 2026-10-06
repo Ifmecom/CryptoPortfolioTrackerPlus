@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("🎯", "3% Trading: één richting per munt",
+            "De Live Scan toont per munt nog maar één setup — de sterkste richting — in plaats van Long én Short naast elkaar.");
+
         AddFeature("📊", "Koppeling met TradingView",
             "Grafiek openen, Pine Script met entry/stop/doelen en alerts, en watchlist-export — via de 📊-knop op de setup-pagina's.");
 

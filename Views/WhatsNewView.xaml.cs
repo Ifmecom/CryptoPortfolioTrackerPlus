@@ -30,6 +30,11 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("🎯", "3% Trading: één richting per munt",
+            "Met Richting 'Both' stond dezelfde munt vaak twee keer in de top: als Long én als Short, met precies dezelfde " +
+            "hitrate. Dat komt doordat de gemeten trefkans per scoreklasse geldt, niet per richting. De Live Scan toont nu per " +
+            "munt alleen de sterkste richting: de hoogste score die niet door liquiditeit of positionering is afgevallen.");
+
         AddFeature("📊", "Koppeling met TradingView: grafieken, Pine Scripts en watchlists",
             "Op Pattern Trading, Trade Advies, Setup Tracker en 3% Trading staat een 📊 TradingView-knop. 'Open grafiek' " +
             "opent de munt op TradingView in je browser, op de beurs waar de app de koersdata vandaan haalde. 'Pine Script' " +
