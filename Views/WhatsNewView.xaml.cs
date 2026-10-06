@@ -30,6 +30,10 @@ public sealed partial class WhatsNewView : Page
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 
+        AddFeature("💶", "Trade Journal: inleg per trade",
+            "Nieuwe kolom 'Inleg (USDT)': hoeveel er in een trade zit (instapprijs × hoeveelheid). Onderaan staat naast " +
+            "de totale winst/verlies nu ook de open inleg: het bedrag dat op dit moment in open posities zit.");
+
         AddFeature("🎯", "3% Trading: één richting per munt",
             "Met Richting 'Both' stond dezelfde munt vaak twee keer in de top: als Long én als Short, met precies dezelfde " +
             "hitrate. Dat komt doordat de gemeten trefkans per scoreklasse geldt, niet per richting. De Live Scan toont nu per " +

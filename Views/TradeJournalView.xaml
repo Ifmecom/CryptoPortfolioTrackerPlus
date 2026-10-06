@@ -195,17 +195,18 @@
                                     <ColumnDefinition Width="*"/>    <!-- 4  Huidig -->
                                     <ColumnDefinition Width="*"/>    <!-- 5  SL -->
                                     <ColumnDefinition Width="*"/>    <!-- 6  TP -->
-                                    <ColumnDefinition Width="65"/>   <!-- 7  Qty -->
-                                    <ColumnDefinition Width="80"/>   <!-- 8  Status -->
-                                    <ColumnDefinition Width="90"/>   <!-- 9  Created -->
-                                    <ColumnDefinition Width="105"/>  <!-- 10 PnL USDT + % -->
-                                    <ColumnDefinition Width="110"/>  <!-- 11 Unrealised P&amp;L -->
-                                    <ColumnDefinition Width="50"/>   <!-- 12 R -->
-                                    <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
-                                    <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
-                                    <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
-                                    <ColumnDefinition Width="36"/>   <!-- 16 Edit trade levels -->
-                                    <ColumnDefinition Width="36"/>   <!-- 17 Close position -->
+                                    <ColumnDefinition Width="110"/>  <!-- 7  Qty -->
+                                    <ColumnDefinition Width="90"/>   <!-- 8  Inleg (USDT) -->
+                                    <ColumnDefinition Width="80"/>   <!-- 9  Status -->
+                                    <ColumnDefinition Width="90"/>   <!-- 10 Created -->
+                                    <ColumnDefinition Width="105"/>  <!-- 11 PnL USDT + % -->
+                                    <ColumnDefinition Width="110"/>  <!-- 12 Unrealised P&amp;L -->
+                                    <ColumnDefinition Width="50"/>   <!-- 13 R -->
+                                    <ColumnDefinition Width="2*"/>   <!-- 14 Notes -->
+                                    <ColumnDefinition Width="32"/>   <!-- 15 Edit note -->
+                                    <ColumnDefinition Width="32"/>   <!-- 16 Cancel -->
+                                    <ColumnDefinition Width="36"/>   <!-- 17 Edit trade levels -->
+                                    <ColumnDefinition Width="36"/>   <!-- 18 Close position -->
                                 </Grid.ColumnDefinitions>
 
                                 <TextBlock Grid.Column="0"  Text="#"
@@ -232,23 +233,26 @@
                                 <TextBlock Grid.Column="7"  Text="Qty"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="Hoeveelheid (eenheden)"/>
-                                <TextBlock Grid.Column="8"  Text="Status"
+                                <TextBlock Grid.Column="8"  Text="Inleg (USDT)"
+                                           Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
+                                           ToolTipService.ToolTip="Ingelegd bedrag: instapprijs × hoeveelheid, in USDT."/>
+                                <TextBlock Grid.Column="9"  Text="Status"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            Margin="12,0,0,0"
                                            ToolTipService.ToolTip="Orderstatus: Pending, Filled, Cancelled..."/>
-                                <TextBlock Grid.Column="9"  Text="Datum"
+                                <TextBlock Grid.Column="10"  Text="Datum"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="Aanmaakdatum van de order"/>
-                                <TextBlock Grid.Column="10" Text="PnL"
+                                <TextBlock Grid.Column="11" Text="PnL"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="Winst/verlies in USDT en percentage t.o.v. de instapprijs. Alleen berekend voor gevulde orders."/>
-                                <TextBlock Grid.Column="11" Text="Unrealised P&amp;L"
+                                <TextBlock Grid.Column="12" Text="Unrealised P&amp;L"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="Live ongerealiseerde winst/verlies in USDT op basis van de huidige marktprijs t.o.v. de instapprijs."/>
-                                <TextBlock Grid.Column="12" Text="R"
+                                <TextBlock Grid.Column="13" Text="R"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="R-multiple: hoeveel maal de initiële risicogrootte (Entry − SL × Qty) is verdiend of verloren. +2R = twee maal het risico verdiend."/>
-                                <TextBlock Grid.Column="13" Text="Notitie"
+                                <TextBlock Grid.Column="14" Text="Notitie"
                                            Style="{StaticResource CaptionTextBlockStyle}" Foreground="DarkGoldenrod"
                                            ToolTipService.ToolTip="Persoonlijke notitie bij deze trade. Klik het potlood-icoon om te bewerken."/>
                             </Grid>
@@ -274,17 +278,18 @@
                                         <ColumnDefinition Width="*"/>    <!-- 4  Huidig -->
                                         <ColumnDefinition Width="*"/>    <!-- 5  SL -->
                                         <ColumnDefinition Width="*"/>    <!-- 6  TP -->
-                                        <ColumnDefinition Width="65"/>   <!-- 7  Qty -->
-                                        <ColumnDefinition Width="80"/>   <!-- 8  Status -->
-                                        <ColumnDefinition Width="90"/>   <!-- 9  Created -->
-                                        <ColumnDefinition Width="105"/>  <!-- 10 PnL USDT + % -->
-                                        <ColumnDefinition Width="110"/>  <!-- 11 Unrealised P&amp;L -->
-                                        <ColumnDefinition Width="50"/>   <!-- 12 R -->
-                                        <ColumnDefinition Width="2*"/>   <!-- 13 Notes -->
-                                        <ColumnDefinition Width="32"/>   <!-- 14 Edit note -->
-                                        <ColumnDefinition Width="32"/>   <!-- 15 Cancel -->
-                                        <ColumnDefinition Width="36"/>   <!-- 16 Edit trade levels -->
-                                        <ColumnDefinition Width="36"/>   <!-- 17 Close position -->
+                                        <ColumnDefinition Width="110"/>  <!-- 7  Qty -->
+                                        <ColumnDefinition Width="90"/>   <!-- 8  Inleg (USDT) -->
+                                        <ColumnDefinition Width="80"/>   <!-- 9  Status -->
+                                        <ColumnDefinition Width="90"/>   <!-- 10 Created -->
+                                        <ColumnDefinition Width="105"/>  <!-- 11 PnL USDT + % -->
+                                        <ColumnDefinition Width="110"/>  <!-- 12 Unrealised P&amp;L -->
+                                        <ColumnDefinition Width="50"/>   <!-- 13 R -->
+                                        <ColumnDefinition Width="2*"/>   <!-- 14 Notes -->
+                                        <ColumnDefinition Width="32"/>   <!-- 15 Edit note -->
+                                        <ColumnDefinition Width="32"/>   <!-- 16 Cancel -->
+                                        <ColumnDefinition Width="36"/>   <!-- 17 Edit trade levels -->
+                                        <ColumnDefinition Width="36"/>   <!-- 18 Close position -->
                                     </Grid.ColumnDefinitions>
 
                                     <!-- ID -->
@@ -329,41 +334,45 @@
                                     <TextBlock Grid.Column="7" Text="{x:Bind QtyDisplay}"
                                                VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"/>
 
+                                    <!-- Inleg = entry × qty -->
+                                    <TextBlock Grid.Column="8" Text="{x:Bind InvestedDisplay}"
+                                               VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"/>
+
                                     <!-- Status -->
-                                    <TextBlock Grid.Column="8" Text="{x:Bind Status}"
+                                    <TextBlock Grid.Column="9" Text="{x:Bind Status}"
                                                VerticalAlignment="Center" FontSize="11"
                                                Margin="12,0,0,0"/>
 
                                     <!-- Datum -->
-                                    <TextBlock Grid.Column="9" Text="{x:Bind CreatedDisplay}"
+                                    <TextBlock Grid.Column="10" Text="{x:Bind CreatedDisplay}"
                                                VerticalAlignment="Center" FontSize="11"
                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"/>
 
                                     <!-- PnL (USDT + %) -->
-                                    <TextBlock Grid.Column="10" Text="{x:Bind PnlDisplay}"
+                                    <TextBlock Grid.Column="11" Text="{x:Bind PnlDisplay}"
                                                VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
                                                Foreground="{x:Bind PnlBrush}"/>
 
                                     <!-- Unrealised P&L (live USDT waarde) -->
-                                    <TextBlock Grid.Column="11" Text="{x:Bind UnrealisedPnlDisplay}"
+                                    <TextBlock Grid.Column="12" Text="{x:Bind UnrealisedPnlDisplay}"
                                                VerticalAlignment="Center" FontSize="12" FontFamily="Consolas"
                                                FontWeight="SemiBold"
                                                Foreground="{x:Bind PnlBrush}"/>
 
                                     <!-- R-multiple -->
-                                    <TextBlock Grid.Column="12" Text="{x:Bind RDisplay}"
+                                    <TextBlock Grid.Column="13" Text="{x:Bind RDisplay}"
                                                VerticalAlignment="Center" FontSize="11" FontFamily="Consolas"
                                                Foreground="{x:Bind PnlBrush}"/>
 
                                     <!-- Notitie -->
-                                    <TextBlock Grid.Column="13" Text="{x:Bind Notes}"
+                                    <TextBlock Grid.Column="14" Text="{x:Bind Notes}"
                                                VerticalAlignment="Center" FontSize="11"
                                                TextTrimming="CharacterEllipsis"
                                                Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                                Margin="0,0,4,0"/>
 
                                     <!-- Notitie bewerken -->
-                                    <Button Grid.Column="14"
+                                    <Button Grid.Column="15"
                                             VerticalAlignment="Center" Padding="4,3"
                                             ToolTipService.ToolTip="Notitie bewerken"
                                             Tag="{x:Bind}"
@@ -372,7 +381,7 @@
                                     </Button>
 
                                     <!-- Cancel button (only for pending orders) -->
-                                    <Button Grid.Column="15"
+                                    <Button Grid.Column="16"
                                             Visibility="{x:Bind converters:Functions.TrueToVisible(IsCancellable)}"
                                             VerticalAlignment="Center" Padding="4,3"
                                             ToolTipService.ToolTip="Order annuleren (nog niet gevuld)"
@@ -382,7 +391,7 @@
                                     </Button>
 
                                     <!-- Edit trade levels (SL / TP) — only for open paper positions -->
-                                    <Button Grid.Column="16"
+                                    <Button Grid.Column="17"
                                             Visibility="{x:Bind converters:Functions.TrueToVisible(IsEditable)}"
                                             VerticalAlignment="Center" Padding="4,3"
                                             Background="#B8860B" Foreground="White"
@@ -393,7 +402,7 @@
                                     </Button>
 
                                     <!-- Close button (only for open filled paper positions) -->
-                                    <Button Grid.Column="17"
+                                    <Button Grid.Column="18"
                                             Visibility="{x:Bind converters:Functions.TrueToVisible(IsCloseable)}"
                                             VerticalAlignment="Center" Padding="4,3"
                                             Background="#CC3B1E" Foreground="White"
@@ -420,6 +429,13 @@
                                        VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
                                        FontFamily="Consolas"
                                        Foreground="{x:Bind _viewModel.TotalPnlBrush, Mode=OneWay}"/>
+                            <TextBlock Text="Open inleg:" Margin="24,0,0,0"
+                                       VerticalAlignment="Center" FontSize="12"
+                                       Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                       ToolTipService.ToolTip="Som van de inleg (instapprijs × hoeveelheid) van de gevulde, nog open posities in deze lijst."/>
+                            <TextBlock Text="{x:Bind _viewModel.OpenInvestedDisplay, Mode=OneWay}"
+                                       VerticalAlignment="Center" FontSize="13" FontWeight="SemiBold"
+                                       FontFamily="Consolas"/>
                         </StackPanel>
                     </Border>
                 </Grid>

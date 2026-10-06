@@ -428,6 +428,7 @@ auto-close raken alleen `IsPaper`-orders. `TradeJournalRow.BaseSymbol` herkent z
 | Kant | Long / Short |
 | Hefboom | 1× – 100× (alleen Futures/Margin) |
 | Hoeveelheid | Aantal coins |
+| Inleg (USDT) *(v1.48)* | `TradeJournalRow.Invested` = Entry × Qty; footer "Open inleg" = som over rijen met status Filled (`OpenInvestedDisplay`) |
 | Instap | Instapprijs (USDT) |
 | Huidig/Sluit | Huidige marktprijs of sluitprijs |
 | P&L (USDT) | Gerealiseerde of ongerealiseerde winst/verlies |

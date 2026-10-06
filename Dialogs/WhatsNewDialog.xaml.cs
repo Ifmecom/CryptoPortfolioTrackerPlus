@@ -30,6 +30,9 @@ public sealed partial class WhatsNewDialog : ContentDialog
     {
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
+        AddFeature("💶", "Trade Journal: inleg per trade",
+            "Zie per trade hoeveel er is ingelegd, en onderaan het totaal dat in open posities zit.");
+
         AddFeature("🎯", "3% Trading: één richting per munt",
             "De Live Scan toont per munt nog maar één setup — de sterkste richting — in plaats van Long én Short naast elkaar, en zonder stablecoins.");
 

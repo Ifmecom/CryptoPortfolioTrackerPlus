@@ -31,6 +31,7 @@ public partial class TradeJournalViewModel : BaseViewModel
     [ObservableProperty] private string statusMessage       = string.Empty;
     [ObservableProperty] private string filterLabel         = "Open";
     [ObservableProperty] private string totalPnlDisplay     = "–";
+    [ObservableProperty] private string openInvestedDisplay = "–";
     [ObservableProperty] private string lastRefreshedDisplay = "–";
     [ObservableProperty] private Microsoft.UI.Xaml.Media.SolidColorBrush totalPnlBrush = BrushGrey;
 
@@ -343,6 +344,10 @@ public partial class TradeJournalViewModel : BaseViewModel
                 : $"{totalPnl:+0.00;-0.00} USDT";
             TotalPnlBrush = totalPnl > 0 ? BrushGreen : totalPnl < 0 ? BrushRed : BrushGrey;
 
+            // Wat er nu in open (gevulde) posities zit
+            var openInvested = Rows.Where(r => r.Status == "Filled").Sum(r => r.Invested);
+            OpenInvestedDisplay = openInvested == 0 ? "–" : $"{openInvested:#,0.00} USDT";
+
             StatusMessage        = Rows.Count == 0
                 ? "No trades found."
                 : $"{Rows.Count} trade(s) — filter: {_activeFilter}";
@@ -429,6 +434,9 @@ public class TradeJournalRow
     public string TpDisplay         => TakeProfit == 0 ? "–" : $"{TakeProfit:#,0.########}";
     public string ClosePriceDisplay => ClosePrice == 0 ? "–" : $"{ClosePrice:#,0.########}";
     public string QtyDisplay        => Qty        == 0 ? "–" : $"{Qty:#,0.########}";
+    /// <summary>Ingelegd bedrag in USDT: instapprijs × hoeveelheid.</summary>
+    public double Invested          => Entry * Qty;
+    public string InvestedDisplay   => Invested   == 0 ? "–" : $"{Invested:#,0.00}";
     public string CreatedDisplay    => CreatedAt.ToString("dd-MM-yy HH:mm");
 
     public string PnlDisplay => PnlUsdt == 0 ? "–"

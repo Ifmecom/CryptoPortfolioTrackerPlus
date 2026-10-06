@@ -166,7 +166,8 @@ public static class PageHelpCatalog
             new[]
             {
                 S(See, "Wat zie je hier",
-                    "Per order: symbool, richting, hoeveelheid, instap, huidige of sluitkoers, winst/verlies, R-multiple, SL/TP en status.",
+                    "Per order: symbool, richting, hoeveelheid, instap, inleg (instap × hoeveelheid, in USDT), huidige of sluitkoers, winst/verlies, R-multiple, SL/TP en status.",
+                    "Onderaan: de totale winst/verlies van de lijst en de open inleg — wat er nu in gevulde, nog open posities zit.",
                     "Filters: Alles · Open · Gesloten · Paper · Live (Bybit Demo valt onder Live).",
                     "Knoppen 'Risico' (risico-dashboard), 'Vernieuwen' en 'Kill All'."),
                 S(Read, "Hoe lees je het",
