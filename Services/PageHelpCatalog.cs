@@ -245,7 +245,7 @@ public static class PageHelpCatalog
                 S(See, "Wat zie je hier",
                     "Tabblad Kalibratie: een backtest over historische koersen die per scoreklasse meet hoe vaak +3% eerder werd gehaald dan de stop.",
                     "Tabblad Live Scan: je coins nu gescoord op 7 factoren (trend, momentum, volume, volatiliteit, steun/weerstand, liquiditeit, positionering), gekoppeld aan de gemeten trefkans.",
-                    "Bij Richting \"Both\" wordt elke coin Long én Short gescoord, maar je ziet per coin alleen de sterkste richting (de hoogste score die niet door liquiditeit/positionering is afgevallen).",
+                    "Bij Richting \"Both\" wordt elke coin Long én Short gescoord, maar je ziet per coin alleen de sterkste richting (de hoogste score die niet door liquiditeit/positionering is afgevallen). Stablecoins (USDC, USDT, …) worden niet gescand.",
                     "Tabblad Paper Trades: de trades die je vanuit deze strategie met nepgeld volgt."),
                 S(Read, "Hoe lees je het",
                     "Hitrate = hoe vaak het doel gehaald werd. Expectancy = gemiddelde opbrengst per trade in R. Positief = de strategie verdiende historisch geld.",

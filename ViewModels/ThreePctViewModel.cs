@@ -391,6 +391,9 @@ public partial class ThreePctViewModel : BaseViewModel
                 done++;
                 LiveScanStatus = $"{done} / {coins.Count} — {coin.Symbol}";
 
+                // Stablecoins hebben geen edge; anders belanden ze (lage BTC-correlatie) bovenaan de shortlist
+                if (TradeSetupGate.IsStablecoin(coin.Symbol)) continue;
+
                 try
                 {
                     var symbol = _binance.ResolveBinanceSymbol(coin.ApiId, coin.Symbol);

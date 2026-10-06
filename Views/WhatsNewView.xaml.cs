@@ -33,7 +33,8 @@ public sealed partial class WhatsNewView : Page
         AddFeature("🎯", "3% Trading: één richting per munt",
             "Met Richting 'Both' stond dezelfde munt vaak twee keer in de top: als Long én als Short, met precies dezelfde " +
             "hitrate. Dat komt doordat de gemeten trefkans per scoreklasse geldt, niet per richting. De Live Scan toont nu per " +
-            "munt alleen de sterkste richting: de hoogste score die niet door liquiditeit of positionering is afgevallen.");
+            "munt alleen de sterkste richting: de hoogste score die niet door liquiditeit of positionering is afgevallen. " +
+            "Stablecoins zoals USDC worden niet meer gescand; die stonden door hun lage BTC-correlatie soms bovenaan de shortlist.");
 
         AddFeature("📊", "Koppeling met TradingView: grafieken, Pine Scripts en watchlists",
             "Op Pattern Trading, Trade Advies, Setup Tracker en 3% Trading staat een 📊 TradingView-knop. 'Open grafiek' " +
