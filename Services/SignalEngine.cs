@@ -142,10 +142,15 @@ public class SignalEngine : ISignalEngine
 
             context.Signals.Add(signal);
 
-            // Persist score and regime back to Coin row
+            // Persist score and regime back to Coin row. Geen Coins.Update(coin): die loopt de hele graaf af en voegt bij
+            // een losse munt (AsNoTracking, via EvaluateCoinAsync) een leeg narratief in. Getrackt: SaveChanges ziet de
+            // wijziging zelf; los: alleen deze twee kolommen schrijven.
             coin.LatestSignalScore = combined;
             coin.MarketRegime      = regime;
-            context.Coins.Update(coin);
+            if (context.Entry(coin).State == EntityState.Detached)
+                await context.Coins.Where(c => c.Id == coin.Id).ExecuteUpdateAsync(s => s
+                    .SetProperty(c => c.LatestSignalScore, combined)
+                    .SetProperty(c => c.MarketRegime, regime));
 
             return signal;
         }

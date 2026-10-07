@@ -3,17 +3,15 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading;
-using Anthropic;
-using Anthropic.Exceptions;
 using Microsoft.EntityFrameworkCore;
-using AB = Anthropic.Models.Beta.Messages;
 
 namespace CryptoPortfolioTracker.Services;
 
 /// <summary>
 /// EF/HTTP-lijm voor AI Research. Pure delen (prompt, herkenning, JSON) zitten in
 /// <see cref="AiPromptBuilder"/>, <see cref="AiIntentDetector"/> en <see cref="AiChatWire"/>.
-/// Claude gaat via de officiële Anthropic-SDK; de andere aanbieders via hun OpenAI-compatibele endpoint.
+/// Claude via de Anthropic Messages API (HTTP — de SDK breekt System.Text.Json/DateOnly op .NET 6, zie <see cref="AiChatWire"/>);
+/// de andere aanbieders via hun OpenAI-compatibele endpoint.
 /// </summary>
 public sealed class AiResearchService : IAiResearchService
 {
@@ -172,71 +170,38 @@ public sealed class AiResearchService : IAiResearchService
 
     private static async Task<string> AskAnthropicAsync(string key, string model, IReadOnlyList<AiChatTurn> turns, CancellationToken ct)
     {
-        var client = new AnthropicClient { ApiKey = key };
-
-        // Huidige generatie (Opus 5.x, Fable, Sonnet 5.x): effort expliciet; Opus/Fable krijgen een
-        // server-side fallback zodat een geweigerd verzoek door een ander model wordt beantwoord.
-        bool currentGen = model.StartsWith("claude-opus-5", StringComparison.Ordinal)
-                       || model.StartsWith("claude-fable", StringComparison.Ordinal)
-                       || model.StartsWith("claude-sonnet-5", StringComparison.Ordinal);
-        bool withFallback = model.StartsWith("claude-opus-5", StringComparison.Ordinal)
-                         || model.StartsWith("claude-fable", StringComparison.Ordinal);
-
-        var parameters = new AB::MessageCreateParams
+        using var req = new HttpRequestMessage(HttpMethod.Post, AiChatWire.AnthropicEndpoint)
         {
-            Model = model,
-            MaxTokens = 16000,
-            System = AiPromptBuilder.SystemPrompt,
-            Messages = turns.Select(t => new AB::BetaMessageParam
-            {
-                Role = t.Role == "assistant" ? AB::Role.Assistant : AB::Role.User,
-                Content = t.Text,
-            }).ToList(),
-            OutputConfig = currentGen ? new AB::BetaOutputConfig { Effort = AB::Effort.Medium } : null,
-            // "default": de API kiest per weigeringscategorie zelf een fallback-model (geen modellijst bij te houden).
-            Betas = withFallback ? [Anthropic.Models.Beta.AnthropicBeta.ServerSideFallback2026_07_01] : null,
-            Fallbacks = withFallback ? new AB::Default() : null,
+            Content = new StringContent(AiChatWire.BuildAnthropicBody(model, AiPromptBuilder.SystemPrompt, turns), Encoding.UTF8, "application/json"),
         };
+        req.Headers.Add("x-api-key", key);
+        req.Headers.Add("anthropic-version", AiChatWire.AnthropicVersion);
+        if (AiChatWire.AnthropicUsesFallback(model))
+            req.Headers.Add("anthropic-beta", AiChatWire.AnthropicFallbackBeta);
 
-        AB::BetaMessage response;
+        HttpResponseMessage resp;
         try
         {
-            response = await client.Beta.Messages.Create(parameters, ct);
+            resp = await _http.SendAsync(req, ct);
         }
-        catch (AnthropicNotFoundException ex)
-        {
-            throw new InvalidOperationException($"Model '{model}' niet gevonden — controleer de modelnaam. ({ex.Message})", ex);
-        }
-        catch (AnthropicUnauthorizedException ex)
-        {
-            throw new InvalidOperationException("Sleutel ongeldig of zonder rechten.", ex);
-        }
-        catch (AnthropicRateLimitException ex)
-        {
-            throw new InvalidOperationException("Limiet bereikt (te veel verzoeken of tegoed op). Probeer het straks opnieuw.", ex);
-        }
-        catch (Anthropic5xxException ex)
-        {
-            throw new InvalidOperationException("Anthropic heeft een storing. Probeer het straks opnieuw.", ex);
-        }
-        catch (AnthropicApiException ex)
-        {
-            throw new InvalidOperationException($"Verzoek geweigerd: {ex.Message}", ex);
-        }
-        catch (AnthropicIOException ex)
+        catch (HttpRequestException ex)
         {
             throw new InvalidOperationException("Geen verbinding met Anthropic.", ex);
         }
 
-        if (response.StopReason == "refusal")
-            return "Claude heeft deze vraag geweigerd." +
-                   (response.StopDetails is { } d && !string.IsNullOrWhiteSpace(d.Explanation) ? $" ({d.Explanation})" : string.Empty);
+        using (resp)
+        {
+            var body = await resp.Content.ReadAsStringAsync(ct);
+            if (!resp.IsSuccessStatusCode)
+                throw new InvalidOperationException(AiChatWire.ParseError((int)resp.StatusCode, body));
 
-        var text = string.Join("\n", response.Content
-            .Select(b => b.TryPickText(out var t) ? t.Text : null)
-            .Where(t => !string.IsNullOrEmpty(t)));
-        if (response.StopReason == "max_tokens") text += "\n\n(Antwoord afgekapt: maximale lengte bereikt.)";
-        return text.Length > 0 ? text : "Claude gaf geen tekstantwoord.";
+            var (text, stop, refusal) = AiChatWire.ParseAnthropic(body);
+            if (stop == "refusal")
+                return "Claude heeft deze vraag geweigerd." + (string.IsNullOrWhiteSpace(refusal) ? string.Empty : $" ({refusal})");
+            if (string.IsNullOrEmpty(text))
+                return "Claude gaf geen tekstantwoord.";
+            return stop == "max_tokens" ? text + "\n\n(Antwoord afgekapt: maximale lengte bereikt.)" : text;
+        }
     }
 
     // ── Geschiedenis ─────────────────────────────────────────────────────────

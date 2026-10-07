@@ -2,6 +2,8 @@
 using CryptoPortfolioTracker.Models;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace CryptoPortfolioTracker.Infrastructure
 {
@@ -25,6 +27,13 @@ namespace CryptoPortfolioTracker.Infrastructure
 
 
         public UpdateContext(DbContextOptions<UpdateContext> connection) : base(connection) { }
+
+        // Vangnet tegen lege narratieven via Coins.Update() op een losse munt (v1.48-incident) — zie NarrativeGuard.
+        public override int SaveChanges(bool acceptAllChangesOnSuccess)
+            => NarrativeGuard.Save(this, () => base.SaveChanges(acceptAllChangesOnSuccess));
+
+        public override Task<int> SaveChangesAsync(bool acceptAllChangesOnSuccess, CancellationToken cancellationToken = default)
+            => NarrativeGuard.SaveAsync(this, () => base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken));
 
 
         public DbSet<Coin> Coins  { get; set; }

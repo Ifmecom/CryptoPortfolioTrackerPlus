@@ -957,7 +957,7 @@
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                                    Text="Kosten: gratis tier bij Gemini, Groq, OpenRouter (:free-modellen) en Mistral; overige betaald per gebruik · Sleutels DPAPI-versleuteld in de instellingen"/>
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
-                                                   Text="Beheerd door: AiResearchService (Claude via de officiële Anthropic-SDK, overige via hun OpenAI-compatibele endpoint)"/>
+                                                   Text="Beheerd door: AiResearchService (Claude via de Messages API, overige via hun OpenAI-compatibele endpoint)"/>
                                     </StackPanel>
                                 </ct:SettingsCard>
                             </ct:SettingsExpander.Items>
