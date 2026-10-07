@@ -138,20 +138,34 @@ public static class TradingViewAlerts
     }
 
     /// <summary>
+    /// Hoe lang na de eigen entry-detectie van de Setup Tracker een TradingView-entry-alert nog een order mag plaatsen.
+    /// De Setup Tracker zet een setup bij het controleren van koersen al op Open; zonder deze marge blokkeerde dat de
+    /// webhook-order ("setup loopt al") terwijl er nooit een order was geplaatst.
+    /// </summary>
+    public const int TrackerEntryGraceHours = 24;
+
+    /// <summary>
     /// Mag een 'Entry geraakt'-alert een Bybit Demo-order plaatsen? Alleen als de gebruiker het aanzette, het een
-    /// CPT-entry-alert is, er een gevolgde Long-setup voor die munt is die nog op Watching staat (Bybit Demo is
-    /// spot: geen Short), er nog geen open demo-order voor die munt is en het dagmaximum niet bereikt is.
+    /// CPT-entry-alert is, er een gevolgde Long-setup voor die munt is (Bybit Demo is spot: geen Short) die nog op
+    /// Watching staat — of die de Setup Tracker zelf in de afgelopen <see cref="TrackerEntryGraceHours"/> uur op Open
+    /// zette zonder order — er nog geen open demo-order voor die munt is en het dagmaximum niet bereikt is.
     /// </summary>
     public static (bool Place, string Reason) AutoOrderCheck(
-        TradingViewAlert alert, Models.WatchedSetup? setup, bool enabled, bool hasOpenOrder, int placedToday, int maxPerDay)
+        TradingViewAlert alert, Models.WatchedSetup? setup, bool enabled, bool hasOpenOrder, int placedToday, int maxPerDay,
+        DateTime? nowUtc = null)
     {
         if (!enabled)                    return (false, "automatische order staat uit");
         if (alert.Event != "entry")      return (false, "geen entry-alert");
         if (setup is null)               return (false, "geen gevolgde setup voor deze munt in de Setup Tracker");
         if (!string.Equals(setup.Direction, "Long", StringComparison.OrdinalIgnoreCase))
                                          return (false, "Short-setup — Bybit Demo handelt alleen spot (Long)");
-        if (setup.Status != Enums.WatchedSetupStatus.Watching)
-                                         return (false, "setup loopt al of is afgesloten");
+        bool openedByTracker = setup.Status == Enums.WatchedSetupStatus.Open && setup.LinkedOrderId is null
+                               && setup.EntryAt is { } entryAt
+                               && (nowUtc ?? DateTime.UtcNow) - entryAt <= TimeSpan.FromHours(TrackerEntryGraceHours);
+        if (setup.Status != Enums.WatchedSetupStatus.Watching && !openedByTracker)
+                                         return (false, setup.Status == Enums.WatchedSetupStatus.Open
+                                             ? $"setup staat al langer dan {TrackerEntryGraceHours} uur op In Trade"
+                                             : "setup is afgesloten");
         if (setup.EntryPrice <= 0 || setup.StopLoss <= 0 || setup.Target1 <= 0 || setup.StopLoss >= setup.EntryPrice)
                                          return (false, "setup heeft geen geldige entry/stop-loss/TP1");
         if (setup.LinkedOrderId is not null) return (false, "er hangt al een order aan deze setup");

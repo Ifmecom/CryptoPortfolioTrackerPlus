@@ -46,6 +46,12 @@ public sealed partial class WhatsNewView : Page
             "'Antwoord analyseren'. Niveaus die niet bij de koers of de richting passen, vallen weg. De app voert nooit zelf " +
             "iets uit: je bevestigt elke actie in het venster dat opent.");
 
+        AddFeature("📥", "Setup Tracker-meldingen: virtueel of echte order?",
+            "Telegram-meldingen van de Setup Tracker (entry geraakt, TP, stop-loss) zeggen nu of er een order aan de setup hangt " +
+            "of dat de Setup Tracker hem alleen virtueel volgt. 'In Trade' betekende namelijk niet dat er een positie openstond. " +
+            "Ook opgelost: als de Setup Tracker de entry zelf al zag, weigerde een latere TradingView-entry-alert de automatische " +
+            "Bybit Demo-order ('setup loopt al'). Binnen 24 uur na die eigen detectie wordt de order nu alsnog geplaatst.");
+
         AddFeature("💡", "Snelle vragen en geschiedenis",
             "Kant-en-klare vragen voor een gekozen munt (fundamenteel verhaal, technische setup, catalysts, tokenomics, " +
             "concurrenten, nieuws met bronnen) of je hele portfolio, en je recente vragen om opnieuw te stellen.");

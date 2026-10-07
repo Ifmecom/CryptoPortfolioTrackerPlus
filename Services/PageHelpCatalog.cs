@@ -232,10 +232,11 @@ public static class PageHelpCatalog
                     "Zet een setup op ⏹ Verlopen als het patroon niet meer geldig is, zodat hij je statistiek niet vertekent.",
                     "Kijk na een paar weken welke scoreklasse en welk marktregime het best presteerden, en focus daarop.",
                     "📊 TradingView op een setup: grafiek openen of een Pine Script met entry/stop/TP1/TP2 en alerts, zodat TradingView je waarschuwt als de entry geraakt wordt. Rechtsboven: één script of een watchlist met al je lopende (top-)setups.",
-                    "Met webhook-alerts aan (Instellingen → TradingView) komen die alerts in de app en via Telegram binnen, met de setup erbij. Zet je 'automatisch Bybit Demo-order' aan, dan plaatst een 'Entry geraakt'-alert op een Long-setup die hier op Watching staat een demo-order met de SL en TP1 van de setup.",
+                    "Met webhook-alerts aan (Instellingen → TradingView) komen die alerts in de app en via Telegram binnen, met de setup erbij. Zet je 'automatisch Bybit Demo-order' aan, dan plaatst een 'Entry geraakt'-alert op een Long-setup die hier op Watching staat — of die de Setup Tracker in de afgelopen 24 uur zelf op In Trade zette, zonder order — een demo-order met de SL en TP1 van de setup.",
                     "🏆 Top X (balk boven de lijst): markeert de setups die het eerst het beoordelen waard zijn, op kansscore (kwaliteit × R/R × gemeten trefkans × waarschuwingen). Kies het aantal, zet \"Alleen top\" aan om alleen die te zien, en beweeg over 🏆 voor de opbouw. Het is een volgorde om te beoordelen, geen advies."),
                 S(Watch, "Let op",
-                    "Weinig afgesloten setups = toeval speelt een grote rol. Trek pas conclusies bij voldoende aantallen."),
+                    "Weinig afgesloten setups = toeval speelt een grote rol. Trek pas conclusies bij voldoende aantallen.",
+                    "De Setup Tracker volgt setups virtueel: 'In Trade' betekent dat de koers de entry raakte, niet dat er een order openstaat. Telegram-meldingen zeggen erbij of er een gekoppelde order is; open posities staan alleen in het Trade Journal."),
             }),
 
         ["ThreePctView"] = new(

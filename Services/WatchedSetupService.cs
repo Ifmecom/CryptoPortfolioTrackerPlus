@@ -181,7 +181,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.Tp2Hit     = true;
                 updated++;
                 _log.Information("WatchedSetup Won (TP2): {Coin} @ {Price}", setup.CoinName, price);
-                await AlertAsync($"🏆 <b>Setup gewonnen (TP2)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP2 {setup.Target2:#,0.########}.");
+                await AlertAsync($"🏆 <b>Setup gewonnen (TP2)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP2 {setup.Target2:#,0.########}.{OrderNote(setup)}");
             }
             else if (hitTP1 && setup.Status != WatchedSetupStatus.Won)
             {
@@ -191,7 +191,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.ClosedAt   = DateTime.UtcNow;
                 updated++;
                 _log.Information("WatchedSetup Won (TP1): {Coin} @ {Price}", setup.CoinName, price);
-                await AlertAsync($"🎯 <b>Setup gewonnen (TP1)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP1 {setup.Target1:#,0.########}.");
+                await AlertAsync($"🎯 <b>Setup gewonnen (TP1)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte TP1 {setup.Target1:#,0.########}.{OrderNote(setup)}");
             }
             else if (hitSL)
             {
@@ -201,7 +201,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.ClosedAt   = DateTime.UtcNow;
                 updated++;
                 _log.Information("WatchedSetup Lost: {Coin} @ {Price}", setup.CoinName, price);
-                await AlertAsync($"🛑 <b>Setup verloren (SL)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} raakte stop-loss {setup.StopLoss:#,0.########}.");
+                await AlertAsync($"🛑 <b>Setup verloren (SL)</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} raakte stop-loss {setup.StopLoss:#,0.########}.{OrderNote(setup)}");
             }
             else if (entryHit && setup.Status == WatchedSetupStatus.Watching)
             {
@@ -210,7 +210,7 @@ public class WatchedSetupService : IWatchedSetupService
                 setup.Status  = WatchedSetupStatus.Open;
                 updated++;
                 _log.Information("WatchedSetup Open (entry hit): {Coin} @ {Price}", setup.CoinName, price);
-                await AlertAsync($"📥 <b>Entry geraakt</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte de entry {setup.EntryPrice:#,0.########}; setup is nu In Trade.");
+                await AlertAsync($"📥 <b>Entry geraakt</b> — {setup.CoinSymbol} {setup.Direction}\nKoers {price:#,0.########} bereikte de entry {setup.EntryPrice:#,0.########}; de Setup Tracker volgt hem nu als In Trade.{OrderNote(setup)}");
             }
         }
 
@@ -219,6 +219,14 @@ public class WatchedSetupService : IWatchedSetupService
 
         return updated;
     }
+
+    /// <summary>
+    /// Regel onder elke Setup Tracker-melding (v1.49): de Setup Tracker meet setups virtueel; alleen een gekoppelde order
+    /// is een echte (paper/demo) positie. Zonder deze regel leek "In Trade" op een geopende trade.
+    /// </summary>
+    public static string OrderNote(WatchedSetup setup) => setup.LinkedOrderId is int id
+        ? $"\nGekoppelde order #{id} — zie Trade Journal."
+        : "\n<i>Setup Tracker (virtueel): er is géén order geplaatst.</i>";
 
     /// <summary>Best-effort Telegram-alert; statusovergangen zijn eenmalig dus geen dedupe nodig.</summary>
     private async Task AlertAsync(string htmlMessage)
