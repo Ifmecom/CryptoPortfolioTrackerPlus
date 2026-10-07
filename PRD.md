@@ -1,9 +1,9 @@
 # Product Requirements Document  
-## CryptoPortfolioTracker Plus — v1.48
+## CryptoPortfolioTracker Plus — v1.49
 
 | | |
 |---|---|
-| **Versie** | 1.48 |
+| **Versie** | 1.49 |
 | **Datum** | Oktober 2026 |
 | **Platform** | Windows 11 · WinUI 3 · .NET 6 · x64 Unpackaged |
 | **Database** | SQLite via Entity Framework Core |
@@ -44,6 +44,7 @@ CryptoPortfolioTracker Plus is een desktop-applicatie voor Windows waarmee een i
 - **Fundamentals** — fundamentele analyse met Fundamental Score (0-100), SWOT-rapport en DefiLlama TVL
 - **Trade Journal** — paper trading én live trades, met P&L en R-multiple
 - **Trade Advies** — multi-timeframe analyse per coin met entry/SL/TP-berekening
+- **AI Research** *(v1.49)* — crypto-vragen aan ChatGPT, Claude, Grok, Gemini e.a. (ingebedde websites of eigen API-sleutel) met slimme vervolgstappen in de app
 - **Statistieken** — geaggregeerde handelsprestaties over meerdere periodes
 - **Bybit EU Demo** *(v1.47)* — echte spot-orders met nepgeld (1-klik én automatisch na een Pattern-scan), SL/TP op Bybit, sync in het Trade Journal
 - **Signaal-kalibratie** *(v1.46)* — elk signaal en elke Pattern-setup wordt gevolgd; scores worden vertaald naar een gemeten trefkans
@@ -202,6 +203,7 @@ De app gebruikt een `NavigationView` (WinUI 3) met een collapsible zijmenu.
 | Trade Journal | `TradeJournalView` | Overzicht paper + live trades |
 | Statistieken | `StatisticsView` | Geaggregeerde handelsprestaties |
 | Bronnen | `SourcesView` | Sentimentbronnen (Reddit, RSS, etc.) |
+| AI Research *(v1.49)* | `AiResearchView` | Vragen aan AI's (websites in WebView2 of API met eigen sleutel) + slimme acties |
 | CoinLibrary | `CoinLibraryView` | Bibliotheek van alle gevolgde coins |
 | Prijsniveaus | `PriceLevelsView` | Heatmap + prijsniveaus per coin |
 | Pattern Trading | `PatternTradingView` | Automatische patroonherkenning voor portfolio-coins |
@@ -1121,6 +1123,58 @@ op (gecached 30 min) en matcht per coin op CoinGecko-id (symbool als fallback) �
 HTTP 402 (Pro/betaald). Unlock-risico wordt benaderd via de FDV/MC-overhang en de handmatige DD-factor "unlock-risico".
 
 > Tabel wordt aangemaakt via `ApplyPlusSchemaAsync` (`CREATE TABLE IF NOT EXISTS`).
+
+---
+
+### 4.19 AI Research *(v1.49)*
+
+**Doel:** crypto-onderzoek met AI's zonder de app te verlaten, en het antwoord direct omzetten in een vervolgstap.
+
+**Structuur:** `AiResearchView` + `AiResearchViewModel` (scoped), service `IAiResearchService`/`AiResearchService` (singleton).
+Links een `Pivot`: tab **Assistent (API)** plus één tab per website uit `AiCatalog.WebProviders` (ChatGPT, Claude, Grok,
+Gemini, Perplexity, DeepSeek, Copilot — in de code-behind aangemaakt, WebView2 lui geïnitialiseerd). Eén gedeeld invoerveld
+onder de tabs; rechts **Slimme acties**, **Snelle vragen** (met muntkeuze, bezit eerst, dan op rang) en **Recente vragen**.
+
+**Twee manieren om te vragen:**
+- *Websites (gratis versies):* WebView2 met een eigen, blijvend profiel (`%LocalAppData%\CryptoPortfolioTrackerPlus\WebView2-AI`,
+  `CoreWebView2Environment.CreateWithOptionsAsync`) — inlogsessies en cookiekeuzes blijven bewaard; de app slaat geen
+  wachtwoorden op. Versturen: zonder context via de URL (`AiCatalog.UrlFor`, `?q=` bij ChatGPT/Claude/Grok/Perplexity/Copilot);
+  met context of bij sites zonder `?q=` (Gemini, DeepSeek) op het klembord om te plakken — portfolio-context gaat **nooit** in een URL.
+  'Aan alle sites' opent de vraag (zonder context) in alle sites met `?q=`. 'Antwoord analyseren' leest via `ExecuteScriptAsync`
+  de selectie, anders de laatste 8000 tekens van de pagina. 'Open in browser' voor sites die ingebedde logins weigeren (Google/X).
+- *API (eigen sleutel):* `AiCatalog.ApiProviders` — gratis tier: Gemini, Groq, OpenRouter (`:free`), Mistral; betaald: Anthropic,
+  OpenAI, xAI, DeepSeek. Claude via de officiële **Anthropic-SDK** (NuGet `Anthropic`, beta-endpoint; Opus 5.x/Fable met
+  `output_config.effort = medium` en server-side fallback `fallbacks: "default"` + beta `server-side-fallback-2026-07-01`;
+  `stop_reason` refusal/max_tokens afgehandeld; typed exceptions → Nederlandse foutmelding). Overige aanbieders via hun
+  OpenAI-compatibele `chat/completions` (pure `AiChatWire`: body zonder temperature/max_tokens, parsing, foutmeldingen incl.
+  Gemini-arrayvorm). Gesprek: laatste 12 beurten; de portfolio-context (`AiPromptBuilder.BuildContext`: posities op waarde met
+  aantal/koers/aandeel/resultaat, plus gevolgde munten) gaat alleen mee met de eerste vraag van een gesprek. De systeemprompt
+  is stabiel (geen tijd erin) en vraagt om een optioneel JSON-codeblok met taal `acties`.
+
+**Slimme acties** (`SmartAction`, pure `AiIntentDetector` + `AiPromptBuilder.ExtractActions`, tests in `AiResearchTests.cs`):
+- Munt-herkenning tegen de bibliotheek: naam (langste eerst, "Bitcoin Cash" vóór "Bitcoin"), ticker in hoofdletters (min. 2
+  tekens, niet in de stoplijst van afkortingen als ETF/SEC/RSI/ATH) of `$ticker` in elke schrijfwijze. Zinnen zonder munt horen
+  bij de vorige munt (niveaus in opsommingsregels). Onbekende `$TICKER` of "voeg X toe" → *toevoegen aan bibliotheek*.
+- Intenties NL/EN: koop/kopen/instappen/accumuleren/buy/long → *aankoop vastleggen* + *paper trade Long*; verkoop/afbouwen/
+  winst nemen/sell/short → *verkoop vastleggen* (alleen munten in bezit) + *paper trade Short*. "long/short term" telt niet.
+- Niveaus: entry/instap, stop(-loss)/SL/invalidatie, target/TP/doel/koersdoel, steun/support, weerstand/resistance — getallen in
+  EN- en NL-notatie, `k`-suffix; dubbelzinnige notatie ("2.750") wordt opgelost met de koers (`AiNumberParser.Pick`). Niveaus
+  verder dan factor 5 van de koers vallen weg. Richting zonder intentiewoord: t.o.v. entry, anders steun, anders koers. Paper-trade-
+  niveaus worden getoetst aan de vulprijs (genoemde entry = limit-order via `PaperTradeDialog.UseLimitEntry`, anders de koers).
+- Altijd per munt: *Trade Advies*, *Fundamentals*, *TradingView*, *antwoord bewaren als notitie*. Stablecoins krijgen geen acties.
+- Live tijdens het typen (350 ms vertraging); volgorde: acties uit de getypte vraag, dan uit het antwoord (AI-voorstel eerst).
+
+**Uitvoering — de app voert nooit zelf iets uit.** `Helpers/AppNavigator` zet een `AppNavigationRequest` klaar en selecteert het
+menu-item (`MainPage.NavigateTo`); de doelpagina pakt de opdracht in zijn `Loaded` op met eigen context:
+`TransactionRequest` → Assets opent `TransactionDialog` (Buy/Sell + munt + notitie voorgevuld), `AddCoinRequest` → Coin Library
+opent `AddCoinDialog` met zoektekst (na `Opened`), `PriceLevelsRequest` → Prijsniveaus opent `AddPriceLevelsDialog` (koop/stop/TP
+over de bestaande heen), `TradeAdviesRequest` → Trade Advies analyseert de munt, `FundamentalsRequest` → zoekfilter. Paper trade
+opent `PaperTradeDialog` direct en plaatst via `ITradeService.PlacePaperAsync`; TradingView via `ITradingViewService`.
+Notitie: `AppendNoteAsync` met `ExecuteUpdateAsync` (alleen het Note-veld; nooit `Coins.Update`).
+
+**Opslag:** API-sleutels DPAPI-versleuteld in de voorkeuren (`AiResearch.{id}.Key`), modelnaam per aanbieder
+(`AiResearch.{id}.Model`, leeg = standaard), laatst gekozen aanbieder en context-vinkje. Geschiedenis: `AiResearchHistory.json`
+(laatste 100). Sleutels via `AiKeysDialog` (code-only; leeg veld = sleutel behouden, 'Wissen' = verwijderen).
 
 ---
 
@@ -2234,6 +2288,19 @@ vaak samen met de markt mee (onderling afhankelijk).
 
 ---
 
+### 7.17 AI-aanbieders *(v1.49)*
+
+| | |
+|---|---|
+| **Websites** | chatgpt.com · claude.ai · grok.com · gemini.google.com · perplexity.ai · chat.deepseek.com · copilot.microsoft.com (WebView2, gebruiker logt zelf in) |
+| **API's** | Anthropic (`api.anthropic.com`, officiële SDK) · OpenAI-compatibel: `generativelanguage.googleapis.com/v1beta/openai`, `api.groq.com/openai/v1`, `openrouter.ai/api/v1`, `api.mistral.ai/v1`, `api.openai.com/v1`, `api.x.ai/v1`, `api.deepseek.com` |
+| **Gebruik** | AI Research (§4.19): vragen, optioneel met portfolio-context; alleen op initiatief van de gebruiker |
+| **Service** | `IAiResearchService` / `AiResearchService` (singleton) · pure `AiChatWire`, `AiPromptBuilder`, `AiIntentDetector`, `AiNumberParser` |
+| **Authenticatie** | Websites: sessie in het WebView2-profiel · API: sleutel van de gebruiker, DPAPI-versleuteld |
+| **Kosten** | Websites gratis (eigen accountlimieten) · gratis API-tier bij Gemini, Groq, OpenRouter, Mistral · overige per gebruik |
+
+---
+
 ## 8. Achtergrondservices
 
 ### 8.1 SentimentService (in-process)
@@ -2479,6 +2546,9 @@ Opslag: ExchangeAccount.ApiKeyEncrypted (DPAPI)
          ExchangeAccount.PublicKeyPem (plaintext — niet gevoelig)
 ```
 
+AI-API-sleutels *(v1.49)* gaan via dezelfde DPAPI-aanpak (`AiResearchService.Protect`, `DataProtectionScope.CurrentUser`) en staan
+als base64 in de voorkeuren (`AiResearch.{aanbieder}.Key`); ze worden nooit teruggetoond of gelogd en alleen naar de eigen aanbieder gestuurd.
+
 ### 11.2 Portfolio-wachtwoord
 
 Het portfolio kan worden vergrendeld met een wachtwoord. Bij juist wachtwoord opent de hoofd-portfolio. Bij het "duress"-wachtwoord opent een alternatieve portfolio (plausible deniability).
@@ -2614,6 +2684,7 @@ Voor `ExchangeKind.Bybit` (echt geld) gooit de methode bewust een fout. Vrijgeve
 | v1.18 | Fear & Greed Index widget op dashboard · `FearGreedReading`-entiteit · `IFearGreedService` (alternative.me API, 60-min cache) · Databronnen-tab uitgebreid |
 | v1.19 | Pattern Trading tab · automatische Level 1 + Level 2 patroonherkenning op 1D/4H/1H · TradabilityScore 0–100 · setup-kaarten (Entry/SL/TP1/TP2/R/R) · 5 filters · klembord-share · `IPatternDetectionService` + `IPatternTradingService` |
 | v1.32 | Setup Tracker verbeterd: bevestigingsdialoog bij handmatig sluiten vóór TP1 bereikt · instap-/sluitingstijden (`EntryAt`) op setupkaarten · automatisch ingevuld bij TP/SL-hit · backfill voor bestaande trades · `Functions.Formatters.cs` (partial class, testbaar) · `WatchedSetupService` interne testconstructor · `CryptoPortfolioTracker.Tests` xUnit project (40 tests: TP/SL-detectie, PnlPct, PatternScore, formatters) |
+| v1.49 | **AI Research** (§4.19): nieuwe pagina met ingebedde AI-websites (WebView2, blijvend profiel) en API-assistent met eigen sleutel (Claude via Anthropic-SDK, overige OpenAI-compatibel) · portfolio-context · **slimme acties** uit vraag/antwoord, ook live tijdens het typen (pure `AiIntentDetector`/`AiNumberParser`/`AiPromptBuilder`) → transactie, paper trade (limit op genoemde entry), prijsniveaus, munt toevoegen, Trade Advies, Fundamentals, TradingView, notitie · `AppNavigator` + voorinvulling in `TransactionDialog`, `AddCoinDialog`, `AddPriceLevelsDialog`, `PaperTradeDialog.UseLimitEntry` · `AiKeysDialog` · geschiedenis `AiResearchHistory.json` |
 | v1.48 | **TradingView-koppeling**: `ITradingViewService` + pure `TradingViewSymbol`/`PineScriptGenerator`/`TradingViewWatchlist` · 📊-knoppen op Pattern Trading, Trade Advies, Setup Tracker, 3% Trading en Analyse (grafiek openen, Pine v6-script per setup of voor de top-setups met alerts, watchlist-export) · `PineScriptDialog` · instellingen standaardbeurs/interval · **TradingView-webhooks** via ntfy.sh (`TradingViewWebhookService`, pure `TradingViewAlerts`): Telegram-melding, koppeling aan gevolgde setup, optioneel Bybit Demo-order bij 'Entry geraakt' · **Pagina-uitleg**: ⓘ-knop rechtsboven op elke pagina (`PageInfoButton`) · pure `PageHelpCatalog` met per menu-optie wat zie je / hoe lees je het / hoe ga je ermee om / let op · `PageHelpDialog` · test die elke `Tag` in `MainPage.xaml` afdekt · **Telegram**: `TelegramHtml.Sanitize` + platte-tekst-vangnet (losse `<` gaf ‘can't parse entities’) · **Bybit EU Demo**: saldo via `/v5/order/spot-borrow-check`, sluiten annuleert alle TP/SL-ordertypes · **Opstartcrash opgelost**: `Program.cs` omzeilt heapoverloop in WinAppSDK-MRM · **Top X**: `OpportunityRanker` (kansscore = kwaliteit × R/R × gemeten trefkans × waarschuwingen) + gedeelde `TopPicksBar` op Analyse, Trade Advies, Pattern Trading, Setup Tracker en 3% Trading (markeren of alleen top, per pagina onthouden) · **3% Trading**: shortlist-limieten instelbaar (`ThreePctShortlistMax`, `ThreePctShortlistMaxCorrelation`) · **Laadsnelheid**: dode `CheckAndFixPrices` uit `MarketChartById.LoadMarketChartJson` (Analyse/Prijsniveaus ~10 s → <0,5 s), `FillPricesArray` lineair, snapshot-eerst in Statistieken (`UpdateOutcomesAsync`) en Trade Journal (`SyncLiveInBackgroundAsync`), `Helpers/PerfLog` · **Narratief-bug**: `PriceUpdateService` schrijft koersvelden met `ExecuteUpdateAsync` i.p.v. `Coins.Update(coin)` (maakte sinds 5436f08 per koerswijziging een leeg narratief); data hersteld uit back-up 12-05-2026 |
 | v1.47 | **Bybit EU Demo**: `ExchangeKind.BybitDemo` · `ILiveOrderExecutor`/`BybitDemoExecutor` (spot, limit-instap met gekoppelde TP/SL, cancel, close, sync) · pure `BybitApi`, `BybitOrderPlanner`, `LiveOrderReconciler`, `AutoTradeSelector` · `AutoTraderService` na Pattern-scan (schakelaar, standaard uit) · order-dialoog 'Paper / Bybit EU Demo' · Trade Journal-sync + 'Demo'-label · instellingen voor demo-sleutel (domein-detectie EU/global) en automatisch handelen · `IGuardrailService.CheckNewLiveTradeAsync` · echt geld geblokkeerd |
 | v1.46 | **Signaal-kalibratie** (signal-outcome-tracker): `SignalOutcome`-entiteit + `SignalOutcomes`-tabel · pure `SignalOutcomeEvaluator` (meting 1/3/7/14 d, MFE/MAE, geen lookahead) + `SignalCalibrationCalculator` (trefkans per bron/richting/scoreklasse/regime) · `ISignalOutcomeService` (SignalEngine-signalen met terugwerkende kracht, Pattern-scans vanaf nu, daily klines Binance→KuCoin→Gate.io→MEXC) · nieuw tabblad Statistieken → Signaal-kalibratie · gemeten kans onder de score op de Analyse-pagina · `ReliabilityThresholds.MinSignalOutcomes` (20) |

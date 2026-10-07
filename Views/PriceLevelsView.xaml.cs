@@ -22,6 +22,10 @@ public partial class PriceLevelsView : Page, IDisposable
     private async void View_Loaded(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)
     {
         using (PerfLog.Measure("PriceLevelsView.ViewLoading")) await _viewModel.ViewLoading();
+
+        // Opdracht vanuit AI Research (v1.49): prijsniveaus-venster voorgevuld openen.
+        if (AppNavigator.Take<PriceLevelsRequest>() is { } request)
+            await _viewModel.ShowAddLevelsDialogWithPrefill(request);
     }
     private async void View_Loading(Microsoft.UI.Xaml.FrameworkElement sender, object args)
     {

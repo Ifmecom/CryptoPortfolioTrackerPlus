@@ -22,7 +22,7 @@ public sealed partial class AddPriceLevelsDialog : ContentDialog
     public ICollection<PriceLevel> newPriceLevels { get; set; }
      
 
-    public AddPriceLevelsDialog(Coin coin, PriceLevelsViewModel viewModel)
+    public AddPriceLevelsDialog(Coin coin, PriceLevelsViewModel viewModel, PriceLevelsRequest? prefill = null)
     {
         _viewModel = viewModel;
         InitializeComponent();
@@ -31,6 +31,7 @@ public sealed partial class AddPriceLevelsDialog : ContentDialog
         DecimalSeparator = _viewModel.AppSettings.NumberFormat.NumberDecimalSeparator;
         newPriceLevels = new List<PriceLevel>(); // Initialize newPriceLevels
         InitializeFields(coin.PriceLevels);
+        if (prefill is not null) ApplyPrefill(prefill);
 
         SetDialogTitleAndButtons(coin);
     }
@@ -58,6 +59,14 @@ public sealed partial class AddPriceLevelsDialog : ContentDialog
                 StopNote = level.Note;
             }
         }
+    }
+
+    /// <summary>Niveaus uit AI Research (v1.49) over de bestaande heen; lege niveaus laten het bestaande staan.</summary>
+    private void ApplyPrefill(PriceLevelsRequest pf)
+    {
+        if (pf.Buy is > 0)        { BuyValue  = pf.Buy.Value;        BuyNote  = pf.Note; }
+        if (pf.Stop is > 0)       { StopValue = pf.Stop.Value;       StopNote = pf.Note; }
+        if (pf.TakeProfit is > 0) { TpValue   = pf.TakeProfit.Value; TpNote   = pf.Note; }
     }
 
     private void SetDialogTitleAndButtons(Coin coin)

@@ -173,6 +173,16 @@ public partial class MainPage : Page //INotifyPropertyChanged
             }
         }
     }
+    /// <summary>Selecteer het menu-item met deze Tag (zoals een klik van de gebruiker). False als het niet bestaat.</summary>
+    public bool NavigateTo(string viewTag)
+    {
+        var item = navigationView.MenuItems.OfType<NavigationViewItem>()
+            .FirstOrDefault(x => (x.Tag as string) == viewTag);
+        if (item is null || ReferenceEquals(navigationView.SelectedItem, item)) return false;
+        navigationView.SelectedItem = item;
+        return true;
+    }
+
     private void LoadView(Type pageType)
     {
         if (pageType.Name == "CoinLibraryView")

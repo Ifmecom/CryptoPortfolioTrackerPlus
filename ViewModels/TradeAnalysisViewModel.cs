@@ -373,6 +373,16 @@ public partial class TradeAnalysisViewModel : BaseViewModel
     // Jump to single-coin analysis from the ranked list
     // -----------------------------------------------------------------------
 
+    /// <summary>Munt kiezen en analyseren op ApiId — vanuit AI Research (v1.49). False als de munt niet in de lijst staat.</summary>
+    public async Task<bool> AnalyzeCoinByApiIdAsync(string apiId)
+    {
+        var coin = Coins.FirstOrDefault(c => c.ApiId == apiId);
+        if (coin is null) return false;
+        SelectedCoin = coin;
+        await AnalyzeAsync();
+        return true;
+    }
+
     public async Task AnalyzeCoinFromSummaryAsync(CoinAnalysisSummary summary)
     {
         SelectedCoin = summary.Coin;

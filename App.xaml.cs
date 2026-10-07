@@ -205,6 +205,7 @@ public partial class App : Application
         services.AddScoped<SetupTrackerView>();
         services.AddScoped<ThreePctView>();
         services.AddScoped<FundamentalsView>();
+        services.AddScoped<AiResearchView>();
 
         services.AddScoped<AssetsViewModel>();
         services.AddScoped<AccountsViewModel>();
@@ -226,6 +227,7 @@ public partial class App : Application
         services.AddScoped<TaxViewModel>();
         services.AddScoped<ThreePctViewModel>();
         services.AddScoped<FundamentalsViewModel>();
+        services.AddScoped<AiResearchViewModel>();
 
         // Register the factory
         services.AddSingleton<IPortfolioContextFactory, PortfolioContextFactory>();
@@ -291,6 +293,7 @@ public partial class App : Application
         services.AddScoped<IAutoTraderService, AutoTraderService>();          // v1.47 — automatisch handelen (demo)
         services.AddSingleton<ITradingViewService, TradingViewService>();     // v1.48 — TradingView: grafiek, Pine Script, watchlist
         services.AddSingleton<ITradingViewWebhookService, TradingViewWebhookService>(); // v1.48 — TradingView-alerts via ntfy.sh
+        services.AddSingleton<IAiResearchService, AiResearchService>();      // v1.49 — AI Research: vragen aan AI-API's, sleutels, geschiedenis
 
         // Pattern Trading (Phase 1 + 2)
         services.AddSingleton<IPatternDetectionService, PatternDetectionService>();

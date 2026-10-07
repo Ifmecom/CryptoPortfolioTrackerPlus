@@ -28,6 +28,14 @@ public sealed partial class WhatsNewDialog : ContentDialog
 
     private void BuildContent()
     {
+        AddVersionHeader("v1.49  —  AI Research");
+
+        AddFeature("🤖", "AI Research",
+            "Vraag ChatGPT, Claude, Grok, Gemini en anderen om raad zonder de app te verlaten — gratis via de websites, of met je eigen API-sleutel.");
+
+        AddFeature("⚡", "Slimme acties",
+            "Uit vraag en antwoord stelt de app vervolgstappen voor: transactie, paper trade, prijsniveaus, munt toevoegen, analyse of notitie.");
+
         AddVersionHeader("v1.48  —  Uitleg bij elke pagina");
 
         AddFeature("💶", "Trade Journal: inleg per trade",

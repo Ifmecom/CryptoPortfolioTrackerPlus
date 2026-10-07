@@ -19,7 +19,13 @@ public sealed partial class FundamentalsView : Page
     }
 
     private async void View_Loaded(object sender, RoutedEventArgs e)
-        { using (PerfLog.Measure("FundamentalsView.ViewLoadingAsync")) await _viewModel.ViewLoadingAsync(); }
+    {
+        using (PerfLog.Measure("FundamentalsView.ViewLoadingAsync")) await _viewModel.ViewLoadingAsync();
+
+        // Opdracht vanuit AI Research (v1.49): filter op de munt.
+        if (AppNavigator.Take<FundamentalsRequest>() is { } request)
+            _viewModel.SearchText = request.Symbol;
+    }
 
     private void View_Unloaded(object sender, RoutedEventArgs e)
     {

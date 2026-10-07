@@ -338,13 +338,18 @@ public sealed partial class AssetsViewModel : BaseViewModel
 
 
     [RelayCommand(CanExecute = nameof(CanShowTransactionDialogToAdd))]
-    public async Task ShowTransactionDialogToAdd()
+    public Task ShowTransactionDialogToAdd() => ShowTransactionDialogToAddCore(null);
+
+    /// <summary>Transactievenster met voorinvulling (koop/verkoop + munt), vanuit AI Research (v1.49).</summary>
+    public Task ShowTransactionDialogWithPrefill(TransactionRequest prefill) => ShowTransactionDialogToAddCore(prefill);
+
+    private async Task ShowTransactionDialogToAddCore(TransactionRequest? prefill)
     {
         var loc = Localizer.Get();
         try
         {
             Logger.Information("Showing Transaction Dialog for Adding");
-            var dialog = new TransactionDialog(this, _transactionService, DialogAction.Add)
+            var dialog = new TransactionDialog(this, _transactionService, DialogAction.Add, null, prefill)
             {
                 XamlRoot = AssetsView.Current.XamlRoot
             };

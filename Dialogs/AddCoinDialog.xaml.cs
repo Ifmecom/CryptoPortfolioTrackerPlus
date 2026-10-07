@@ -30,7 +30,7 @@ public partial class AddCoinDialog : ContentDialog
     [ObservableProperty] private Narrative initialNarrative = new();
 
 
-    public AddCoinDialog(CoinLibraryViewModel viewModel, DialogAction dialogAction, IMessenger messenger)
+    public AddCoinDialog(CoinLibraryViewModel viewModel, DialogAction dialogAction, IMessenger messenger, string? initialSearch = null)
     {
         _viewModel = viewModel;
         CoinName = "";
@@ -41,6 +41,14 @@ public partial class AddCoinDialog : ContentDialog
         InitialNarrative = Narratives.Where(x => x.Name == "- Not Assigned -").FirstOrDefault();
         InitializeComponent();
         BePatientVisibility = Visibility.Collapsed;
+        // Zoektekst vanuit AI Research (v1.49): pas invullen als het venster open is (eerder breekt de zoekbox);
+        // de gebruiker kiest zelf de juiste munt uit de suggesties.
+        if (!string.IsNullOrWhiteSpace(initialSearch))
+            Opened += (_, _) =>
+            {
+                CoinName = initialSearch.Trim();
+                ASBox.Focus(FocusState.Programmatic);
+            };
         SetDialogTitleAndButtons();
         messenger.Register<ShowBePatienceMessage>(this, (r, m) =>
         {

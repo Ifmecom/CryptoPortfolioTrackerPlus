@@ -233,6 +233,18 @@ public sealed partial class PaperTradeDialog : ContentDialog
         Recalculate();
     }
 
+    /// <summary>Limit-order op een genoemde entry (AI Research, v1.49). Aanroepen na de constructor.</summary>
+    public void UseLimitEntry(double entry)
+    {
+        if (entry <= 0) return;
+        _initialising = true;
+        rdLimit.IsChecked = true;
+        pnlLimitPrice.Visibility = Visibility.Visible;
+        nbLimitPrice.Value = Math.Round(entry, GetDecimals(entry));
+        _initialising = false;
+        Recalculate();
+    }
+
     private void OrderType_Changed(object sender, RoutedEventArgs e)
     {
         if (_initialising) return;

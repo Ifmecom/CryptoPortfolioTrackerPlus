@@ -867,6 +867,28 @@
                                     </StackPanel>
                                 </ct:SettingsCard>
 
+                                <ct:SettingsCard Header="AI Research: vraaggeschiedenis"
+                                    Description="%LocalAppData%\CryptoPortfolioTrackerPlus\AiResearchHistory.json"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE81C;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="De laatste 100 vragen en antwoorden van de API-assistent (aanbieder, vraag, antwoord, tijd). Gebruikt voor 'Recente vragen'."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Beheerd door: AiResearchService (v1.49)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
+                                <ct:SettingsCard Header="AI Research: browserprofiel (inlogsessies)"
+                                    Description="%LocalAppData%\CryptoPortfolioTrackerPlus\WebView2-AI"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                                    <StackPanel MaxWidth="320" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="WebView2-profiel van de ingebedde AI-websites: cookies en inlogsessies, zodat je niet steeds opnieuw hoeft in te loggen. De app slaat zelf geen wachtwoorden op. Map verwijderen = overal uitloggen."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Beheerd door: Microsoft Edge WebView2 (AiResearchView, v1.49)"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+
                                 <ct:SettingsCard Header="TradingView-exports (.pine / watchlist)"
                                     Description="Documenten\CryptoPortfolioTracker\TradingView"
                                     HeaderIcon="{ui:FontIcon Glyph=&#xE8E5;}">
@@ -905,6 +927,37 @@
                                                    Text="Opent de grafiek van een munt in je browser. TradingView heeft geen openbare API: de app haalt er geen data op en stuurt er niets naartoe (alerts komen via ntfy.sh). Pine Script (v6) en watchlists plak/importeer je zelf."/>
                                         <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
                                                    Text="Kosten: gratis account volstaat · Alerts uit het Pine Script werken binnen TradingView; webhooks (betaald plan) komen via ntfy.sh in de app — zie hierboven."/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+                            </ct:SettingsExpander.Items>
+                        </ct:SettingsExpander>
+
+                        <!-- ── AI-assistenten (v1.49) ─────────────────────── -->
+                        <ct:SettingsExpander Header="AI-assistenten (AI Research)"
+                            Description="AI-diensten die je vanuit de pagina AI Research gebruikt. Er gaat alleen iets naartoe als jij een vraag stelt."
+                            HeaderIcon="{ui:FontIcon Glyph=&#xE99A;}"
+                            IsExpanded="True">
+                            <ct:SettingsExpander.Items>
+                                <ct:SettingsCard Header="Ingebedde websites (gratis versies)"
+                                    Description="chatgpt.com · claude.ai · grok.com · gemini.google.com · perplexity.ai · chat.deepseek.com · copilot.microsoft.com"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE774;}">
+                                    <StackPanel MaxWidth="360" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="De echte websites in een ingebouwde browser (WebView2). Je logt daar zelf in; de app ziet je wachtwoord niet. Een vraag gaat via de URL (alleen de vraag) of via het klembord (vraag + portfolio-context), nooit automatisch."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Richting: jouw vraag gaat naar de site · 'Antwoord analyseren' leest alleen de geselecteerde tekst of het laatste stuk van de pagina"/>
+                                    </StackPanel>
+                                </ct:SettingsCard>
+                                <ct:SettingsCard Header="AI-API's (met eigen sleutel)"
+                                    Description="Gemini · Groq · OpenRouter · Mistral · Anthropic (Claude) · OpenAI · xAI (Grok) · DeepSeek"
+                                    HeaderIcon="{ui:FontIcon Glyph=&#xE8D7;}">
+                                    <StackPanel MaxWidth="360" Spacing="4">
+                                        <TextBlock TextWrapping="Wrap" FontSize="12"
+                                                   Text="Alleen als je een sleutel invult (AI Research → Sleutels). De app stuurt je vraag, de laatste beurten van het gesprek en — als het vinkje aan staat — je portfolio-context (posities, koersen, resultaat, gevolgde munten) naar de gekozen aanbieder."/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Kosten: gratis tier bij Gemini, Groq, OpenRouter (:free-modellen) en Mistral; overige betaald per gebruik · Sleutels DPAPI-versleuteld in de instellingen"/>
+                                        <TextBlock FontSize="11" Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}"
+                                                   Text="Beheerd door: AiResearchService (Claude via de officiële Anthropic-SDK, overige via hun OpenAI-compatibele endpoint)"/>
                                     </StackPanel>
                                 </ct:SettingsCard>
                             </ct:SettingsExpander.Items>

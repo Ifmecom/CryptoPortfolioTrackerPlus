@@ -59,6 +59,10 @@ public sealed partial class TradeAnalysisView : Page
             ShowAnalysisPlaceholder();
             CopyButton.IsEnabled = false;
         }
+
+        // Opdracht vanuit AI Research (v1.49): munt kiezen en direct analyseren.
+        if (AppNavigator.Take<TradeAdviesRequest>() is { } request)
+            await _vm.AnalyzeCoinByApiIdAsync(request.CoinApiId);
     }
 
     private void View_Unloaded(object sender, RoutedEventArgs e)

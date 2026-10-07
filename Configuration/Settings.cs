@@ -335,6 +335,28 @@ public partial class Settings : ObservableObject
     }
 
     /// <summary>Top X-keuze per pagina (v1.48): aantal te markeren setups (0 = uit, standaard 5).</summary>
+    // ── AI Research (v1.49) ──────────────────────────────────────────────────
+    /// <summary>API-sleutel per aanbieder, DPAPI-versleuteld (base64) — ontsleutelen doet <c>AiResearchService</c>.</summary>
+    public string GetAiApiKeyProtected(string providerId) => _store.Get($"AiResearch.{providerId}.Key", string.Empty);
+    public void SetAiApiKeyProtected(string providerId, string value) => _store.Set($"AiResearch.{providerId}.Key", value ?? string.Empty);
+
+    /// <summary>Modelnaam per aanbieder; leeg = standaardmodel uit <c>AiCatalog</c>.</summary>
+    public string GetAiModel(string providerId) => _store.Get($"AiResearch.{providerId}.Model", string.Empty);
+    public void SetAiModel(string providerId, string value) => _store.Set($"AiResearch.{providerId}.Model", value?.Trim() ?? string.Empty);
+
+    public string AiResearchApiProvider
+    {
+        get => _store.Get("AiResearch.ApiProvider", string.Empty);
+        set { _store.Set("AiResearch.ApiProvider", value ?? string.Empty); OnPropertyChanged(nameof(AiResearchApiProvider)); }
+    }
+
+    /// <summary>Portfolio-context meesturen met een vraag (standaard aan).</summary>
+    public bool AiResearchIncludeContext
+    {
+        get => _store.Get("AiResearch.IncludeContext", true);
+        set { _store.Set("AiResearch.IncludeContext", value); OnPropertyChanged(nameof(AiResearchIncludeContext)); }
+    }
+
     public int GetTopPickCount(string page) => _store.Get($"TopPicks.{page}.Count", 5);
     public void SetTopPickCount(string page, int value) => _store.Set($"TopPicks.{page}.Count", Math.Clamp(value, 0, 50));
 

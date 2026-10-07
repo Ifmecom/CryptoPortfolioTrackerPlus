@@ -27,6 +27,29 @@ public sealed partial class WhatsNewView : Page
 
     private void BuildContent()
     {
+        // ── v1.49 ────────────────────────────────────────────────────────────
+        AddVersionHeader("v1.49", "AI Research");
+
+        AddFeature("🤖", "AI Research: vragen aan ChatGPT, Claude, Grok, Gemini en meer — in de app",
+            "Nieuwe pagina AI Research (menu Analyse & handel). Tabbladen met de echte websites van ChatGPT, Claude, Grok, " +
+            "Gemini, Perplexity, DeepSeek en Copilot: de gratis versies, je logt daar zelf in en de app onthoudt de sessie. " +
+            "'Aan alle sites' opent dezelfde vraag in vijf AI's tegelijk, zodat je de antwoorden kunt vergelijken. " +
+            "Met een API-sleutel (gratis bij Gemini, Groq, OpenRouter en Mistral; betaald bij Claude, OpenAI, xAI en DeepSeek) " +
+            "stelt de app de vraag zelf, desgewenst met je portfolio als context, en houdt het gesprek bij. " +
+            "Sleutels worden versleuteld op deze pc bewaard.");
+
+        AddFeature("⚡", "Slimme acties uit vraag en antwoord",
+            "Noem je een munt, dan stelt de app direct vervolgstappen voor — al tijdens het typen: aankoop of verkoop vastleggen " +
+            "(transactievenster voorgevuld), paper trade met de genoemde entry/stop/doel, prijsniveaus zetten, een onbekende munt " +
+            "toevoegen aan je bibliotheek, de munt analyseren in Trade Advies of Fundamentals, de grafiek openen op TradingView, " +
+            "of het antwoord bewaren als notitie bij de munt. Op een website selecteer je het antwoord en klik je " +
+            "'Antwoord analyseren'. Niveaus die niet bij de koers of de richting passen, vallen weg. De app voert nooit zelf " +
+            "iets uit: je bevestigt elke actie in het venster dat opent.");
+
+        AddFeature("💡", "Snelle vragen en geschiedenis",
+            "Kant-en-klare vragen voor een gekozen munt (fundamenteel verhaal, technische setup, catalysts, tokenomics, " +
+            "concurrenten, nieuws met bronnen) of je hele portfolio, en je recente vragen om opnieuw te stellen.");
+
         // ── v1.48 ────────────────────────────────────────────────────────────
         AddVersionHeader("v1.48", "Uitleg bij elke pagina");
 

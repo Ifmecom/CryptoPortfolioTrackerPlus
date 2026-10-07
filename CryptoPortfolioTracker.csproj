@@ -31,6 +31,7 @@
     <DefaultLanguage>en-US</DefaultLanguage>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="Anthropic" Version="12.53.0" />
     <PackageReference Include="AK.Toolkit.WinUI3.ScrollBarExtensions" Version="1.0.5" />
     <PackageReference Include="Flurl.Http" Version="3.2.4" />
     <PackageReference Include="Telegram.Bot" Version="19.0.0" />

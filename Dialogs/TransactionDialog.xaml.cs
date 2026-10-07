@@ -113,9 +113,14 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
     }
 
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. Consider declaring as nullable.
-    public TransactionDialog(AssetsViewModel viewModel, ITransactionService transactionService, DialogAction _dialogAction, Transaction? transaction = null)
+    /// <summary>Voorinvulling vanuit AI Research (v1.49): koop/verkoop + munt + notitie. Wordt eenmalig toegepast.</summary>
+    private TransactionRequest? _prefill;
+
+    public TransactionDialog(AssetsViewModel viewModel, ITransactionService transactionService, DialogAction _dialogAction, Transaction? transaction = null,
+                             TransactionRequest? prefill = null)
     {
         _viewModel = viewModel;
+        _prefill = _dialogAction == DialogAction.Add ? prefill : null;
         InitializeComponent();
         //dispatcherQueue = DispatcherQueue.GetForCurrentThread();
         dialogAction = _dialogAction;
@@ -146,6 +151,7 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
         else
         {
             Title = loc.GetLocalizedString("TransactionDialog_Title_Add");
+            if (_prefill is not null) index = _prefill.IsBuy ? 4 : 5;   // 4 = Buy, 5 = Sell
         }
 
         // WinUI 3 RadioButtons auto-selecteert SelectedIndex=0 tijdens InitializeComponent,
@@ -474,6 +480,11 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
             if (dialogAction == DialogAction.Add)
             {
                 TimeStamp = DateTimeOffset.Parse(DateTime.Now.ToString());
+                if (_prefill is { } pf)
+                {
+                    _prefill = null;
+                    ApplyPrefill(pf);
+                }
             }
             else if (dialogAction == DialogAction.Edit && transactionToEdit != null)
             {
@@ -499,6 +510,18 @@ public partial class TransactionDialog : ContentDialog //, INotifyPropertyChange
                 IsEarnings = PriceA == 0;
             }
         }
+    }
+
+    /// <summary>Munt kiezen uit de lijst ("SYMBOOL Naam"); de gebruiker vult zelf aantal, prijs en account aan.</summary>
+    private void ApplyPrefill(TransactionRequest pf)
+    {
+        static string? Match(List<string> list, string symbol) =>
+            list.FirstOrDefault(x => x.StartsWith(symbol + " ", StringComparison.OrdinalIgnoreCase))
+            ?? list.FirstOrDefault(x => x.Equals(symbol, StringComparison.OrdinalIgnoreCase));
+
+        if (pf.IsBuy && Match(ListCoinB, pf.Symbol) is { } coinB) CoinB = coinB;
+        else if (!pf.IsBuy && Match(ListCoinA, pf.Symbol) is { } coinA) CoinA = coinA;
+        Note = pf.Note;
     }
 
     private async void ASBoxCoinA_TextChanged(object sender, EventArgs e)

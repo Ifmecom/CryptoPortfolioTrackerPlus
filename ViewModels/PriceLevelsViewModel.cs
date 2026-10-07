@@ -134,13 +134,27 @@ public partial class PriceLevelsViewModel : BaseViewModel
 
 
     [RelayCommand]
-    public async Task ShowAddLevelsDialog(Coin coin)
+    public Task ShowAddLevelsDialog(Coin coin) => ShowAddLevelsDialogCore(coin, null);
+
+    /// <summary>Prijsniveaus-venster voorgevuld met niveaus uit AI Research (v1.49).</summary>
+    public async Task ShowAddLevelsDialogWithPrefill(PriceLevelsRequest prefill)
+    {
+        var coin = _priceLevelService.ListCoins.FirstOrDefault(c => c.ApiId == prefill.CoinApiId);
+        if (coin is null)
+        {
+            await ShowMessageDialog("Munt niet gevonden", "Deze munt staat niet in de lijst van Prijsniveaus.", "OK");
+            return;
+        }
+        await ShowAddLevelsDialogCore(coin, prefill);
+    }
+
+    private async Task ShowAddLevelsDialogCore(Coin coin, PriceLevelsRequest? prefill)
     {
         var loc = Localizer.Get();
         Logger.Information("Showing Price Levels Dialog");
         try
         {
-            var dialog = new AddPriceLevelsDialog(coin, this)
+            var dialog = new AddPriceLevelsDialog(coin, this, prefill)
             {
                 XamlRoot = PriceLevelsView.Current.XamlRoot
             };

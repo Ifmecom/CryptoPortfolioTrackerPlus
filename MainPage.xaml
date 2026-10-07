@@ -125,6 +125,12 @@
                     </NavigationViewItem.Icon>
                 </NavigationViewItem>
 
+                <NavigationViewItem x:Name="AiResearchNavItem" Content="AI Research" Tag="AiResearchView">
+                    <NavigationViewItem.Icon>
+                        <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE99A;"/>
+                    </NavigationViewItem.Icon>
+                </NavigationViewItem>
+
                 <NavigationViewItemHeader Content="Bibliotheek"/>
 
                 <NavigationViewItem x:Name="CoinLibraryNavItem" l:Uids.Uid="Navigation_CoinLibrary" Tag="CoinLibraryView" >

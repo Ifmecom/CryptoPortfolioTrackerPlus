@@ -26,6 +26,10 @@ public partial class CoinLibraryView : Page, IDisposable
     {
         using (PerfLog.Measure("CoinLibraryView.ViewLoading")) await _viewModel.ViewLoading();
         using (PerfLog.Measure("CoinLibraryView.RetrieveAllCoinData")) await _viewModel.RetrieveAllCoinData();
+
+        // Opdracht vanuit AI Research (v1.49): munt-toevoegen-venster met zoektekst openen.
+        if (AppNavigator.Take<AddCoinRequest>() is { } request)
+            await _viewModel.ShowAddCoinDialogWithSearch(request.SearchText);
     }
     private async void View_Loading(Microsoft.UI.Xaml.FrameworkElement sender, object args)
     {

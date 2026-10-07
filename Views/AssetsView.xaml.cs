@@ -44,6 +44,10 @@ public partial class AssetsView : Page, IDisposable
         {
             MyAssetsListViewControl.AssetsListView.SelectedIndex = -1;
         }
+
+        // Opdracht vanuit AI Research (v1.49): transactievenster voorgevuld openen.
+        if (AppNavigator.Take<TransactionRequest>() is { } request)
+            await _viewModel.ShowTransactionDialogWithPrefill(request);
     }
 
     private async void Correlation_Click(object sender, Microsoft.UI.Xaml.RoutedEventArgs e)

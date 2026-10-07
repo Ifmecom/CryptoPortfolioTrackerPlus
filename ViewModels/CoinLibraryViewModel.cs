@@ -169,7 +169,12 @@ public partial class CoinLibraryViewModel : BaseViewModel
     }
 
     [RelayCommand(CanExecute = nameof(CanShowAddCoinDialog))]
-    public async Task ShowAddCoinDialog()
+    public Task ShowAddCoinDialog() => ShowAddCoinDialogCore(null);
+
+    /// <summary>Munt-toevoegen-venster met een zoektekst, vanuit AI Research (v1.49).</summary>
+    public Task ShowAddCoinDialogWithSearch(string searchText) => ShowAddCoinDialogCore(searchText);
+
+    private async Task ShowAddCoinDialogCore(string? initialSearch)
     {
         (await _narrativeService.GetNarratives())
             .IfSucc(list => narratives = list);
@@ -180,7 +185,7 @@ public partial class CoinLibraryViewModel : BaseViewModel
         var loc = Localizer.Get();
         try
         {
-            dialog = new AddCoinDialog(Current, Enums.DialogAction.Add, App.Container.GetService<IMessenger>())
+            dialog = new AddCoinDialog(Current, Enums.DialogAction.Add, App.Container.GetService<IMessenger>(), initialSearch)
             {
                 XamlRoot = CoinLibraryView.Current.XamlRoot
             };

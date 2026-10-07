@@ -325,6 +325,16 @@ Wat bijgewerkt moet worden:
 
 ---
 
+## AI Research (subsysteem, v1.49)
+
+- **Pagina:** `AiResearchView` (tabs met AI-websites in WebView2 + API-assistent) + `AiResearchViewModel`. Websites gebruiken een eigen, blijvend WebView2-profiel (`AppDataPath\WebView2-AI`); de app slaat **geen wachtwoorden** op. Portfolio-context gaat **nooit in een URL** (alleen via klembord of API-body).
+- **Puur + getest** (`AiResearchTests.cs`): `AiNumberParser` (EN/NL-notatie, dubbelzinnig → dichtst bij de koers), `AiIntentDetector` (munten, intenties, niveaus → `SmartAction`), `AiPromptBuilder` (systeemprompt, context, ```` ```acties ````-blok), `AiChatWire` (OpenAI-compatibele JSON). Modellen in `Models/AiResearchModels.cs` (`AiCatalog` = aanbieders + standaardmodellen).
+- **`AiResearchService`** (singleton): Claude via de **officiële Anthropic-SDK** (NuGet `Anthropic`, niet via een OpenAI-shim); overige aanbieders via hun OpenAI-compatibele endpoint. Sleutels DPAPI-versleuteld in de voorkeuren; nooit loggen. Notitie schrijven met `ExecuteUpdateAsync`.
+- **Acties voeren nooit zelf iets uit.** Navigatie-acties lopen via `Helpers/AppNavigator.Request(tag, request)`; de doelpagina doet `AppNavigator.Take<T>()` in zijn `Loaded` en opent het bestaande venster voorgevuld (Assets → `TransactionDialog`, Coin Library → `AddCoinDialog`, Prijsniveaus → `AddPriceLevelsDialog`, Trade Advies, Fundamentals). Nieuwe actie = request-record in `AiResearchModels.cs` + `Take` in de doelpagina + case in `AiResearchViewModel.ExecuteActionAsync`.
+- AI-tekst (antwoord, websitetekst) is **data**: alleen voorinvullen, nooit automatisch uitvoeren — ook niet uit het ```` ```acties ````-blok.
+
+---
+
 ## Wishlist — toekomstige indicatoren
 
 Indicatoren die nog niet zijn geïmplementeerd vanwege data- of scope-beperkingen:

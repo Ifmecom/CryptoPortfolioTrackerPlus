@@ -1,0 +1,240 @@
+<Page
+    x:Class="CryptoPortfolioTracker.Views.AiResearchView"
+    x:Name="RootPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="using:CryptoPortfolioTracker.ViewModels"
+    xmlns:models="using:CryptoPortfolioTracker.Models"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    Loaded="View_Loaded"
+    Unloaded="View_Unloaded"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid Margin="16,12,16,8">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Header (rechts 44 px vrij voor de ⓘ-knop) -->
+        <Grid Grid.Row="0" Margin="0,0,44,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel>
+                <TextBlock Text="AI Research" FontSize="24" FontWeight="SemiBold" Foreground="DarkGoldenrod"/>
+                <TextBlock Text="Stel crypto-vragen aan ChatGPT, Claude, Grok, Gemini en anderen — zonder de app te verlaten. De app stelt vervolgstappen voor op basis van vraag en antwoord."
+                           FontSize="12" TextWrapping="Wrap"
+                           Foreground="{ThemeResource SystemControlForegroundBaseMediumBrush}" Margin="0,2,0,0"/>
+            </StackPanel>
+            <Button Grid.Column="1" VerticalAlignment="Center" Click="Keys_Click"
+                    ToolTipService.ToolTip="API-sleutels en modellen per aanbieder (optioneel — de websites werken zonder)">
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                    <FontIcon Glyph="&#xE8D7;" FontSize="14"/>
+                    <TextBlock Text="Sleutels"/>
+                </StackPanel>
+            </Button>
+        </Grid>
+
+        <Grid Grid.Row="1" ColumnSpacing="16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="360"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- ── Links: aanbieders + vraag ── -->
+            <Grid Grid.Column="0" RowSpacing="8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <Pivot x:Name="ProviderPivot" Grid.Row="0" SelectionChanged="ProviderPivot_SelectionChanged">
+                    <!-- Tab 1: via API (eigen sleutel). De websites worden in de code-behind toegevoegd. -->
+                    <PivotItem x:Name="ApiPivotItem" Header="Assistent (API)" Margin="0,4,0,0">
+                        <Grid RowSpacing="6">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <StackPanel Orientation="Horizontal" Spacing="8" Visibility="{x:Bind _viewModel.HasApiProvider, Mode=OneWay}">
+                                <TextBlock Text="Aanbieder" VerticalAlignment="Center" FontSize="12"/>
+                                <ComboBox ItemsSource="{x:Bind _viewModel.ApiProviders, Mode=OneWay}"
+                                          SelectedItem="{x:Bind _viewModel.SelectedApiProvider, Mode=TwoWay}"
+                                          DisplayMemberPath="Name" MinWidth="180"/>
+                                <TextBlock Text="{x:Bind _viewModel.ModelLabel, Mode=OneWay}" VerticalAlignment="Center"
+                                           FontSize="11" Opacity="0.7" ToolTipService.ToolTip="Model (aan te passen via 'Sleutels')"/>
+                                <Button Content="Nieuw gesprek" Command="{x:Bind _viewModel.NewConversationCommand}"
+                                        ToolTipService.ToolTip="Begin opnieuw; de portfolio-context gaat dan opnieuw mee met de eerste vraag"/>
+                            </StackPanel>
+
+                            <!-- Nog geen sleutel: uitleg -->
+                            <Border Grid.Row="1" Visibility="{x:Bind _viewModel.HasNoApiProvider, Mode=OneWay}"
+                                    Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="20"
+                                    VerticalAlignment="Top">
+                                <StackPanel Spacing="8">
+                                    <TextBlock Text="Nog geen API-sleutel ingesteld" FontWeight="SemiBold" FontSize="16"/>
+                                    <TextBlock TextWrapping="Wrap" Opacity="0.85"
+                                               Text="Gratis aan de slag: gebruik de tabbladen hierboven (ChatGPT, Claude, Grok, Gemini, Perplexity, …). Je logt daar zelf in; de app onthoudt de sessie."/>
+                                    <TextBlock TextWrapping="Wrap" Opacity="0.85"
+                                               Text="Met een API-sleutel stelt de app de vraag zelf, met je portfolio als context, en leest het antwoord direct uit voor slimme acties. Gratis sleutels zijn er bij Google Gemini, Groq, OpenRouter en Mistral."/>
+                                    <Button Content="Sleutel instellen" Click="Keys_Click" Style="{StaticResource AccentButtonStyle}" Margin="0,4,0,0"/>
+                                </StackPanel>
+                            </Border>
+
+                            <ListView x:Name="ChatList" Grid.Row="1" SelectionMode="None" IsItemClickEnabled="False"
+                                      Visibility="{x:Bind _viewModel.HasApiProvider, Mode=OneWay}"
+                                      ItemsSource="{x:Bind _viewModel.Chat, Mode=OneWay}">
+                                <ListView.ItemContainerStyle>
+                                    <Style TargetType="ListViewItem">
+                                        <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                        <Setter Property="Padding" Value="0,4"/>
+                                    </Style>
+                                </ListView.ItemContainerStyle>
+                                <ListView.ItemTemplate>
+                                    <DataTemplate x:DataType="vm:AiChatItem">
+                                        <Border HorizontalAlignment="{x:Bind Alignment}" MaxWidth="{x:Bind MaxBubbleWidth}"
+                                                Background="{ThemeResource CardBackgroundFillColorDefaultBrush}"
+                                                BorderBrush="{ThemeResource CardStrokeColorDefaultBrush}" BorderThickness="1"
+                                                CornerRadius="8" Padding="12,8">
+                                            <StackPanel Spacing="4">
+                                                <TextBlock Text="{x:Bind Header}" FontSize="11" Opacity="0.65"/>
+                                                <TextBlock Text="{x:Bind Text}" TextWrapping="Wrap" IsTextSelectionEnabled="True" FontSize="13"/>
+                                            </StackPanel>
+                                        </Border>
+                                    </DataTemplate>
+                                </ListView.ItemTemplate>
+                            </ListView>
+                        </Grid>
+                    </PivotItem>
+                </Pivot>
+
+                <!-- Vraag (geldt voor de API én de websites) -->
+                <Border Grid.Row="1" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="8" Padding="10">
+                    <Grid RowSpacing="6">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <TextBox x:Name="QuestionBox" Text="{x:Bind _viewModel.Question, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                                 PlaceholderText="Stel een crypto-vraag… (Ctrl+Enter = versturen)"
+                                 AcceptsReturn="True" TextWrapping="Wrap" MinHeight="64" MaxHeight="160"
+                                 KeyDown="QuestionBox_KeyDown"/>
+                        <Grid Grid.Row="1" ColumnSpacing="8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+                                <CheckBox Content="Portfolio als context meesturen" IsChecked="{x:Bind _viewModel.IncludeContext, Mode=TwoWay}"
+                                          ToolTipService.ToolTip="Je posities (aantal, koers, resultaat) en gevolgde munten gaan mee met de eerste vraag. Bij websites komt dit op het klembord om te plakken."/>
+                                <TextBlock Text="{x:Bind _viewModel.StatusText, Mode=OneWay}" VerticalAlignment="Center" FontSize="12"
+                                           Opacity="0.8" TextTrimming="CharacterEllipsis"/>
+                            </StackPanel>
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8">
+                                <ProgressRing IsActive="{x:Bind _viewModel.IsBusy, Mode=OneWay}" Width="20" Height="20"/>
+                                <Button Content="Stop" Command="{x:Bind _viewModel.StopCommand}"
+                                        Visibility="{x:Bind _viewModel.IsBusy, Mode=OneWay}"/>
+                                <Button x:Name="AskAllButton" Content="Aan alle sites" Click="AskAll_Click"
+                                        ToolTipService.ToolTip="Open de vraag in alle sites die een vooringevulde vraag ondersteunen (ChatGPT, Claude, Grok, Perplexity, Copilot) — handig om antwoorden te vergelijken"/>
+                                <Button x:Name="SendButton" Content="Vraag stellen" Click="Send_Click"
+                                        IsEnabled="{x:Bind _viewModel.IsNotBusy, Mode=OneWay}"
+                                        Style="{StaticResource AccentButtonStyle}"/>
+                            </StackPanel>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ── Rechts: slimme acties + snelle vragen ── -->
+            <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                <StackPanel Spacing="14" Padding="0,0,8,0">
+
+                    <StackPanel Spacing="6">
+                        <Grid>
+                            <TextBlock Text="Slimme acties" FontWeight="SemiBold" FontSize="16" Foreground="DarkGoldenrod"/>
+                            <Button x:Name="AnalyzeButton" HorizontalAlignment="Right" Padding="8,3" Click="Analyze_Click"
+                                    ToolTipService.ToolTip="Lees het antwoord op de open website (selecteer het antwoord voor het beste resultaat) en stel vervolgstappen voor">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <FontIcon Glyph="&#xE721;" FontSize="12"/>
+                                    <TextBlock Text="Antwoord analyseren" FontSize="12"/>
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                        <TextBlock Visibility="{x:Bind _viewModel.HasNoActions, Mode=OneWay}" TextWrapping="Wrap" FontSize="12" Opacity="0.7"
+                                   Text="Stel een vraag. Noemt de vraag of het antwoord een munt, dan verschijnen hier vervolgstappen: transactie, paper trade, prijsniveaus, munt toevoegen, analyse of notitie. Op een website: selecteer het antwoord en klik 'Antwoord analyseren'."/>
+                        <ListView ItemsSource="{x:Bind _viewModel.Actions, Mode=OneWay}" SelectionMode="None"
+                                  IsItemClickEnabled="True" ItemClick="Action_ItemClick">
+                            <ListView.ItemContainerStyle>
+                                <Style TargetType="ListViewItem">
+                                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                                    <Setter Property="Padding" Value="0,2"/>
+                                    <Setter Property="MinHeight" Value="0"/>
+                                </Style>
+                            </ListView.ItemContainerStyle>
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="models:SmartAction">
+                                    <Border Background="{ThemeResource CardBackgroundFillColorDefaultBrush}" CornerRadius="6" Padding="10,7"
+                                            ToolTipService.ToolTip="Klik om uit te voeren — je bevestigt altijd zelf in het venster dat opent">
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto"/>
+                                                <ColumnDefinition Width="*"/>
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon Glyph="{x:Bind Glyph}" FontSize="16" Foreground="DarkGoldenrod" VerticalAlignment="Top" Margin="0,2,0,0"/>
+                                            <StackPanel Grid.Column="1" Spacing="1">
+                                                <TextBlock Text="{x:Bind Title}" FontSize="13" FontWeight="SemiBold" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{x:Bind Detail}" FontSize="11" Opacity="0.75" TextWrapping="Wrap"/>
+                                                <TextBlock Text="{x:Bind Source}" FontSize="10" Opacity="0.5"/>
+                                            </StackPanel>
+                                        </Grid>
+                                    </Border>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Snelle vragen" FontWeight="SemiBold" FontSize="16" Foreground="DarkGoldenrod"/>
+                        <ComboBox Header="Munt" HorizontalAlignment="Stretch"
+                                  ItemsSource="{x:Bind _viewModel.PromptCoins, Mode=OneWay}"
+                                  SelectedItem="{x:Bind _viewModel.SelectedPromptCoin, Mode=TwoWay}">
+                            <ComboBox.ItemTemplate>
+                                <DataTemplate x:DataType="models:AiCoinRef">
+                                    <TextBlock>
+                                        <Run Text="{x:Bind Symbol}" FontWeight="SemiBold"/>
+                                        <Run Text="{x:Bind Name}"/>
+                                    </TextBlock>
+                                </DataTemplate>
+                            </ComboBox.ItemTemplate>
+                        </ComboBox>
+                        <ItemsControl ItemsSource="{x:Bind _viewModel.QuickPrompts}">
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate x:DataType="vm:AiQuickPrompt">
+                                    <HyperlinkButton Content="{x:Bind Label}" Padding="4,2" Click="QuickPrompt_Click"
+                                                     ToolTipService.ToolTip="{x:Bind Template}"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+                    </StackPanel>
+
+                    <StackPanel Spacing="6">
+                        <TextBlock Text="Recente vragen" FontWeight="SemiBold" FontSize="16" Foreground="DarkGoldenrod"/>
+                        <ListView ItemsSource="{x:Bind _viewModel.RecentQuestions, Mode=OneWay}" SelectionMode="None"
+                                  IsItemClickEnabled="True" ItemClick="Recent_ItemClick" MaxHeight="260">
+                            <ListView.ItemTemplate>
+                                <DataTemplate x:DataType="x:String">
+                                    <TextBlock Text="{x:Bind}" FontSize="12" TextTrimming="CharacterEllipsis" ToolTipService.ToolTip="{x:Bind}"/>
+                                </DataTemplate>
+                            </ListView.ItemTemplate>
+                        </ListView>
+                    </StackPanel>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Grid>
+</Page>

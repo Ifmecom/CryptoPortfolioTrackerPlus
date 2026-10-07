@@ -309,6 +309,32 @@ public static class PageHelpCatalog
                     "Paper-resultaten zijn vaak optimistischer dan echt handelen (geen emotie, perfecte vullingen)."),
             }),
 
+        ["AiResearchView"] = new(
+            "AI Research",
+            "Stel crypto-vragen aan AI's zonder de app te verlaten, en zet het antwoord direct om in een vervolgstap.",
+            new[]
+            {
+                S(See, "Wat zie je hier",
+                    "Tabblad 'Assistent (API)': een gesprek met een AI via je eigen API-sleutel. De app stelt de vraag zelf, desgewenst met je portfolio als context.",
+                    "Tabbladen ChatGPT, Claude, Grok, Gemini, Perplexity, DeepSeek en Copilot: de echte websites (gratis versies) in de app. Je logt daar zelf in; de sessie blijft bewaard.",
+                    "Rechts: slimme acties (vervolgstappen), snelle vragen voor een gekozen munt, en je recente vragen."),
+                S(Read, "Hoe lees je het",
+                    "Slimme acties komen uit je vraag en het antwoord: genoemde munten (ticker in hoofdletters, $TICKER of de naam), kopen of verkopen, en niveaus als entry, stop, doel, steun en weerstand.",
+                    "Via de API zet de AI soms zelf een actievoorstel onder het antwoord ('AI-voorstel'). Op een website selecteer je het antwoord en klik je 'Antwoord analyseren'.",
+                    "Niveaus die niet bij de koers passen (meer dan 5× ernaast) of niet bij de richting (bij long een stop boven de entry) vallen weg.",
+                    "Een munt die niet in je bibliotheek staat, krijgt de actie 'toevoegen aan bibliotheek'. Een verkoop-actie verschijnt alleen voor munten die je bezit; stablecoins krijgen geen acties."),
+                S(Act, "Hoe ga je ermee om",
+                    "Gratis: gebruik de websites. Met een gratis API-sleutel (Gemini, Groq, OpenRouter of Mistral, via 'Sleutels') krijg je de beste slimme acties.",
+                    "'Portfolio als context meesturen' geeft de AI je posities mee. Bij een website komen vraag en context op het klembord: klik in het invoerveld van de site en plak (Ctrl+V).",
+                    "'Aan alle sites' opent de vraag in ChatGPT, Claude, Grok, Perplexity en Copilot tegelijk, zodat je de antwoorden kunt vergelijken.",
+                    "Klik op een actie: de app opent het juiste venster voorgevuld (transactie, paper trade, prijsniveaus, munt toevoegen) of springt naar Trade Advies, Fundamentals of TradingView. 'Antwoord bewaren' zet het antwoord in de notitie van de munt."),
+                S(Watch, "Let op",
+                    "AI's maken fouten en kennen niet altijd de actuele koers. Controleer cijfers en niveaus voordat je handelt; dit is geen financieel advies.",
+                    "De app voert nooit zelf iets uit: je bevestigt elke actie in het venster dat opent.",
+                    "Met context deel je je posities met de gekozen AI-aanbieder. Zet het vinkje uit als je dat niet wilt.",
+                    "Inloggen met Google of X kan in de ingebouwde browser geweigerd worden; gebruik dan e-mail-login of 'Open in browser'. API-sleutels staan versleuteld op deze pc."),
+            }),
+
         ["SourcesView"] = new(
             "Bronnen",
             "De bronnen waaruit de app het sentiment (de stemming) rond coins haalt.",
